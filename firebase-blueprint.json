@@ -1,0 +1,138 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with cultural preferences and favorite items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "city": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "student", "researcher", "admin"] },
+        "interests": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "displayName", "role"]
+    },
+    "Heritage": {
+      "title": "Heritage",
+      "description": "Vietnamese cultural & historical heritage sites",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["monument", "temple", "citadel", "palace", "tomb", "ancient_house", "craft_village", "artifact", "costume", "instrument", "architecture", "folk_art", "culinary"] },
+        "region": { "type": "string", "enum": ["north", "central", "south"] },
+        "province": { "type": "string" },
+        "period": { "type": "string" },
+        "history": { "type": "string" },
+        "culturalSignificance": { "type": "string" },
+        "interestingFacts": { "type": "string" },
+        "conservationStatus": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "verifiedStatus": { "type": "string", "enum": ["verified", "folk_legend", "unverified"] },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "googleMapsUri": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "region", "province", "history", "verifiedStatus"]
+    },
+    "FamilyStory": {
+      "title": "FamilyStory",
+      "description": "Grandparent oral stories and family memories",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "tellerName": { "type": "string" },
+        "tellerBirthYear": { "type": "number" },
+        "location": { "type": "string" },
+        "topic": { "type": "string" },
+        "timePeriod": { "type": "string" },
+        "storyContent": { "type": "string" },
+        "originalAudioUrl": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["private", "family", "public"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "tellerName", "storyContent", "visibility"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "User-contributed heritage spots, crafts, and photos awaiting moderation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "location": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title", "description", "status"]
+    },
+    "Itinerary": {
+      "title": "Itinerary",
+      "description": "Smart cultural & dining travel itineraries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "destination": { "type": "string" },
+        "duration": { "type": "string" },
+        "items": { "type": "string" },
+        "aiReasoning": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "title", "destination", "items"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "Saved items by users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "itemId": { "type": "string" },
+        "itemType": { "type": "string", "enum": ["heritage", "place", "story", "itinerary", "craft"] },
+        "title": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "itemId", "itemType", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile collection"
+    },
+    "/heritage/{heritageId}": {
+      "schema": "Heritage",
+      "description": "Curated cultural heritage database"
+    },
+    "/familyStories/{storyId}": {
+      "schema": "FamilyStory",
+      "description": "User grandfather/grandmother memories and oral histories"
+    },
+    "/communityPosts/{postId}": {
+      "schema": "CommunityPost",
+      "description": "Community contributed heritage items"
+    },
+    "/itineraries/{itineraryId}": {
+      "schema": "Itinerary",
+      "description": "Saved travel itineraries"
+    },
+    "/favorites/{favoriteId}": {
+      "schema": "Favorite",
+      "description": "User favorites list"
+    }
+  }
+}

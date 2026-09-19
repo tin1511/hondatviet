@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.role == 'admin' || request.auth.token.email == 'btin2499@gmail.com');
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId) || isAdmin();
+    }
+
+    // Heritage cultural items (Public read, Admin write)
+    match /heritage/{heritageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Grandparents oral stories (Private, Family, or Public read; Owner write)
+    match /familyStories/{storyId} {
+      allow read: if resource.data.visibility == 'public' || 
+                     (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.visibility == 'family')) ||
+                     isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Community contributions (Approved items public, Author sees own, Admin manages all)
+    match /communityPosts/{postId} {
+      allow read: if resource.data.status == 'approved' || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+                     isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Itineraries (Owner read/write, Admin read/write)
+    match /itineraries/{itineraryId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Favorites (Owner read/write)
+    match /favorites/{favoriteId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

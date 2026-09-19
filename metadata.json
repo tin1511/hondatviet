@@ -1,0 +1,7 @@
+{
+  "name": "HERITAGEAI - Khám phá Di sản & Trải nghiệm Việt Nam",
+  "description": "Nền tảng AI đồng hành khám phá di sản, hướng dẫn viên du lịch AI ảo được huấn luyện chuyên sâu, nhận diện văn hóa, bản đồ di sản 3 miền, ẩm thực lân cận và quản trị dữ liệu.",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
