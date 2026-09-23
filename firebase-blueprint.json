@@ -2,17 +2,22 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "User profile with cultural preferences and favorite items",
+      "description": "User profile and account with cultural preferences, credentials, and achievements",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
+        "password": { "type": "string" },
         "avatarUrl": { "type": "string" },
         "city": { "type": "string" },
         "role": { "type": "string", "enum": ["user", "student", "researcher", "admin"] },
-        "interests": { "type": "string" },
-        "createdAt": { "type": "string" }
+        "roleLabel": { "type": "string" },
+        "interests": { "type": "array" },
+        "points": { "type": "number" },
+        "level": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "lastLoginAt": { "type": "string" }
       },
       "required": ["id", "email", "displayName", "role"]
     },
@@ -107,9 +112,26 @@
         "createdAt": { "type": "string" }
       },
       "required": ["id", "userId", "itemId", "itemType", "title"]
+    },
+    "SystemConfig": {
+      "title": "SystemConfig",
+      "description": "Global system configurations including Gemini AI and VieNeu TTS API settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "configType": { "type": "string", "enum": ["ai_config", "tts_config"] },
+        "data": { "type": "object" }
+      },
+      "required": ["id", "updatedAt", "configType"]
     }
   },
   "firestore": {
+    "/system_config/{configId}": {
+      "schema": "SystemConfig",
+      "description": "Global system configuration documents for AI and TTS APIs"
+    },
     "/users/{userId}": {
       "schema": "User",
       "description": "User profile collection"

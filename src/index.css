@@ -4,6 +4,10 @@
   :root {
     --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-serif: 'Lora', 'Playfair Display', 'Merriweather', 'Times New Roman', Georgia, serif;
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sat: env(safe-area-inset-top, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
   }
 
   html {
@@ -21,6 +25,13 @@
     overflow-x: hidden;
     width: 100%;
     min-height: 100vh;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Prevent text size adjustment on orientation change in mobile browsers */
+  html, body {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   /* Custom font-serif and font-sans utility classes with full Vietnamese diacritic support */
@@ -32,6 +43,14 @@
   .font-sans {
     font-family: var(--font-sans);
   }
+}
+
+/* Safe area padding utilities for mobile edge-to-edge screens */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+}
+.bottom-safe {
+  bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
 }
 
 /* Custom scrollbar styling for high-density and responsive elements */
@@ -58,3 +77,38 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Optimize touch taps on mobile devices */
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+

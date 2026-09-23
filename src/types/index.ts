@@ -255,6 +255,16 @@ export interface PastAndPresentItem {
   conservationDetails: string;
 }
 
+export interface ContributionComment {
+  id: string;
+  userId?: string;
+  authorName: string;
+  authorAvatar?: string;
+  authorRole?: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface CommunityContribution {
   id: string;
   userId: string;
@@ -271,6 +281,8 @@ export interface CommunityContribution {
   submittedAt?: string;
   createdAt?: string;
   likesCount?: number;
+  likedByUsers?: string[];
+  comments?: ContributionComment[];
 }
 
 export interface ChatMessage {
@@ -390,4 +402,24 @@ export interface UserProfile {
   createdAt: string;
   lastLoginAt?: string;
   isLoggedIn?: boolean;
+}
+
+export interface RecognitionSampleItem {
+  id: string;
+  title: string;
+  category: string;
+  url: string;
+  prompt: string;
+  description?: string;
+  source?: string;
+}
+
+export interface RecognitionSectionConfig {
+  badge: string;
+  title: string;
+  description: string;
+  samplesLabel: string;
+  samples: RecognitionSampleItem[];
+  lastUpdated?: string;
+  updatedBy?: string;
 }

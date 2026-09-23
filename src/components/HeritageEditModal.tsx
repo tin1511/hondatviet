@@ -148,7 +148,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
     }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -195,7 +195,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
       ]
     };
 
-    storageService.updateHeritage(itemToSave);
+    await storageService.updateHeritage(itemToSave);
     setSuccessMessage('Đã lưu thay đổi nội dung di sản thành công!');
 
     if (onSaveSuccess) {

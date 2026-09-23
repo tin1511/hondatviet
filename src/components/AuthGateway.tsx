@@ -897,7 +897,7 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
 
         {/* Footer info */}
         <footer className="border-t border-stone-900 bg-stone-950/80 backdrop-blur-md px-4 py-4 text-center text-xs text-stone-500">
-          <p>HeritageAI Vietnam 4.0 &copy; 2026 &bull; Bảo tồn & Lan tỏa Giá trị Di sản Văn hóa Dân tộc</p>
+          <p>Hồn Đất Việt &copy; 2026 &bull; Bảo tồn & Lan tỏa Giá trị Di sản Văn hóa Dân tộc</p>
         </footer>
       </div>
 

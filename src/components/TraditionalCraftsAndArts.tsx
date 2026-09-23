@@ -14,6 +14,7 @@ import {
 import { TRADITIONAL_CRAFTS, TRADITIONAL_ARTS } from '../data/vietnamHeritageData';
 import { TraditionalCraftVillage, TraditionalArtItem } from '../types';
 import { aiService } from '../services/aiService';
+import { ttsService } from '../services/ttsService';
 
 export const TraditionalCraftsAndArts: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'crafts' | 'arts'>('crafts');
@@ -219,8 +220,11 @@ export const TraditionalCraftsAndArts: React.FC = () => {
               </div>
 
               <button
-                onClick={() => aiService.speakText(selectedArt.description + '. ' + selectedArt.characteristics.join('. '))}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow"
+                onClick={() => {
+                  ttsService.prepareForMobilePlayback();
+                  aiService.speakText(selectedArt.description + '. ' + selectedArt.characteristics.join('. '));
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs rounded-xl flex items-center gap-1.5 shadow cursor-pointer"
               >
                 <Volume2 className="w-4 h-4" />
                 <span>Nghe giới thiệu âm thanh</span>

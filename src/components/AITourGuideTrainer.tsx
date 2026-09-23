@@ -149,7 +149,8 @@ export const AITourGuideTrainer: React.FC = () => {
       setSpeakingIdx(idx);
       aiService.speakText(text, {
         lang: 'vi-VN',
-        onEnd: () => setSpeakingIdx(null)
+        onEnd: () => setSpeakingIdx(null),
+        onError: () => setSpeakingIdx(null)
       });
     }
   };

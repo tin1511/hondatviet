@@ -119,15 +119,15 @@ const ALL_MILESTONE_BADGES: MilestoneBadge[] = [
   },
   {
     id: 'badge-storyteller',
-    name: 'Người Giữ Ký Ức Gia Đình',
+    name: 'Người Kể Chuyện Di Sản',
     icon: '🎙️',
-    category: 'Gia đình',
+    category: 'Văn hóa',
     tier: 'Vàng',
     tierColor: 'from-amber-400 to-amber-600 border-amber-400 text-amber-200',
-    description: 'Ghi âm và lưu giữ câu chuyện truyền miệng của ông bà, cha mẹ qua các thế hệ.',
-    requirementText: 'Ghi âm ít nhất 1 mẩu ký ức của ông bà',
-    targetTab: 'grandparents',
-    ctaText: 'Thu âm ký ức',
+    description: 'Nghe AI tái hiện những câu chuyện di sản, huyền tích và chính sử Việt Nam.',
+    requirementText: 'Nghe ít nhất 1 câu chuyện di sản bằng AI',
+    targetTab: 'storyteller',
+    ctaText: 'Nghe kể chuyện',
     getProgress: (u) => {
       const count = u.storiesCreated || 0;
       const isUnlocked = count >= 1 || (u.badges || []).some(b => b.id === 'badge-storyteller');

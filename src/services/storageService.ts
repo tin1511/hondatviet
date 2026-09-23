@@ -1,6 +1,7 @@
 import { 
   FamilyStoryMemory, 
   CommunityContribution, 
+  ContributionComment,
   ItineraryPlan, 
   UserProfile,
   UserActivityLog,
@@ -9,7 +10,11 @@ import {
   HeritageItem,
   PlaceItem,
   AITourGuideConfig,
-  CityLandmarkBackground
+  CityLandmarkBackground,
+  HeritageStory,
+  StoryMode,
+  RecognitionSampleItem,
+  RecognitionSectionConfig
 } from '../types';
 import { 
   DEMO_GRANDPARENT_STORIES, 
@@ -17,6 +22,12 @@ import {
   PLACES_NEAR_HERITAGE 
 } from '../data/vietnamHeritageData';
 import { cleanVietnameseText } from '../utils/textUtils';
+import {
+  saveUserToFirestore,
+  getAccountsFromFirestore,
+  updatePasswordInFirestore,
+  resetPasswordInFirestoreByEmail
+} from './firebaseAuthService';
 
 const FAVORITES_KEY = 'heritageai_favorites';
 const STORIES_KEY = 'heritageai_family_stories';
@@ -29,6 +40,8 @@ const HERITAGES_KEY = 'heritageai_custom_heritages';
 const PLACES_KEY = 'heritageai_custom_places';
 const TOUR_GUIDE_CONFIG_KEY = 'heritageai_tour_guide_config';
 const LANDMARKS_KEY = 'heritageai_custom_landmarks';
+const CUSTOM_STORIES_KEY = 'heritageai_custom_stories';
+const RECOGNITION_CONFIG_KEY = 'heritageai_recognition_section_config';
 
 export const DEFAULT_TOUR_GUIDE_CONFIG: AITourGuideConfig = {
   guideName: 'Bảo An',
@@ -149,20 +162,56 @@ export const storageService = {
   async fetchAccounts(): Promise<UserProfile[]> {
     const local = this.getAccounts();
     try {
+      // 1. Fetch directly from Firebase Firestore Cloud Database
+      const firestoreAccounts = await getAccountsFromFirestore();
+      if (firestoreAccounts && firestoreAccounts.length > 0) {
+        const map = new Map<string, UserProfile>();
+        local.forEach(a => map.set(a.id, a));
+        firestoreAccounts.forEach((fsAcc: UserProfile) => {
+          const localAcc = map.get(fsAcc.id) || Array.from(map.values()).find(l => l.email && fsAcc.email && l.email.toLowerCase() === fsAcc.email.toLowerCase());
+          if (localAcc) {
+            const mergedAcc: UserProfile = {
+              ...localAcc,
+              ...fsAcc,
+              password: fsAcc.password || localAcc.password
+            };
+            map.set(mergedAcc.id, mergedAcc);
+          } else {
+            map.set(fsAcc.id, fsAcc);
+          }
+        });
+        const merged = Array.from(map.values());
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
+        return merged;
+      }
+
+      // 2. Secondary fallback to server API
       const res = await fetch('/api/accounts');
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.accounts)) {
           const map = new Map<string, UserProfile>();
           local.forEach(a => map.set(a.id, a));
-          data.accounts.forEach((a: UserProfile) => map.set(a.id, a));
+          data.accounts.forEach((serverAcc: UserProfile) => {
+            const localAcc = map.get(serverAcc.id) || Array.from(map.values()).find(l => l.email && serverAcc.email && l.email.toLowerCase() === serverAcc.email.toLowerCase());
+            if (localAcc) {
+              const mergedAcc: UserProfile = {
+                ...localAcc,
+                ...serverAcc,
+                password: serverAcc.password || localAcc.password
+              };
+              map.set(mergedAcc.id, mergedAcc);
+            } else {
+              map.set(serverAcc.id, serverAcc);
+            }
+          });
           const merged = Array.from(map.values());
           localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
           return merged;
         }
       }
     } catch (err) {
-      console.warn('Unable to sync accounts from server:', err);
+      console.warn('Unable to sync accounts from Firebase/server:', err);
     }
     return local;
   },
@@ -246,11 +295,25 @@ export const storageService = {
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
 
-    // Async sync to server database
+    // Direct Cloud Save to Firebase Firestore
+    saveUserToFirestore(newUser).catch(err => console.warn('Firebase Firestore register save warning:', err));
+
+    // Secondary sync to server database
     fetch('/api/accounts/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newUser)
+    }).then(r => r.json()).then(data => {
+      if (data.success && data.user) {
+        const accs = this.getAccounts();
+        const idx = accs.findIndex(a => a.id === data.user.id || a.email.toLowerCase() === data.user.email.toLowerCase());
+        if (idx >= 0) {
+          accs[idx] = { ...accs[idx], ...data.user };
+        } else {
+          accs.push(data.user);
+        }
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accs));
+      }
     }).catch(err => console.warn('Server registration sync warning:', err));
 
     this.logActivity({
@@ -286,11 +349,19 @@ export const storageService = {
         localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(otherAccounts));
         localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(adminAccount));
 
+        // Sync admin login to Firestore and server
+        saveUserToFirestore(adminAccount).catch(err => console.warn('Firestore admin login save warning:', err));
+        fetch('/api/accounts/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: cleanId, password: cleanPass })
+        }).catch(err => console.warn('Server admin login sync warning:', err));
+
         this.logActivity({
           userId: adminAccount.id,
           actionType: 'auth',
           title: 'Đăng nhập Quản trị viên',
-          description: 'Quản trị viên đã đăng nhập thành công vào Hệ thống HeritageAI'
+          description: 'Quản trị viên đã đăng nhập thành công vào Hệ thống Hồn Đất Việt'
         });
 
         return { success: true, user: adminAccount };
@@ -326,11 +397,19 @@ export const storageService = {
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(updatedAccounts));
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(account));
 
+    // Sync login to Firestore and server
+    saveUserToFirestore(account).catch(err => console.warn('Firestore login sync warning:', err));
+    fetch('/api/accounts/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: cleanId, password: cleanPass })
+    }).catch(err => console.warn('Server login sync warning:', err));
+
     this.logActivity({
       userId: account.id,
       actionType: 'auth',
       title: 'Đăng nhập tài khoản',
-      description: `Chào mừng ${account.displayName} quay trở lại HeritageAI`
+      description: `Chào mừng ${account.displayName} quay trở lại Hồn Đất Việt`
     });
 
     return { success: true, user: account };
@@ -391,6 +470,18 @@ export const storageService = {
     );
     localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(updatedAccounts));
 
+    // Sync to Firestore and server
+    updatePasswordInFirestore(updatedUser.id, cleanNew).catch(err => console.warn('Firestore password change warning:', err));
+    fetch('/api/accounts/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: updatedUser.id,
+        oldPassword: cleanOld,
+        newPassword: cleanNew
+      })
+    }).catch(err => console.warn('Server password change sync warning:', err));
+
     this.logActivity({
       userId: updatedUser.id,
       actionType: 'auth',
@@ -432,6 +523,17 @@ export const storageService = {
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(current));
     }
 
+    // Sync to Firestore and server
+    resetPasswordInFirestoreByEmail(cleanEmail, cleanNew).catch(err => console.warn('Firestore reset password warning:', err));
+    fetch('/api/accounts/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: cleanEmail,
+        newPassword: cleanNew
+      })
+    }).catch(err => console.warn('Server reset password sync warning:', err));
+
     this.logActivity({
       userId: accounts[accountIndex].id,
       actionType: 'auth',
@@ -460,6 +562,14 @@ export const storageService = {
       accounts[idx] = updated;
       localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
     }
+
+    // Sync profile update to Firestore and server
+    saveUserToFirestore(updated).catch(err => console.warn('Firestore profile update warning:', err));
+    fetch('/api/accounts/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated)
+    }).catch(err => console.warn('Server profile update sync warning:', err));
 
     this.logActivity({
       userId: updated.id,
@@ -752,7 +862,24 @@ export const storageService = {
           status: 'verified',
           submittedAt: '2026-09-14T08:00:00Z',
           createdAt: '2026-09-14T08:00:00Z',
-          likesCount: 18
+          likesCount: 18,
+          likedByUsers: [],
+          comments: [
+            {
+              id: 'comment-1',
+              authorName: 'TS. Nguyễn Văn Phúc',
+              authorRole: 'admin',
+              content: 'Tư liệu rất giá trị! Phong cảnh lăng Gia Long cần được bảo tồn nguyên sơ như này.',
+              createdAt: '2026-09-15T09:30:00Z'
+            },
+            {
+              id: 'comment-2',
+              authorName: 'Lê Thanh Hải (Hội Sử Học)',
+              authorRole: 'student',
+              content: 'Mình vừa ghé tuần trước, đường vào rợp bóng thông xanh rất thơ mộng.',
+              createdAt: '2026-09-15T14:20:00Z'
+            }
+          ]
         },
         {
           id: 'post-2',
@@ -769,7 +896,9 @@ export const storageService = {
           status: 'pending_review',
           submittedAt: '2026-09-16T11:20:00Z',
           createdAt: '2026-09-16T11:20:00Z',
-          likesCount: 5
+          likesCount: 5,
+          likedByUsers: [],
+          comments: []
         }
       ];
       localStorage.setItem(POSTS_KEY, JSON.stringify(initial));
@@ -791,7 +920,9 @@ export const storageService = {
       status: post.status || 'pending_review',
       submittedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
-      likesCount: post.likesCount || 0
+      likesCount: post.likesCount || 0,
+      likedByUsers: [],
+      comments: []
     };
     list.unshift(newPost);
     localStorage.setItem(POSTS_KEY, JSON.stringify(list));
@@ -823,6 +954,97 @@ export const storageService = {
       description: `Quản trị viên đã ${statusText.toLowerCase()} bài đóng góp: "${targetPost?.title || id}"`,
       targetId: id
     });
+  },
+
+  deleteCommunityContribution(id: string): void {
+    const list = this.getCommunityContributions();
+    const target = list.find(p => p.id === id);
+    const updated = list.filter(p => p.id !== id);
+    localStorage.setItem(POSTS_KEY, JSON.stringify(updated));
+
+    this.logActivity({
+      actionType: 'admin_action',
+      title: 'Xóa bài đăng cộng đồng',
+      description: `Quản trị viên đã xóa bài đóng góp: "${target?.title || id}"`,
+      targetId: id
+    });
+  },
+
+  toggleLikeCommunityPost(id: string, userId: string = 'guest-user'): { likesCount: number; isLiked: boolean } {
+    const list = this.getCommunityContributions();
+    let isLiked = false;
+    let newLikesCount = 0;
+
+    const updated = list.map(p => {
+      if (p.id === id) {
+        const likedBy = p.likedByUsers || [];
+        const userIndex = likedBy.indexOf(userId);
+        let updatedLikes = p.likesCount || 0;
+
+        if (userIndex >= 0) {
+          // Unlike
+          likedBy.splice(userIndex, 1);
+          updatedLikes = Math.max(0, updatedLikes - 1);
+          isLiked = false;
+        } else {
+          // Like
+          likedBy.push(userId);
+          updatedLikes += 1;
+          isLiked = true;
+        }
+
+        newLikesCount = updatedLikes;
+        return { ...p, likesCount: updatedLikes, likedByUsers: likedBy };
+      }
+      return p;
+    });
+
+    localStorage.setItem(POSTS_KEY, JSON.stringify(updated));
+    return { likesCount: newLikesCount, isLiked };
+  },
+
+  addCommentToCommunityPost(postId: string, commentData: { authorName: string; authorAvatar?: string; authorRole?: string; content: string; userId?: string }): ContributionComment[] {
+    const list = this.getCommunityContributions();
+    let updatedComments: ContributionComment[] = [];
+
+    const updated = list.map(p => {
+      if (p.id === postId) {
+        const comments = p.comments || [];
+        const newComment: ContributionComment = {
+          id: 'comment-' + Date.now(),
+          userId: commentData.userId || 'user-' + Date.now(),
+          authorName: commentData.authorName || 'Thành viên Di sản',
+          authorAvatar: commentData.authorAvatar,
+          authorRole: commentData.authorRole || 'user',
+          content: commentData.content,
+          createdAt: new Date().toISOString()
+        };
+        comments.push(newComment);
+        updatedComments = comments;
+        return { ...p, comments };
+      }
+      return p;
+    });
+
+    localStorage.setItem(POSTS_KEY, JSON.stringify(updated));
+    return updatedComments;
+  },
+
+  deleteCommentFromCommunityPost(postId: string, commentId: string): ContributionComment[] {
+    const list = this.getCommunityContributions();
+    let updatedComments: ContributionComment[] = [];
+
+    const updated = list.map(p => {
+      if (p.id === postId) {
+        const comments = (p.comments || []).filter(c => c.id !== commentId);
+        updatedComments = comments;
+        return { ...p, comments };
+      }
+      return p;
+    });
+
+    localStorage.setItem(POSTS_KEY, JSON.stringify(updated));
+    return updatedComments;
   },
 
   // ==========================================
@@ -861,7 +1083,72 @@ export const storageService = {
       if (data) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Self-heal: ensure authentic images are used across all heritage sites
+          let hasHealed = false;
+          const healed = parsed.map((item: HeritageItem) => {
+            if (item.id === 'van-mieu-quoc-tu-giam' && (!item.imageUrl || item.imageUrl.includes('1599707367072'))) {
+              hasHealed = true;
+              return { ...item, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg' };
+            }
+            if (item.id === 'dai-noi-hue' && (!item.imageUrl || item.imageUrl.includes('1583417319070') || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { 
+                ...item, 
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg',
+                historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Annam_-_Hu%C3%A9_-_Porte_d%27entr%C3%A9e_du_Palais_Royal.jpg',
+                historicImageYear: 'Ảnh tư liệu Cổng Ngọ Môn Cung Đình Huế (Đầu thế kỷ 20)'
+              };
+            }
+            if (item.id === 'pho-co-hoi-an' && (!item.imageUrl || item.imageUrl.includes('1555939594') || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { 
+                ...item, 
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg',
+                historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Cau_Nhat_Ban.jpg',
+                historicImageYear: 'Chùa Cầu (Lai Viễn Kiều) - Di tích biểu tượng hơn 400 năm tuổi'
+              };
+            }
+            if (item.id === 'trang-an-ninh-binh' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { ...item, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Muaxuantamcoc.jpg' };
+            }
+            if (item.id === 'thanh-dia-my-son' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { ...item, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg/1280px-A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg' };
+            }
+            if (item.id === 'vinh-ha-long' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { ...item, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Ha_Long_Bay_in_2019.jpg/1280px-Ha_Long_Bay_in_2019.jpg' };
+            }
+            if (item.id === 'chua-thien-mu' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { ...item, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/ThienMuPagoda.jpg/1280px-ThienMuPagoda.jpg' };
+            }
+            if (item.id === 'dinh-doc-lap' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { 
+                ...item, 
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/20190923_Independence_Palace-10.jpg/1280px-20190923_Independence_Palace-10.jpg',
+                historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Dinh_Doc_Lap_1966.jpg/1280px-Dinh_Doc_Lap_1966.jpg',
+                historicImageYear: 'Dinh Độc Lập năm 1966 (KTS Ngô Viết Thụ thiết kế)'
+              };
+            }
+            return item;
+          });
+
+          // Also merge any new heritages from HERITAGE_DATABASE that might not be in local storage
+          const existingHIds = new Set(healed.map((h: HeritageItem) => h.id));
+          for (const def of HERITAGE_DATABASE) {
+            if (!existingHIds.has(def.id)) {
+              healed.push(def);
+              hasHealed = true;
+            }
+          }
+
+          if (hasHealed) {
+            localStorage.setItem(HERITAGES_KEY, JSON.stringify(healed));
+          }
+          return healed;
         }
       }
     } catch (e) {
@@ -875,7 +1162,7 @@ export const storageService = {
       const res = await fetch('/api/heritages');
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.heritages) && data.heritages.length > 0) {
+        if (data.success && Array.isArray(data.heritages)) {
           localStorage.setItem(HERITAGES_KEY, JSON.stringify(data.heritages));
           window.dispatchEvent(new CustomEvent('heritage-data-updated'));
           return data.heritages;
@@ -887,12 +1174,11 @@ export const storageService = {
     return this.getHeritages();
   },
 
-  saveHeritages(items: HeritageItem[]): void {
+  async saveHeritages(items: HeritageItem[]): Promise<void> {
     try {
       localStorage.setItem(HERITAGES_KEY, JSON.stringify(items));
       window.dispatchEvent(new CustomEvent('heritage-data-updated'));
-      // Sync to server in background
-      fetch('/api/heritages', {
+      await fetch('/api/heritages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ heritages: items })
@@ -902,7 +1188,7 @@ export const storageService = {
     }
   },
 
-  updateHeritage(heritage: HeritageItem): void {
+  async updateHeritage(heritage: HeritageItem): Promise<void> {
     const list = [...this.getHeritages()];
     const index = list.findIndex(h => h.id === heritage.id);
     if (index >= 0) {
@@ -910,7 +1196,7 @@ export const storageService = {
     } else {
       list.unshift(heritage);
     }
-    this.saveHeritages(list);
+    await this.saveHeritages(list);
     this.logActivity({
       actionType: 'admin_action',
       title: index >= 0 ? 'Cập nhật nội dung di sản' : 'Thêm di sản mới',
@@ -919,11 +1205,11 @@ export const storageService = {
     });
   },
 
-  deleteHeritage(id: string): void {
+  async deleteHeritage(id: string): Promise<void> {
     const list = this.getHeritages();
     const target = list.find(h => h.id === id);
     const updated = list.filter(h => h.id !== id);
-    this.saveHeritages(updated);
+    await this.saveHeritages(updated);
     if (target) {
       this.logActivity({
         actionType: 'admin_action',
@@ -934,9 +1220,9 @@ export const storageService = {
     }
   },
 
-  resetHeritages(): void {
+  async resetHeritages(): Promise<void> {
     localStorage.removeItem(HERITAGES_KEY);
-    this.saveHeritages(HERITAGE_DATABASE);
+    await this.saveHeritages(HERITAGE_DATABASE);
     this.logActivity({
       actionType: 'admin_action',
       title: 'Khôi phục dữ liệu di sản gốc',
@@ -952,7 +1238,7 @@ export const storageService = {
       const data = localStorage.getItem(PLACES_KEY);
       if (data) {
         const parsed = JSON.parse(data);
-        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        if (parsed && typeof parsed === 'object') {
           return parsed;
         }
       }
@@ -979,12 +1265,11 @@ export const storageService = {
     return this.getPlaces();
   },
 
-  savePlaces(places: Record<string, PlaceItem[]>): void {
+  async savePlaces(places: Record<string, PlaceItem[]>): Promise<void> {
     try {
       localStorage.setItem(PLACES_KEY, JSON.stringify(places));
       window.dispatchEvent(new CustomEvent('heritage-data-updated'));
-      // Sync to server in background
-      fetch('/api/places', {
+      await fetch('/api/places', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ places })
@@ -994,7 +1279,7 @@ export const storageService = {
     }
   },
 
-  updatePlace(heritageId: string, place: PlaceItem): void {
+  async updatePlace(heritageId: string, place: PlaceItem): Promise<void> {
     const placesMap = { ...this.getPlaces() };
     const currentList = placesMap[heritageId] ? [...placesMap[heritageId]] : [];
     const index = currentList.findIndex(p => p.id === place.id);
@@ -1004,7 +1289,7 @@ export const storageService = {
       currentList.unshift(place);
     }
     placesMap[heritageId] = currentList;
-    this.savePlaces(placesMap);
+    await this.savePlaces(placesMap);
     this.logActivity({
       actionType: 'admin_action',
       title: index >= 0 ? 'Cập nhật địa điểm ăn uống & trải nghiệm' : 'Thêm địa điểm lân cận mới',
@@ -1013,25 +1298,38 @@ export const storageService = {
     });
   },
 
-  deletePlace(heritageId: string, placeId: string): void {
+  async deletePlace(heritageId: string, placeId: string): Promise<void> {
     const placesMap = { ...this.getPlaces() };
-    if (!placesMap[heritageId]) return;
-    const target = placesMap[heritageId].find(p => p.id === placeId);
-    placesMap[heritageId] = placesMap[heritageId].filter(p => p.id !== placeId);
-    this.savePlaces(placesMap);
-    if (target) {
-      this.logActivity({
-        actionType: 'admin_action',
-        title: 'Xóa địa điểm lân cận',
-        description: `Quản trị viên đã xóa địa điểm "${target.name}"`,
-        targetId: placeId
-      });
+    let foundTarget: PlaceItem | undefined;
+
+    if (placesMap[heritageId]) {
+      foundTarget = placesMap[heritageId].find(p => p.id === placeId);
+      placesMap[heritageId] = placesMap[heritageId].filter(p => p.id !== placeId);
     }
+
+    // Always sweep all heritage keys to guarantee removal even if placeId was registered under another heritage
+    Object.keys(placesMap).forEach(hId => {
+      if (Array.isArray(placesMap[hId])) {
+        if (!foundTarget) {
+          foundTarget = placesMap[hId].find(p => p.id === placeId);
+        }
+        placesMap[hId] = placesMap[hId].filter(p => p.id !== placeId);
+      }
+    });
+
+    await this.savePlaces(placesMap);
+
+    this.logActivity({
+      actionType: 'admin_action',
+      title: 'Xóa địa điểm lân cận',
+      description: `Quản trị viên đã xóa địa điểm "${foundTarget?.name || placeId}" khỏi hệ thống`,
+      targetId: placeId
+    });
   },
 
-  resetPlaces(): void {
+  async resetPlaces(): Promise<void> {
     localStorage.removeItem(PLACES_KEY);
-    this.savePlaces(PLACES_NEAR_HERITAGE);
+    await this.savePlaces(PLACES_NEAR_HERITAGE);
     this.logActivity({
       actionType: 'admin_action',
       title: 'Khôi phục danh sách địa điểm lân cận gốc',
@@ -1105,7 +1403,145 @@ export const storageService = {
       if (data) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Self-heal: ensure authentic landmark images are used across all regions
+          let hasHealed = false;
+          const healed = parsed.map((item: CityLandmarkBackground) => {
+            if (item.id === 'hanoi' && (!item.imageUrl || item.imageUrl.includes('1599707367072'))) {
+              hasHealed = true;
+              return { 
+                ...item, 
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg',
+                landmarkName: 'Văn Miếu - Quốc Tử Giám & Hồ Gươm'
+              };
+            }
+            if (item.id === 'tphcm' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/20190923_Independence_Palace-10.jpg/1280px-20190923_Independence_Palace-10.jpg',
+                landmarkName: 'Dinh Độc Lập & Hội Trường Thống Nhất'
+              };
+            }
+            if (item.id === 'hue' && (!item.imageUrl || item.imageUrl.includes('1583417319070') || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { 
+                ...item, 
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg',
+                landmarkName: 'Đại Nội Cung Đình Huế & Cổng Ngọ Môn'
+              };
+            }
+            if (item.id === 'danang' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/84152-Da-Nang_%2848572442536%29.jpg/1280px-84152-Da-Nang_%2848572442536%29.jpg',
+                landmarkName: 'Cầu Vàng Bà Nà Hills - Bàn Tay Khổng Lồ'
+              };
+            }
+            if (item.id === 'myson' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg/1280px-A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg',
+                landmarkName: 'Thánh Địa Mỹ Sơn & Tháp Chăm Cổ'
+              };
+            }
+            if (item.id === 'hoian' && (!item.imageUrl || item.imageUrl.includes('1555939594') || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return { 
+                ...item, 
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg',
+                landmarkName: 'Phố Cổ Hội An & Chùa Cầu'
+              };
+            }
+            if (item.id === 'ninhbinh' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Muaxuantamcoc.jpg',
+                landmarkName: 'Quần thể Danh thắng Tràng An & Tam Cốc'
+              };
+            }
+            if (item.id === 'halong' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Ha_Long_Bay_in_2019.jpg/1280px-Ha_Long_Bay_in_2019.jpg',
+                landmarkName: 'Vịnh Hạ Long & Quần đảo Cát Bà'
+              };
+            }
+            if (item.id === 'dalat' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Da_Lat_train_station_12.jpg/1280px-Da_Lat_train_station_12.jpg',
+                landmarkName: 'Ga Xe Lửa Cổ Đà Lạt & Hồ Xuân Hương'
+              };
+            }
+            if (item.id === 'cantho' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Mua_ban_tren_song.jpg/1280px-Mua_ban_tren_song.jpg',
+                landmarkName: 'Chợ nổi Cái Răng & Sông Nước Tây Đô'
+              };
+            }
+            if (item.id === 'quangbinh' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Phongnhacave.jpg',
+                landmarkName: 'Vườn Quốc gia Phong Nha - Kẻ Bàng'
+              };
+            }
+            if (item.id === 'hagiang' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Lung_Cu_Flag_Tower.jpg/1280px-Lung_Cu_Flag_Tower.jpg',
+                landmarkName: 'Cột Cờ Quốc Gia Lũng Cú & Cao Nguyên Đá Đồng Văn'
+              };
+            }
+            if (item.id === 'nhatrang' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Po_Nagar.jpg/1280px-Po_Nagar.jpg',
+                landmarkName: 'Tháp Bà Ponagar & Vịnh Biển Nha Trang'
+              };
+            }
+            if (item.id === 'sapa' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Amit%C4%81bha_statue_on_Fansipan_1.jpg/1280px-Amit%C4%81bha_statue_on_Fansipan_1.jpg',
+                landmarkName: 'Đỉnh Fansipan & Đại Tượng Phật Trên Mây'
+              };
+            }
+            if (item.id === 'haiphong' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+              hasHealed = true;
+              return {
+                ...item,
+                imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Lan_Ha_Bay.jpg/1280px-Lan_Ha_Bay.jpg',
+                landmarkName: 'Vịnh Lan Hạ & Quần đảo Cát Bà'
+              };
+            }
+            return item;
+          });
+
+          // Also merge any missing default landmarks
+          const existingIds = new Set(healed.map((l: CityLandmarkBackground) => l.id));
+          for (const def of DEFAULT_CITY_LANDMARKS) {
+            if (!existingIds.has(def.id)) {
+              healed.push(def);
+              hasHealed = true;
+            }
+          }
+
+          if (hasHealed) {
+            localStorage.setItem(LANDMARKS_KEY, JSON.stringify(healed));
+          }
+          return healed;
         }
       }
     } catch (e) {
@@ -1155,7 +1591,261 @@ export const storageService = {
     localStorage.removeItem(LANDMARKS_KEY);
     window.dispatchEvent(new CustomEvent('landmarks-updated', { detail: DEFAULT_CITY_LANDMARKS }));
     return DEFAULT_CITY_LANDMARKS;
+  },
+
+  // ==========================================
+  // AI CUSTOM STORIES MANAGEMENT (ADMIN)
+  // ==========================================
+  getCustomStories(): Record<string, HeritageStory> {
+    try {
+      const data = localStorage.getItem(CUSTOM_STORIES_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  },
+
+  getCustomStory(heritageNameOrId: string, mode: StoryMode): HeritageStory | null {
+    const stories = this.getCustomStories();
+    const key = `${heritageNameOrId.toLowerCase().trim()}_${mode}`;
+    return stories[key] || null;
+  },
+
+  saveCustomStory(story: HeritageStory): void {
+    const stories = this.getCustomStories();
+    const key = `${(story.heritageId || story.heritageName).toLowerCase().trim()}_${story.mode}`;
+    stories[key] = {
+      ...story,
+      heritageName: cleanVietnameseText(story.heritageName),
+      title: cleanVietnameseText(story.title),
+      storyText: cleanVietnameseText(story.storyText),
+      historicalContext: cleanVietnameseText(story.historicalContext),
+      distinctionNote: cleanVietnameseText(story.distinctionNote)
+    };
+    localStorage.setItem(CUSTOM_STORIES_KEY, JSON.stringify(stories));
+
+    this.logActivity({
+      actionType: 'admin_action',
+      title: 'Biên tập nội dung kể chuyện AI',
+      description: `Admin đã lưu chỉnh sửa câu chuyện di sản "${story.heritageName}" (Chế độ: ${story.mode})`
+    });
+
+    window.dispatchEvent(new CustomEvent('custom-stories-updated'));
+  },
+
+  deleteCustomStory(heritageNameOrId: string, mode: StoryMode): void {
+    const stories = this.getCustomStories();
+    const key = `${heritageNameOrId.toLowerCase().trim()}_${mode}`;
+    delete stories[key];
+    localStorage.setItem(CUSTOM_STORIES_KEY, JSON.stringify(stories));
+    window.dispatchEvent(new CustomEvent('custom-stories-updated'));
+  },
+
+  getRecognitionSectionConfig(): RecognitionSectionConfig {
+    try {
+      const data = localStorage.getItem(RECOGNITION_CONFIG_KEY);
+      if (data) {
+        const parsed = JSON.parse(data) as RecognitionSectionConfig;
+        if (parsed && Array.isArray(parsed.samples) && parsed.samples.length > 0) {
+          // Self-heal: ensure authentic cultural images are used instead of broken/stock photos
+          let hasHealed = false;
+          const healedSamples = parsed.samples.map(sample => {
+            // Check for outdated stock photos
+            if (sample.id === 'dai-noi-hue' || sample.title.includes('Huế')) {
+              if (!sample.url || sample.url.includes('unsplash') || sample.url.includes('1583417319070')) {
+                hasHealed = true;
+                return {
+                  ...sample,
+                  url: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg',
+                  category: sample.category || 'Hoàng thành & Cung điện',
+                  prompt: sample.prompt || 'Nhận diện Cổng Ngọ Môn - Đại Nội Huế triều Nguyễn'
+                };
+              }
+            }
+            if (sample.id === 'van-mieu-hanoi' || sample.title.includes('Văn Miếu')) {
+              if (!sample.url || sample.url.includes('unsplash') || sample.url.includes('1599707367072')) {
+                hasHealed = true;
+                return {
+                  ...sample,
+                  url: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg',
+                  category: sample.category || 'Di tích Lịch sử & Giáo dục',
+                  prompt: sample.prompt || 'Nhận diện Khuê Văn Các và Bia Tiến sĩ Văn Miếu Hà Nội'
+                };
+              }
+            }
+            if (sample.id === 'chua-cau-hoi-an' || sample.title.includes('Chùa Cầu')) {
+              if (!sample.url || sample.url.includes('unsplash') || sample.url.includes('1555939594')) {
+                hasHealed = true;
+                return {
+                  ...sample,
+                  url: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Cau_Nhat_Ban.jpg',
+                  category: sample.category || 'Đô thị Cổ & Kiến trúc gỗ',
+                  prompt: sample.prompt || 'Nhận diện Lai Viễn Kiều (Chùa Cầu) Hội An'
+                };
+              }
+            }
+            if (sample.id === 'gom-bat-trang' || sample.title.includes('Bát Tràng')) {
+              if (!sample.url || sample.url.includes('unsplash') || sample.url.includes('1565193566173')) {
+                hasHealed = true;
+                return {
+                  ...sample,
+                  url: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/B%C3%A1t_Tr%C3%A0ng_DSC_0095.JPG',
+                  category: sample.category || 'Làng nghề Thủ công Truyền thống',
+                  prompt: sample.prompt || 'Nhận diện Gốm Bát Tràng và kỹ thuật men rạn cổ'
+                };
+              }
+            }
+            if (sample.id === 'ao-dai-co-phuc' || sample.title.includes('Áo Dài')) {
+              if (!sample.url || sample.url.includes('unsplash') || sample.url.includes('1528127269322')) {
+                hasHealed = true;
+                return {
+                  ...sample,
+                  url: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/%C3%81o_d%C3%A0i_(6405924827).jpg',
+                  category: sample.category || 'Trang phục Truyền thống',
+                  prompt: sample.prompt || 'Nhận diện áo dài ngũ thân và trang phục truyền thống Việt Nam'
+                };
+              }
+            }
+            if (sample.id === 'chua-thien-mu' || sample.title.includes('Thiên Mụ')) {
+              if (!sample.url || sample.url.includes('unsplash') || sample.url.includes('1544644181')) {
+                hasHealed = true;
+                return {
+                  ...sample,
+                  url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/ThienMuPagoda.jpg/1280px-ThienMuPagoda.jpg',
+                  category: sample.category || 'Chùa cổ & Phật giáo',
+                  prompt: sample.prompt || 'Nhận diện Tháp Phước Duyên Chùa Thiên Mụ bên bờ sông Hương'
+                };
+              }
+            }
+            return sample;
+          });
+
+          const healedConfig: RecognitionSectionConfig = {
+            ...parsed,
+            badge: cleanVietnameseText(parsed.badge || DEFAULT_RECOGNITION_SECTION_CONFIG.badge),
+            title: cleanVietnameseText(parsed.title || DEFAULT_RECOGNITION_SECTION_CONFIG.title),
+            description: cleanVietnameseText(parsed.description || DEFAULT_RECOGNITION_SECTION_CONFIG.description),
+            samplesLabel: cleanVietnameseText(parsed.samplesLabel || DEFAULT_RECOGNITION_SECTION_CONFIG.samplesLabel),
+            samples: healedSamples
+          };
+
+          if (hasHealed) {
+            localStorage.setItem(RECOGNITION_CONFIG_KEY, JSON.stringify(healedConfig));
+          }
+          return healedConfig;
+        }
+      }
+    } catch (e) {
+      console.error('Error loading recognition section config:', e);
+    }
+    return DEFAULT_RECOGNITION_SECTION_CONFIG;
+  },
+
+  saveRecognitionSectionConfig(config: RecognitionSectionConfig, adminName?: string): RecognitionSectionConfig {
+    const cleanedConfig: RecognitionSectionConfig = {
+      badge: cleanVietnameseText(config.badge || DEFAULT_RECOGNITION_SECTION_CONFIG.badge),
+      title: cleanVietnameseText(config.title || DEFAULT_RECOGNITION_SECTION_CONFIG.title),
+      description: cleanVietnameseText(config.description || DEFAULT_RECOGNITION_SECTION_CONFIG.description),
+      samplesLabel: cleanVietnameseText(config.samplesLabel || DEFAULT_RECOGNITION_SECTION_CONFIG.samplesLabel),
+      samples: (config.samples || []).map(sample => ({
+        ...sample,
+        id: sample.id || `sample-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        title: cleanVietnameseText(sample.title),
+        category: cleanVietnameseText(sample.category),
+        url: sample.url.trim(),
+        prompt: cleanVietnameseText(sample.prompt),
+        description: sample.description ? cleanVietnameseText(sample.description) : undefined,
+        source: sample.source ? cleanVietnameseText(sample.source) : undefined
+      })),
+      lastUpdated: new Date().toISOString(),
+      updatedBy: adminName || 'Quản trị viên Hệ thống'
+    };
+
+    localStorage.setItem(RECOGNITION_CONFIG_KEY, JSON.stringify(cleanedConfig));
+
+    this.logActivity({
+      actionType: 'admin_action',
+      title: 'Cập nhật cấu hình & ảnh mẫu nhận diện AI',
+      description: `Admin đã thay đổi nội dung tiêu đề và ${cleanedConfig.samples.length} ảnh mẫu nhận diện di sản`
+    });
+
+    window.dispatchEvent(new CustomEvent('recognition-config-updated', { detail: cleanedConfig }));
+    return cleanedConfig;
+  },
+
+  resetRecognitionSectionConfig(): RecognitionSectionConfig {
+    localStorage.setItem(RECOGNITION_CONFIG_KEY, JSON.stringify(DEFAULT_RECOGNITION_SECTION_CONFIG));
+    this.logActivity({
+      actionType: 'admin_action',
+      title: 'Khôi phục mẫu nhận diện mặc định',
+      description: 'Admin đã hoàn nguyên nội dung và ảnh mẫu nhận diện AI về nguyên bản di sản chuẩn'
+    });
+    window.dispatchEvent(new CustomEvent('recognition-config-updated', { detail: DEFAULT_RECOGNITION_SECTION_CONFIG }));
+    return DEFAULT_RECOGNITION_SECTION_CONFIG;
   }
+};
+
+export const DEFAULT_RECOGNITION_SECTION_CONFIG: RecognitionSectionConfig = {
+  badge: 'Thị giác Máy tính & AI Văn hóa Việt Nam',
+  title: 'Nhận diện Di sản, Hiện vật & Cổ phục',
+  description: 'Chụp ảnh trực tiếp hoặc tải hình ảnh di tích, đình chùa, làng nghề, nhạc cụ, cổ phục để AI phân tích tức thì.',
+  samplesLabel: 'ẢNH MẪU THỬ NGHIỆM NHANH MỘT CHẠM:',
+  samples: [
+    {
+      id: 'dai-noi-hue',
+      title: 'Đại Nội Huế (Ngọ Môn)',
+      category: 'Hoàng thành & Cung điện',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg',
+      prompt: 'Nhận diện Cổng Ngọ Môn - Đại Nội Huế triều Nguyễn',
+      description: 'Cổng chính phía nam của Hoàng thành Huế, kiệt tác kiến trúc cung đình triều Nguyễn xây dựng năm 1833 thời vua Minh Mạng.',
+      source: 'Wikimedia Commons'
+    },
+    {
+      id: 'van-mieu-hanoi',
+      title: 'Văn Miếu - Quốc Tử Giám',
+      category: 'Di tích Lịch sử & Giáo dục',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg',
+      prompt: 'Nhận diện Khuê Văn Các và Bia Tiến sĩ Văn Miếu Hà Nội',
+      description: 'Trường đại học đầu tiên của Việt Nam, xây dựng năm 1070 thời vua Lý Thánh Tông, biểu tượng nghìn năm văn hiến Thăng Long.',
+      source: 'Wikimedia Commons'
+    },
+    {
+      id: 'chua-cau-hoi-an',
+      title: 'Chùa Cầu Hội An',
+      category: 'Đô thị Cổ & Kiến trúc gỗ',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Cau_Nhat_Ban.jpg',
+      prompt: 'Nhận diện Lai Viễn Kiều (Chùa Cầu) Hội An',
+      description: 'Di tích cầu ngói bằng gỗ cổ kính do các thương nhân Nhật Bản xây dựng vào đầu thế kỷ 17, biểu tượng của Phố cổ Hội An.',
+      source: 'Wikimedia Commons'
+    },
+    {
+      id: 'gom-bat-trang',
+      title: 'Làng Gốm Bát Tràng',
+      category: 'Làng nghề Thủ công Truyền thống',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/B%C3%A1t_Tr%C3%A0ng_DSC_0095.JPG',
+      prompt: 'Nhận diện Gốm Bát Tràng và kỹ thuật men rạn cổ',
+      description: 'Làng gốm sứ thủ công ven sông Hồng với bề dày hơn 700 năm lịch sử, nổi danh với dòng men lam, men ngọc và men rạn gia tộc.',
+      source: 'Wikimedia Commons'
+    },
+    {
+      id: 'ao-dai-co-phuc',
+      title: 'Áo Dài & Cổ Phục Việt Nam',
+      category: 'Trang phục Truyền thống',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/2/2f/%C3%81o_d%C3%A0i_(6405924827).jpg',
+      prompt: 'Nhận diện áo dài ngũ thân và trang phục truyền thống Việt Nam',
+      description: 'Trang phục quốc hồn quốc túy tôn vinh nét đoan trang, thanh lịch của người Việt qua các thời kỳ lịch sử.',
+      source: 'Wikimedia Commons'
+    },
+    {
+      id: 'chua-thien-mu',
+      title: 'Chùa Thiên Mụ & Tháp Phước Duyên',
+      category: 'Chùa cổ & Phật giáo',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/ThienMuPagoda.jpg/1280px-ThienMuPagoda.jpg',
+      prompt: 'Nhận diện Tháp Phước Duyên Chùa Thiên Mụ bên bờ sông Hương',
+      description: 'Ngôi quốc tự cổ kính dựng năm 1601 thời Chúa Tiên Nguyễn Hoàng, với ngọn tháp bát giác 7 tầng soi bóng nước Hương Giang.',
+      source: 'Wikimedia Commons'
+    }
+  ]
 };
 
 export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
@@ -1165,7 +1855,7 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     province: 'Hà Nội',
     landmarkName: 'Văn Miếu - Quốc Tử Giám & Hồ Gươm',
     tagline: 'Thủ đô ngàn năm văn hiến, lắng đọng hào khí Thăng Long',
-    imageUrl: 'https://images.unsplash.com/photo-1599707367072-cd6ada2bc375?auto=format&fit=crop&w=2000&q=85',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg',
     lat: 21.0285,
     lng: 105.8542
   },
@@ -1173,9 +1863,9 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     id: 'tphcm',
     cityName: 'TP. Hồ Chí Minh',
     province: 'TP. Hồ Chí Minh',
-    landmarkName: 'Dinh Độc Lập & Bến Bạch Đằng',
-    tagline: 'Đô thị phương Nam phồn hoa, giao thoa truyền thống và hiện đại',
-    imageUrl: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=2000&q=85',
+    landmarkName: 'Dinh Độc Lập & Hội Trường Thống Nhất',
+    tagline: 'Kiệt tác kiến trúc của KTS Ngô Viết Thụ, chứng nhân lịch sử non sông thống nhất',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/20190923_Independence_Palace-10.jpg/1280px-20190923_Independence_Palace-10.jpg',
     lat: 10.7769,
     lng: 106.7009
   },
@@ -1183,19 +1873,19 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     id: 'hue',
     cityName: 'Thừa Thiên Huế',
     province: 'Thừa Thiên Huế',
-    landmarkName: 'Đại Nội Cung Đình Huế & Sông Hương',
-    tagline: 'Cố đô vàng son triều Nguyễn - Di sản Văn hóa Thế giới',
-    imageUrl: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=2000&q=85',
-    lat: 16.4637,
-    lng: 107.5909
+    landmarkName: 'Đại Nội Cung Đình Huế & Cổng Ngọ Môn',
+    tagline: 'Cố đô vàng son triều Nguyễn - Di sản Văn hóa Thế giới UNESCO',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg',
+    lat: 16.4697,
+    lng: 107.5796
   },
   {
     id: 'danang',
     cityName: 'Đà Nẵng',
     province: 'Đà Nẵng',
-    landmarkName: 'Cầu Vàng Bà Nà & Cầu Rồng Sông Hàn',
-    tagline: 'Thành phố biển hiện đại kề bên danh thắng Ngũ Hành Sơn & bán đảo Sơn Trà',
-    imageUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=2000&q=85',
+    landmarkName: 'Cầu Vàng Bà Nà Hills - Bàn Tay Khổng Lồ',
+    tagline: 'Cây cầu đi bộ ngoạn mục vươn giữa mây ngàn đỉnh Bà Nà',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/84152-Da-Nang_%2848572442536%29.jpg/1280px-84152-Da-Nang_%2848572442536%29.jpg',
     lat: 16.0544,
     lng: 108.2022
   },
@@ -1205,7 +1895,7 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     province: 'Quảng Nam',
     landmarkName: 'Thánh Địa Mỹ Sơn & Tháp Chăm Cổ',
     tagline: 'Quần thể đền tháp Chăm Pa nghìn năm bí ẩn giữa thung lũng thiêng - Di sản Thế giới',
-    imageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=2000&q=85',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg/1280px-A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg',
     lat: 15.7959,
     lng: 108.1245
   },
@@ -1214,8 +1904,8 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     cityName: 'Hội An (Quảng Nam)',
     province: 'Quảng Nam',
     landmarkName: 'Phố Cổ Hội An & Chùa Cầu',
-    tagline: 'Thương cảng cổ kính lung linh sắc đèn lồng và kiến trúc gỗ',
-    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=2000&q=85',
+    tagline: 'Đô thị cổ Di sản Thế giới lung linh đèn lồng, tường vàng và Chùa Cầu hơn 400 năm tuổi',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg',
     lat: 15.8801,
     lng: 108.3270
   },
@@ -1225,7 +1915,7 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     province: 'Ninh Bình',
     landmarkName: 'Quần thể Danh thắng Tràng An & Tam Cốc',
     tagline: 'Di sản Kép thế giới giữa non nước hữu tình cố đô Hoa Lư',
-    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=2000&q=85',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Muaxuantamcoc.jpg',
     lat: 20.2536,
     lng: 105.9750
   },
@@ -1235,7 +1925,7 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     province: 'Quảng Ninh',
     landmarkName: 'Vịnh Hạ Long & Quần đảo Cát Bà',
     tagline: 'Kỳ quan thiên nhiên thế giới với hàng nghìn đảo đá vôi kỳ vĩ',
-    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=2000&q=85',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Ha_Long_Bay_in_2019.jpg/1280px-Ha_Long_Bay_in_2019.jpg',
     lat: 20.9101,
     lng: 107.1839
   },
@@ -1243,9 +1933,9 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     id: 'dalat',
     cityName: 'Lâm Đồng (Đà Lạt)',
     province: 'Lâm Đồng',
-    landmarkName: 'Hồ Xuân Hương & Rừng thông Đà Lạt',
-    tagline: 'Thành phố sương mù ngàn hoa thơ mộng giữa cao nguyên',
-    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2000&q=85',
+    landmarkName: 'Ga Xe Lửa Cổ Đà Lạt & Hồ Xuân Hương',
+    tagline: 'Thành phố sương mù ngàn hoa thơ mộng với di sản kiến trúc Art Deco độc đáo',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Da_Lat_train_station_12.jpg/1280px-Da_Lat_train_station_12.jpg',
     lat: 11.9404,
     lng: 108.4583
   },
@@ -1253,9 +1943,9 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     id: 'cantho',
     cityName: 'Cần Thơ',
     province: 'Cần Thơ',
-    landmarkName: 'Chợ nổi Cái Răng & Bến Ninh Kiều',
-    tagline: 'Thủ phủ sông nước Tây Đô hào sảng và mộc mạc',
-    imageUrl: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=2000&q=85',
+    landmarkName: 'Chợ nổi Cái Răng & Sông Nước Tây Đô',
+    tagline: 'Thủ phủ sông nước Tây Đô hào sảng và nét văn hóa chợ nổi trên sông đặc trưng',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Mua_ban_tren_song.jpg/1280px-Mua_ban_tren_song.jpg',
     lat: 10.0452,
     lng: 105.7469
   },
@@ -1265,7 +1955,7 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     province: 'Quảng Bình',
     landmarkName: 'Vườn Quốc gia Phong Nha - Kẻ Bàng',
     tagline: 'Vương quốc hang động thạch nhũ tráng lệ bậc nhất hành tinh',
-    imageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=2000&q=85',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/45/Phongnhacave.jpg',
     lat: 17.5388,
     lng: 106.2875
   },
@@ -1273,9 +1963,9 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     id: 'hagiang',
     cityName: 'Hà Giang',
     province: 'Hà Giang',
-    landmarkName: 'Cao nguyên đá Đồng Văn & Cột cờ Lũng Cú',
-    tagline: 'Cực Bắc thiêng liêng với những cung đèo ngoạn mục và dốc đá',
-    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2000&q=85',
+    landmarkName: 'Cột Cờ Quốc Gia Lũng Cú & Cao Nguyên Đá Đồng Văn',
+    tagline: 'Cực Bắc thiêng liêng với non sông cẩm tú ngút ngàn và công viên địa chất toàn cầu',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Lung_Cu_Flag_Tower.jpg/1280px-Lung_Cu_Flag_Tower.jpg',
     lat: 22.8233,
     lng: 104.9839
   },
@@ -1285,7 +1975,7 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     province: 'Khánh Hòa',
     landmarkName: 'Tháp Bà Ponagar & Vịnh Biển Nha Trang',
     tagline: 'Quần thể đền tháp Champa cổ kính bên vịnh biển xanh ngọc tuyệt mỹ',
-    imageUrl: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=2000&q=85',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Po_Nagar.jpg/1280px-Po_Nagar.jpg',
     lat: 12.2388,
     lng: 109.1967
   },
@@ -1303,9 +1993,9 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     id: 'sapa',
     cityName: 'Lào Cai (Sa Pa)',
     province: 'Lào Cai',
-    landmarkName: 'Đỉnh Fansipan & Thung lũng Mường Hoa',
-    tagline: 'Nóc nhà Đông Dương hùng vĩ giữa bồng bềnh mây ngàn và ruộng bậc thang',
-    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=2000&q=85',
+    landmarkName: 'Đỉnh Fansipan & Đại Tượng Phật Trên Mây',
+    tagline: 'Nóc nhà Đông Dương hùng vĩ giữa bồng bềnh mây ngàn Tây Bắc',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Amit%C4%81bha_statue_on_Fansipan_1.jpg/1280px-Amit%C4%81bha_statue_on_Fansipan_1.jpg',
     lat: 22.3364,
     lng: 103.8438
   },
@@ -1315,7 +2005,7 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     province: 'Hải Phòng',
     landmarkName: 'Vịnh Lan Hạ & Quần đảo Cát Bà',
     tagline: 'Thành phố hoa phượng đỏ với quần đảo ngọc và vịnh biển kỳ vĩ',
-    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=2000&q=85',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Lan_Ha_Bay.jpg/1280px-Lan_Ha_Bay.jpg',
     lat: 20.8449,
     lng: 106.6881
   },

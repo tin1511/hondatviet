@@ -1,9 +1,11 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { HERITAGE_DATABASE } from './src/data/vietnamHeritageData';
+import { VIETNAM_LANDMARK_PHOTOS } from './src/data/landmarkImagesDatabase';
 
 dotenv.config();
 
@@ -11,6 +13,9 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '25mb' }));
+
+// Centralized AI Model Configuration
+export const AI_MODEL = "gemini-flash-latest";
 
 // Lazy Gemini API Client
 let geminiClient: GoogleGenAI | null = null;
@@ -34,12 +39,12 @@ function getGemini(): GoogleGenAI {
 
 /**
  * Executes generateContent with resilience against 503 (model experiencing high demand),
- * 429 (rate limits), and transient unavailable errors.
+ * 429 (rate limits/quota limits), and transient unavailable errors.
  *
  * Sequence:
  * 1. Try preferred model (default: 'gemini-flash-latest').
- * 2. If 503/429/UNAVAILABLE occurs, back off briefly (350ms) and retry once.
- * 3. Automatically failover to fallback models: 'gemini-3.8-flash', 'gemini-3.1-flash-lite'
+ * 2. If 503/429/UNAVAILABLE occurs, back off briefly and retry.
+ * 3. Automatically failover to lightweight fallback models: 'gemini-3.1-flash-lite', 'gemini-3.8-flash'
  */
 async function generateContentWithResilience(
   ai: GoogleGenAI,
@@ -48,9 +53,9 @@ async function generateContentWithResilience(
 ) {
   const candidateModels = [
     preferredModel,
-    'gemini-flash-latest',
+    'gemini-3.1-flash-lite',
     'gemini-3.8-flash',
-    'gemini-3.1-flash-lite'
+    'gemini-flash-latest'
   ].filter((val, idx, self) => self.indexOf(val) === idx);
 
   let lastError: any = null;
@@ -75,11 +80,12 @@ async function generateContentWithResilience(
           msg.includes('high demand') ||
           msg.includes('UNAVAILABLE') ||
           msg.includes('overloaded') ||
-          msg.includes('RESOURCE_EXHAUSTED');
+          msg.includes('RESOURCE_EXHAUSTED') ||
+          msg.includes('quota');
 
         if (isTransient) {
           if (attempt === 0) {
-            await new Promise((resolve) => setTimeout(resolve, 350));
+            await new Promise((resolve) => setTimeout(resolve, 500));
             continue;
           }
           break;
@@ -91,6 +97,182 @@ async function generateContentWithResilience(
   }
 
   throw lastError;
+}
+
+/**
+ * Executes multi-provider AI requests (Gemini, OpenRouter, HuggingFace, Custom) with fallback
+ */
+async function executeUnifiedAIRequest(params: {
+  provider?: string;
+  model?: string;
+  fallbackProvider?: string;
+  fallbackModel?: string;
+  message: string;
+  conversationHistory?: { role: string; text: string }[];
+  systemPrompt?: string;
+  temperature?: number;
+  maxTokens?: number;
+  baseUrl?: string;
+  apiKey?: string;
+}): Promise<{ text: string; provider: string; model: string; responseTimeMs: number }> {
+  const provider = params.provider || process.env.VITE_AI_PROVIDER || 'gemini';
+  const model = params.model || process.env.VITE_AI_MODEL || 'gemini-flash-latest';
+  const startTime = Date.now();
+
+  const tryCall = async (p: string, m: string): Promise<string> => {
+    if (p === 'openrouter') {
+      const apiKey = params.apiKey || process.env.OPENROUTER_API_KEY || process.env.VITE_AI_API_KEY || '';
+      const messages = [
+        ...(params.systemPrompt ? [{ role: 'system', content: params.systemPrompt }] : []),
+        ...(params.conversationHistory || []).map((item) => ({
+          role: item.role === 'model' || item.role === 'assistant' ? 'assistant' : 'user',
+          content: item.text
+        })),
+        { role: 'user', content: params.message }
+      ];
+
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {}),
+          'HTTP-Referer': 'https://heritageai.vn',
+          'X-Title': 'Hồn Đất Việt'
+        },
+        body: JSON.stringify({
+          model: m || 'meta-llama/llama-3.8b-instruct:free',
+          messages,
+          temperature: params.temperature ?? 0.7,
+          max_tokens: params.maxTokens ?? 2048
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error?.message || data?.error || `OpenRouter API Error (${res.status})`);
+      }
+      return data?.choices?.[0]?.message?.content || '';
+    } else if (p === 'huggingface') {
+      const apiKey = params.apiKey || process.env.HUGGINGFACE_API_KEY || '';
+      const promptText = `${params.systemPrompt || ''}\n\nUser: ${params.message}\nAssistant:`;
+      const hfModel = m || 'mistralai/Mistral-7B-Instruct-v0.2';
+
+      const res = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+        },
+        body: JSON.stringify({
+          inputs: promptText,
+          parameters: {
+            temperature: params.temperature ?? 0.7,
+            max_new_tokens: params.maxTokens ?? 1024
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || `HuggingFace API Error (${res.status})`);
+      }
+
+      if (Array.isArray(data) && data[0]?.generated_text) {
+        let text = data[0].generated_text;
+        if (text.includes('Assistant:')) {
+          text = text.split('Assistant:').pop();
+        }
+        return text.trim();
+      }
+      return typeof data === 'string' ? data : JSON.stringify(data);
+    } else if (p === 'custom') {
+      const baseUrl = params.baseUrl || process.env.VITE_AI_BASE_URL || 'https://api.openai.com/v1';
+      const apiKey = params.apiKey || process.env.VITE_AI_API_KEY || '';
+      const messages = [
+        ...(params.systemPrompt ? [{ role: 'system', content: params.systemPrompt }] : []),
+        ...(params.conversationHistory || []).map((item) => ({
+          role: item.role === 'model' || item.role === 'assistant' ? 'assistant' : 'user',
+          content: item.text
+        })),
+        { role: 'user', content: params.message }
+      ];
+
+      const res = await fetch(`${baseUrl.replace(/\/+$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+        },
+        body: JSON.stringify({
+          model: m || 'custom-model',
+          messages,
+          temperature: params.temperature ?? 0.7,
+          max_tokens: params.maxTokens ?? 2048
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error?.message || `Custom API Error (${res.status})`);
+      }
+      return data?.choices?.[0]?.message?.content || '';
+    } else {
+      // Gemini
+      const ai = getGemini();
+      const contents = [
+        ...(params.conversationHistory || []).map((item) => ({
+          role: item.role === 'user' ? 'user' : 'model',
+          parts: [{ text: item.text }]
+        })),
+        {
+          role: 'user',
+          parts: [{ text: params.message }]
+        }
+      ];
+
+      const response = await generateContentWithResilience(ai, {
+        contents: contents as any,
+        config: {
+          systemInstruction: params.systemPrompt
+        }
+      }, m || 'gemini-flash-latest');
+
+      return response.text || '';
+    }
+  };
+
+  try {
+    const text = await tryCall(provider, model);
+    return {
+      text,
+      provider,
+      model,
+      responseTimeMs: Date.now() - startTime
+    };
+  } catch (primaryError: any) {
+    console.warn(`[Server AI] Primary Provider (${provider}/${model}) error:`, primaryError?.message || primaryError);
+
+    // Try Fallback if configured
+    const fallbackP = params.fallbackProvider || process.env.VITE_AI_FALLBACK_PROVIDER;
+    const fallbackM = params.fallbackModel || process.env.VITE_AI_FALLBACK_MODEL;
+
+    if (fallbackP && (fallbackP !== provider || fallbackM !== model)) {
+      try {
+        console.log(`[Server AI] Attempting Fallback Provider (${fallbackP}/${fallbackM})...`);
+        const text = await tryCall(fallbackP, fallbackM || 'gemini-3.8-flash');
+        return {
+          text,
+          provider: fallbackP,
+          model: fallbackM || 'gemini-3.8-flash',
+          responseTimeMs: Date.now() - startTime
+        };
+      } catch (fallbackError: any) {
+        console.error(`[Server AI] Fallback Provider (${fallbackP}) error:`, fallbackError?.message || fallbackError);
+      }
+    }
+
+    throw primaryError;
+  }
 }
 
 /**
@@ -207,7 +389,7 @@ app.post('/api/ai/recognize-heritage', async (req: Request, res: Response) => {
     }
 
     const ai = getGemini();
-    const systemPrompt = `Bạn là Senior Vietnam Cultural Heritage & History Expert của nền tảng HERITAGEAI.
+    const systemPrompt = `Bạn là Senior Vietnam Cultural Heritage & History Expert của nền tảng Hồn Đất Việt.
 Nhiệm vụ: Nhận diện chính xác hình ảnh người dùng tải lên, có thể là:
 - Di tích, Đình, Chùa, Đền, Thành cổ, Cung điện, Lăng tẩm, Nhà cổ
 - Làng nghề thủ công, Hiện vật, Trang phục truyền thống, Nhạc cụ dân tộc, Kiến trúc, Nghệ thuật dân gian, Món ăn truyền thống Việt Nam.
@@ -295,7 +477,7 @@ Trả về đúng định dạng JSON đã định nghĩa.`,
         ],
         conservationStatus: 'Được bảo tồn và bảo vệ di tích cấp quốc gia',
         verifiedStatus: 'verified',
-        verifiedNote: 'Tư liệu kiểm định từ kho di sản HERITAGEAI',
+        verifiedNote: 'Tư liệu kiểm định từ kho di sản Hồn Đất Việt',
         suggestedQuestions: [
           'Di tích này gắn liền với triều đại hoặc nhân vật lịch sử nào?',
           'Nét kiến trúc độc đáo nhất tại đây là gì?',
@@ -326,7 +508,7 @@ app.post('/api/ai/storyteller', async (req: Request, res: Response) => {
 
     const targetInstruction = modeInstructions[mode] || modeInstructions.student;
 
-    const systemPrompt = `Bạn là Bậc thầy Kể chuyện Di sản Văn hóa Việt Nam của HERITAGEAI.
+    const systemPrompt = `Bạn là Bậc thầy Kể chuyện Di sản Văn hóa Việt Nam của Hồn Đất Việt.
 Yêu cầu:
 1. Kể câu chuyện về "${heritageName}" (${period || ''}) theo phong cách: ${targetInstruction}.
 2. Phải phân biệt rạch ròi giữa sự kiện lịch sử đã xác minh và truyền thuyết dân gian.
@@ -388,7 +570,13 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
     conversationHistory = [], 
     currentHeritageContext, 
     language = 'vi',
-    isTourGuideMode = false 
+    isTourGuideMode = false,
+    overrideProvider,
+    overrideModel,
+    temperature,
+    maxTokens,
+    systemPrompt: customSystemPrompt,
+    baseUrl
   } = req.body;
 
   if (!message) {
@@ -398,12 +586,11 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
   const guideCfg = serverTourGuideConfig || DEFAULT_TOUR_GUIDE_SERVER;
 
   try {
-    const ai = getGemini();
-
-    let systemPrompt = '';
-    if (isTourGuideMode) {
-      const etiquetteFormatted = (guideCfg.etiquetteRules || []).map((r: string) => `   - ${r}`).join('\n');
-      systemPrompt = `Bạn là "${guideCfg.guideName}" - ${guideCfg.title} với hơn ${guideCfg.experienceYears || 10} năm kinh nghiệm dẫn đoàn du khách trong nước và quốc tế khám phá di sản Việt Nam.
+    let systemPrompt = customSystemPrompt || '';
+    if (!systemPrompt) {
+      if (isTourGuideMode) {
+        const etiquetteFormatted = (guideCfg.etiquetteRules || []).map((r: string) => `   - ${r}`).join('\n');
+        systemPrompt = `Bạn là "${guideCfg.guideName}" - ${guideCfg.title} với hơn ${guideCfg.experienceYears || 10} năm kinh nghiệm dẫn đoàn du khách trong nước và quốc tế khám phá di sản Việt Nam.
 BỐI CẢNH & ĐIỂM DỪNG CHÂN ĐANG THAM QUAN:
 ${currentHeritageContext ? JSON.stringify(currentHeritageContext) : 'Các tuyến điểm du lịch di sản, danh thắng và văn hóa Việt Nam'}.
 
@@ -418,41 +605,52 @@ ${etiquetteFormatted}
 7. Tri thức huấn luyện độc quyền từ Ban Quản Trị Di Sản:
 ${guideCfg.customKnowledgePrompt || 'Chưa có thêm ghi chú.'}
 8. Đa ngôn ngữ: Nếu du khách hỏi bằng tiếng Anh/Pháp/Nhật/Hàn/Trung, hãy thuyết minh bằng ngôn ngữ tương ứng chuẩn phong thái Hướng dẫn viên Quốc tế!`;
-    } else {
-      systemPrompt = `Bạn là "Trợ lý Văn hóa Việt Nam" - một trợ lý AI uyên bác, lễ phép, tôn trọng sự thật lịch sử của nền tảng HERITAGEAI.
-Người dùng có thể hỏi về:
-- Lịch sử di tích, phong tục tập quán, nguồn gốc món ăn truyền thống, lễ hội, trang phục, nhạc cụ, làng nghề.
-- Bối cảnh hiện tại người dùng đang xem: ${currentHeritageContext ? JSON.stringify(currentHeritageContext) : 'Chung về văn hóa Việt Nam'}.
+      } else {
+        systemPrompt = `Bạn là trợ lý AI của Hồn Đất Việt, một ứng dụng tìm hiểu lịch sử, văn hóa và di sản Việt Nam.
 
-NGUYÊN TẮC BẮT BUỘC:
-1. Trả lời ngắn gọn, trực diện trước. Có thể gợi ý mở rộng nếu người dùng muốn đào sâu.
-2. Không bịa đặt dữ kiện hay nguồn tham khảo.
-3. Phân biệt rõ sự thật lịch sử và huyền tích/truyền thuyết dân gian (đánh dấu bằng nhãn rõ ràng).
-4. Nếu chưa đủ dữ liệu hoặc lịch sử còn tranh cãi, nói rõ "Chưa đủ dữ liệu chính sử để khẳng định".
-5. Hỗ trợ đa ngôn ngữ: Nếu người dùng hỏi bằng tiếng Anh/Pháp/Nhật/Trung, trả lời bằng ngôn ngữ tương ứng kèm lời chào lịch thiệp.`;
+Luôn trả lời bằng tiếng Việt tự nhiên, rõ ràng và dễ hiểu.
+
+Khi người dùng hỏi về:
+- lịch sử Việt Nam
+- di tích
+- danh lam thắng cảnh
+- văn hóa
+- lễ hội
+- nhân vật lịch sử
+- địa danh
+- bảo tàng
+- di sản
+- kiến trúc
+- ẩm thực truyền thống
+
+hãy ưu tiên cung cấp thông tin chính xác, dễ hiểu và có cấu trúc.
+
+Không tự bịa thông tin nếu không chắc chắn.
+Nếu thông tin có thể thay đổi theo thời gian, hãy nói rõ khi cần kiểm tra nguồn mới.
+
+Không trả lời bằng tiếng Anh trừ khi người dùng yêu cầu.
+
+Bối cảnh di sản người dùng đang theo dõi: ${currentHeritageContext ? JSON.stringify(currentHeritageContext) : 'Chung về văn hóa di sản Việt Nam'}.`;
+      }
     }
 
-    const contents = [
-      ...conversationHistory.map((item: any) => ({
-        role: item.role === 'user' ? 'user' : 'model',
-        parts: [{ text: item.text }]
-      })),
-      {
-        role: 'user',
-        parts: [{ text: message }]
-      }
-    ];
-
-    const response = await generateContentWithResilience(ai, {
-      contents: contents as any,
-      config: {
-        systemInstruction: systemPrompt,
-      }
+    const aiRes = await executeUnifiedAIRequest({
+      provider: overrideProvider,
+      model: overrideModel,
+      message,
+      conversationHistory,
+      systemPrompt,
+      temperature,
+      maxTokens,
+      baseUrl
     });
 
     return res.json({
       success: true,
-      reply: cleanVietnameseText(response.text) || (isTourGuideMode ? `Dạ em là ${guideCfg.guideName}, rất vui được hướng dẫn quý đoàn mình khám phá di sản!` : 'Trợ lý Văn hóa Việt Nam luôn sẵn sàng đồng hành cùng bạn.'),
+      reply: cleanVietnameseText(aiRes.text) || (isTourGuideMode ? `Dạ em là ${guideCfg.guideName}, rất vui được hướng dẫn quý đoàn mình khám phá di sản!` : 'Trợ lý Văn hóa Việt Nam luôn sẵn sàng đồng hành cùng bạn.'),
+      provider: aiRes.provider,
+      model: aiRes.model,
+      responseTimeMs: aiRes.responseTimeMs,
       guideName: isTourGuideMode ? guideCfg.guideName : undefined
     });
   } catch (error: any) {
@@ -467,7 +665,7 @@ NGUYÊN TẮC BẮT BUỘC:
         fallbackReply = `Dạ em là ${guideName}, hướng dẫn viên du lịch văn hóa! Rất hân hạnh được đồng hành cùng quý cô bác, anh chị. Quý đoàn mình muốn em thuyết minh về di sản nào, tìm quán ăn ngon hay hướng dẫn lộ trình tham quan cứ bảo em nhé!`;
       }
     } else {
-      fallbackReply = 'Xin chào bạn! Hiện tại hệ thống máy chủ AI đang nhận lượng truy cập cao. ';
+      fallbackReply = 'AI hiện đang quá tải hoặc đã hết hạn mức. Vui lòng thử lại sau. ';
       if (currentHeritageContext?.name) {
         fallbackReply += `Về "${currentHeritageContext.name}": Đây là di sản văn hóa quý giá với lịch sử: "${currentHeritageContext.history || 'nhiều giá trị truyền thống'}". Bạn có thể xem thêm chi tiết trong bản đồ di sản hoặc thử lại câu hỏi trong giây lát.`;
       } else {
@@ -485,6 +683,99 @@ NGUYÊN TẮC BẮT BUỘC:
 });
 
 // ==========================================
+// 4B. AI ADMIN MANAGEMENT & TEST ENDPOINTS
+// ==========================================
+
+/**
+ * Endpoint for testing provider API connection ("Test API")
+ */
+app.post('/api/ai/test-connection', async (req: Request, res: Response) => {
+  const { provider = 'gemini', model = 'gemini-flash-latest', apiKey, baseUrl } = req.body;
+  const startTime = Date.now();
+
+  try {
+    const aiRes = await executeUnifiedAIRequest({
+      provider,
+      model,
+      apiKey,
+      baseUrl,
+      message: 'Xin chào, hãy trả lời bằng tiếng Việt.',
+      systemPrompt: 'Trả lời ngắn gọn "Chào mừng bạn đến với Hồn Đất Việt".',
+      maxTokens: 50
+    });
+
+    const responseTimeMs = Date.now() - startTime;
+    return res.json({
+      success: true,
+      message: `🟢 Kết nối ${provider.toUpperCase()} (${aiRes.model}) thành công! Phản hồi trong ${responseTimeMs}ms.`,
+      responseTimeMs,
+      sampleResponse: aiRes.text
+    });
+  } catch (err: any) {
+    const responseTimeMs = Date.now() - startTime;
+    const errorMsg = String(err?.message || err || 'Lỗi không xác định');
+    let friendlyReason = '🔴 API không hoạt động: ';
+
+    if (errorMsg.includes('API key') || errorMsg.includes('INVALID_ARGUMENT') || errorMsg.includes('401') || errorMsg.includes('403')) {
+      friendlyReason += 'API Key không hợp lệ hoặc thiếu quyền truy cập.';
+    } else if (errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('quota') || errorMsg.includes('429')) {
+      friendlyReason += 'Tài khoản đã hết quota hoặc bị giới hạn tốc độ (Rate Limit).';
+    } else if (errorMsg.includes('NOT_FOUND') || errorMsg.includes('404')) {
+      friendlyReason += 'Model không tồn tại hoặc không được hỗ trợ bởi Provider.';
+    } else if (errorMsg.includes('fetch failed') || errorMsg.includes('Network') || errorMsg.includes('ENOTFOUND')) {
+      friendlyReason += 'Không thể kết nối máy chủ (Network Error).';
+    } else {
+      friendlyReason += errorMsg;
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: friendlyReason,
+      responseTimeMs
+    });
+  }
+});
+
+/**
+ * Endpoint for testing custom prompt model response ("Test Model")
+ */
+app.post('/api/ai/test-model', async (req: Request, res: Response) => {
+  const { provider = 'gemini', model = 'gemini-flash-latest', prompt, apiKey, baseUrl, temperature, maxTokens } = req.body;
+  const startTime = Date.now();
+
+  const testPrompt = prompt || 'Giới thiệu ngắn gọn về Đại Nội Huế bằng tiếng Việt.';
+
+  try {
+    const aiRes = await executeUnifiedAIRequest({
+      provider,
+      model,
+      apiKey,
+      baseUrl,
+      message: testPrompt,
+      systemPrompt: 'Bạn là trợ lý AI của Hồn Đất Việt. Hãy trả lời bằng tiếng Việt ngắn gọn, súc tích.',
+      temperature: temperature ?? 0.7,
+      maxTokens: maxTokens ?? 2048
+    });
+
+    const responseTimeMs = Date.now() - startTime;
+    return res.json({
+      success: true,
+      provider: aiRes.provider,
+      model: aiRes.model,
+      responseTimeMs,
+      text: aiRes.text
+    });
+  } catch (err: any) {
+    const responseTimeMs = Date.now() - startTime;
+    return res.status(500).json({
+      success: false,
+      error: err?.message || 'Lỗi chạy thử mô hình AI',
+      responseTimeMs
+    });
+  }
+});
+
+// ==========================================
 // 5. AI ORAL HISTORY / GRANDPARENT MEMORY CURATION
 // ==========================================
 app.post('/api/ai/transcribe-story', async (req: Request, res: Response) => {
@@ -495,7 +786,7 @@ app.post('/api/ai/transcribe-story', async (req: Request, res: Response) => {
     }
 
     const ai = getGemini();
-    const systemPrompt = `Bạn là Trợ lý Lưu giữ Ký ức & Lịch sử Truyền khẩu ("Ông bà kể chuyện") của HERITAGEAI.
+    const systemPrompt = `Bạn là Trợ lý Lưu giữ Ký ức & Lịch sử Truyền khẩu ("Ông bà kể chuyện") của Hồn Đất Việt.
 Nhiệm vụ:
 1. Đọc lời kể thô của ông/bà/người cao tuổi.
 2. Sắp xếp thành đoạn văn mạch lạc, giữ trọn vẹn 100% cảm xúc và từ ngữ địa phương, TUYỆT ĐỐI KHÔNG BỊA ĐẶT THÊM NỘI DUNG HOẶC THAY ĐỔI Ý NGHĨA GỐC.
@@ -553,7 +844,7 @@ app.post('/api/ai/analyze-reviews', async (req: Request, res: Response) => {
     const { placeName, rating, userRatingCount, sampleReviews = [], placeType } = req.body;
 
     const ai = getGemini();
-    const systemPrompt = `Bạn là Chuyên viên Phân tích Đánh giá Địa điểm Văn hóa & Ẩm thực của HERITAGEAI.
+    const systemPrompt = `Bạn là Chuyên viên Phân tích Đánh giá Địa điểm Văn hóa & Ẩm thực của Hồn Đất Việt.
 QUY TẮC BẮT BUỘC:
 1. Không được tuyên bố "AI đã đọc toàn bộ review Google Maps".
 2. Sử dụng cách diễn đạt: "Dựa trên dữ liệu đánh giá được Google Places API cung cấp...".
@@ -631,7 +922,7 @@ app.post('/api/ai/match-places', async (req: Request, res: Response) => {
     }
 
     const ai = getGemini();
-    const systemPrompt = `Bạn là Trợ lý Cá nhân hóa Ẩm thực & Giải trí Văn hóa của HERITAGEAI.
+    const systemPrompt = `Bạn là Trợ lý Cá nhân hóa Ẩm thực & Giải trí Văn hóa của Hồn Đất Việt.
 Người dùng đưa ra yêu cầu (ví dụ: "quán giá rẻ", "yên tĩnh học bài", "ăn đặc sản gốc Huế", "phù hợp gia đình có trẻ nhỏ").
 Dựa trên:
 - Yêu cầu người dùng
@@ -693,7 +984,7 @@ app.post('/api/ai/generate-itinerary', async (req: Request, res: Response) => {
     const { destination, duration = '1 ngày', interests = [], budget = 'vừa phải', companion = 'cá nhân' } = req.body;
 
     const ai = getGemini();
-    const systemPrompt = `Bạn là Chuyên gia Thiết kế Lịch trình Du lịch Văn hóa Thông minh của HERITAGEAI.
+    const systemPrompt = `Bạn là Chuyên gia Thiết kế Lịch trình Du lịch Văn hóa Thông minh của Hồn Đất Việt.
 Mục tiêu:
 Tạo lịch trình khám phá văn hóa kết hợp di sản + bảo tàng + ẩm thực địa phương + làng nghề + giải trí.
 Tối ưu hóa:
@@ -800,7 +1091,6 @@ Tối ưu hóa:
 // ==========================================
 // ACCOUNTS & ACTIVITIES SERVER PERSISTENCE
 // ==========================================
-import fs from 'fs';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 if (!fs.existsSync(DATA_DIR)) {
@@ -814,6 +1104,7 @@ const DEFAULT_ADMIN_ACCOUNT_SERVER = {
   id: 'user-admin',
   displayName: 'Quản trị viên Hệ thống',
   email: 'admin@heritageai.vn',
+  password: 'AINHS2026',
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
   city: 'Hà Nội / Huế',
   role: 'admin',
@@ -888,30 +1179,164 @@ app.post('/api/accounts/register', (req: Request, res: Response) => {
     if (!newUser || !newUser.email) {
       return res.status(400).json({ success: false, error: 'Dữ liệu tài khoản không hợp lệ.' });
     }
-    const cleanEmail = newUser.email.trim().toLowerCase();
-    const existing = serverAccounts.find((a: any) => a.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      return res.json({ success: true, user: existing, alreadyExisted: true });
+    const cleanEmail = String(newUser.email).trim().toLowerCase();
+    const existingIndex = serverAccounts.findIndex((a: any) => a.email && a.email.toLowerCase() === cleanEmail);
+    
+    if (existingIndex >= 0) {
+      // Update existing account details or return updated account
+      const existing = serverAccounts[existingIndex];
+      const updatedUser = {
+        ...existing,
+        ...newUser,
+        email: cleanEmail,
+        password: newUser.password || existing.password || '123456',
+        lastLoginAt: new Date().toISOString(),
+        isLoggedIn: true
+      };
+      serverAccounts[existingIndex] = updatedUser;
+      writeServerAccounts(serverAccounts);
+      return res.json({ success: true, user: updatedUser, alreadyExisted: true });
     }
-    serverAccounts.push(newUser);
+
+    const userToSave = {
+      ...newUser,
+      email: cleanEmail,
+      password: newUser.password || '123456',
+      createdAt: newUser.createdAt || new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      isLoggedIn: true
+    };
+
+    serverAccounts.push(userToSave);
     writeServerAccounts(serverAccounts);
 
     const log = {
       id: 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-      userId: newUser.id,
-      userName: newUser.displayName,
-      userRole: newUser.role || 'user',
-      userEmail: newUser.email,
+      userId: userToSave.id,
+      userName: userToSave.displayName,
+      userRole: userToSave.role || 'user',
+      userEmail: userToSave.email,
       actionType: 'auth',
       title: 'Tạo tài khoản mới',
-      description: `Đăng ký thành công tài khoản ${newUser.displayName} (${newUser.email}) trên server`,
+      description: `Đăng ký thành công tài khoản ${userToSave.displayName} (${userToSave.email}) trên hệ thống`,
       timestamp: new Date().toISOString()
     };
     serverActivities.unshift(log);
     if (serverActivities.length > 500) serverActivities = serverActivities.slice(0, 500);
     writeServerActivities(serverActivities);
 
-    return res.json({ success: true, user: newUser });
+    return res.json({ success: true, user: userToSave });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/accounts/login', (req: Request, res: Response) => {
+  try {
+    const { identifier, password } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ success: false, error: 'Vui lòng nhập tên đăng nhập hoặc email.' });
+    }
+
+    const cleanId = String(identifier).trim().toLowerCase();
+    const cleanPass = password ? String(password).trim() : '';
+
+    // Check Admin Credentials
+    if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
+      if (cleanPass === 'AINHS2026') {
+        let adminAccount = serverAccounts.find((a: any) => a.id === 'user-admin' || (a.email && a.email.toLowerCase() === 'admin@heritageai.vn'));
+        if (!adminAccount) {
+          adminAccount = { ...DEFAULT_ADMIN_ACCOUNT_SERVER };
+          serverAccounts.push(adminAccount);
+        }
+        adminAccount.lastLoginAt = new Date().toISOString();
+        adminAccount.isLoggedIn = true;
+        writeServerAccounts(serverAccounts);
+        return res.json({ success: true, user: adminAccount });
+      } else {
+        return res.status(400).json({ success: false, error: 'Mật khẩu quản trị viên không chính xác.' });
+      }
+    }
+
+    // Regular User authentication
+    const account = serverAccounts.find((a: any) => 
+      (a.email && a.email.toLowerCase() === cleanId) || 
+      (a.displayName && a.displayName.toLowerCase() === cleanId) ||
+      (a.id && a.id.toLowerCase() === cleanId)
+    );
+
+    if (!account) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Tài khoản không tồn tại. Vui lòng kiểm tra lại thông tin hoặc Đăng Ký Mới.' 
+      });
+    }
+
+    if (cleanPass && account.password && account.password !== cleanPass) {
+      return res.status(400).json({ success: false, error: 'Mật khẩu không chính xác. Vui lòng thử lại.' });
+    }
+
+    account.lastLoginAt = new Date().toISOString();
+    account.isLoggedIn = true;
+    writeServerAccounts(serverAccounts);
+
+    return res.json({ success: true, user: account });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/accounts/reset-password', (req: Request, res: Response) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp email và mật khẩu mới.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanNew = String(newPassword).trim();
+
+    const accountIndex = serverAccounts.findIndex((a: any) => 
+      (a.email && a.email.toLowerCase() === cleanEmail) || 
+      (cleanEmail === 'admin' && (a.id === 'user-admin' || a.role === 'admin'))
+    );
+
+    if (accountIndex < 0) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy tài khoản tương ứng với email này.' });
+    }
+
+    serverAccounts[accountIndex].password = cleanNew;
+    writeServerAccounts(serverAccounts);
+
+    return res.json({ success: true, user: serverAccounts[accountIndex] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/accounts/change-password', (req: Request, res: Response) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+    if (!userId || !oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Thiếu dữ liệu đổi mật khẩu.' });
+    }
+
+    const cleanOld = String(oldPassword).trim();
+    const cleanNew = String(newPassword).trim();
+
+    const account = serverAccounts.find((a: any) => a.id === userId);
+    if (!account) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy tài khoản người dùng.' });
+    }
+
+    if (account.password && account.password !== cleanOld) {
+      return res.status(400).json({ success: false, error: 'Mật khẩu hiện tại không chính xác.' });
+    }
+
+    account.password = cleanNew;
+    writeServerAccounts(serverAccounts);
+
+    return res.json({ success: true, user: account });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
   }
@@ -1111,6 +1536,284 @@ app.post('/api/places', (req: Request, res: Response) => {
 });
 
 // ==========================================
+// AI LANDMARK IMAGE SEARCH
+// ==========================================
+app.post('/api/ai/search-landmark-images', async (req: Request, res: Response) => {
+  try {
+    const { query = '', cityName = '', landmarkName = '', province = '' } = req.body;
+    const combinedSearch = `${query} ${cityName} ${landmarkName} ${province}`.trim().toLowerCase();
+
+    // 1. Keyword search in curated VIETNAM_LANDMARK_PHOTOS
+    const keywordMatches = VIETNAM_LANDMARK_PHOTOS.filter(photo => {
+      if (!combinedSearch) return true;
+      const target = `${photo.title} ${photo.cityName} ${photo.province} ${photo.landmarkName} ${photo.tagline} ${photo.tags.join(' ')}`.toLowerCase();
+      const terms = combinedSearch.split(/\s+/).filter(Boolean);
+      return terms.some(t => target.includes(t));
+    });
+
+    // 2. AI suggestions for landmark photos
+    let aiSuggestions: any[] = [];
+    try {
+      const ai = getGemini();
+      const prompt = `Bạn là chuyên gia về hình ảnh danh lam thắng cảnh và di sản văn hóa Việt Nam.
+Người dùng đang tìm kiếm ảnh nền cho:
+Từ khóa: "${query || landmarkName || cityName || 'Địa danh nổi tiếng Việt Nam'}"
+Tỉnh/Thành phố: "${cityName || province || ''}"
+
+Hãy gợi ý tối đa 4 thông tin danh thắng nổi tiếng nhất phù hợp để tìm ảnh nền chất lượng cao:
+- Tên danh thắng chính xác (landmarkName)
+- Tỉnh/Thành phố (cityName)
+- Khẩu hiệu mô tả cảnh đẹp ngắn gọn (tagline)
+- Góc chụp đẹp nhất (photoPerspective)
+- Từ khóa tìm kiếm ảnh (searchKeywords)`;
+
+      const response = await generateContentWithResilience(ai, {
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              suggestions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    landmarkName: { type: Type.STRING },
+                    cityName: { type: Type.STRING },
+                    province: { type: Type.STRING },
+                    tagline: { type: Type.STRING },
+                    photoPerspective: { type: Type.STRING },
+                    searchKeywords: { type: Type.STRING }
+                  },
+                  required: ['landmarkName', 'cityName', 'tagline', 'searchKeywords']
+                }
+              }
+            },
+            required: ['suggestions']
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      if (Array.isArray(parsed.suggestions)) {
+        aiSuggestions = parsed.suggestions;
+      }
+    } catch (aiErr) {
+      console.info('[AI Landmark Image Search] Gemini suggestion step completed with curated fallback.');
+    }
+
+    return res.json({
+      success: true,
+      photos: keywordMatches.length > 0 ? keywordMatches : VIETNAM_LANDMARK_PHOTOS,
+      aiSuggestions,
+      totalCount: keywordMatches.length > 0 ? keywordMatches.length : VIETNAM_LANDMARK_PHOTOS.length
+    });
+  } catch (error: any) {
+    return res.json({
+      success: true,
+      photos: VIETNAM_LANDMARK_PHOTOS,
+      aiSuggestions: [],
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// GEMINI GOOGLE SEARCH LANDMARK IMAGE FINDER
+// ==========================================
+app.post('/api/ai/google-find-landmark-image', async (req: Request, res: Response) => {
+  try {
+    const { landmarkName = '', cityName = '', province = '' } = req.body;
+    if (!landmarkName && !cityName) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp tên danh thắng hoặc tỉnh thành' });
+    }
+
+    const searchQuery = `${landmarkName} ${cityName} ${province}`.trim();
+    const ai = getGemini();
+
+    const systemPrompt = `Bạn là chuyên gia tra cứu thông tin và tìm kiếm hình ảnh phong cảnh danh lam thắng cảnh Việt Nam chất lượng cao trên Google của Hồn Đất Việt.
+NHIỆM VỤ:
+Người dùng cung cấp Tên Danh Thắng: "${landmarkName}", Tỉnh/Thành: "${cityName || province || 'Việt Nam'}".
+Hãy tìm kiếm hình ảnh thực tế chất lượng cao (HD/4K) trên Google và thông tin chuẩn xác về danh thắng này.
+
+YÊU CẦU:
+1. Tìm các đường link ảnh thực tế, sắc nét, góc chụp đẹp (toàn cảnh landscape) thể hiện đúng danh thắng "${landmarkName}".
+2. Ưu tiên các đường link ảnh thực từ Wikimedia Commons, Wikipedia, Unsplash, Flickr, Cổng du lịch Việt Nam, hoặc link ảnh trực tiếp dạng URL hợp lệ.
+3. Xác định tọa độ GPS (Vĩ độ - lat, Kinh độ - lng) chính xác của địa danh này.
+4. Viết 1 câu khẩu hiệu (tagline) ngắn gọn, truyền cảm giới thiệu vẻ đẹp đặc trưng.
+5. Cung cấp danh sách 3-5 ảnh ứng viên (candidateImages) với nguồn ảnh và góc chụp mô tả.
+
+HÃY TRẢ VỀ ĐỊNH DẠNG JSON CHUẨN:
+{
+  "bestImageUrl": "string (link ảnh tốt nhất)",
+  "landmarkName": "string (tên chuẩn hóa)",
+  "cityName": "string (tên thành phố)",
+  "province": "string (tên tỉnh)",
+  "tagline": "string (câu mô tả ngắn)",
+  "lat": 0,
+  "lng": 0,
+  "searchSummary": "string (tóm tắt kết quả tìm kiếm Google của Gemini)",
+  "candidateImages": [
+    {
+      "url": "string (link ảnh)",
+      "title": "string (mô tả góc chụp)",
+      "source": "string (nguồn ảnh như Google / Wikimedia / Unsplash)",
+      "photographer": "string (tác giả hoặc nguồn)"
+    }
+  ]
+}`;
+
+    let parsedResult: any = null;
+
+    try {
+      // 1. Try with Google Search grounding tool
+      const response = await generateContentWithResilience(ai, {
+        contents: `Tìm kiếm trên Google ảnh chất lượng cao và thông tin cho danh lam thắng cảnh Việt Nam: "${searchQuery}"`,
+        config: {
+          systemInstruction: systemPrompt,
+          tools: [{ googleSearch: {} }],
+          responseMimeType: 'application/json'
+        }
+      }, 'gemini-3.8-flash');
+
+      const text = response?.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedResult = JSON.parse(jsonMatch[0]);
+      }
+    } catch {
+      // 2. If Google search tool reaches rate limit / quota / unavailable, fall back to direct model prompt
+      try {
+        const response = await generateContentWithResilience(ai, {
+          contents: `Hãy tìm và tổng hợp thông tin, đường dẫn ảnh chất lượng cao trên web/Google cho danh thắng: "${searchQuery}"`,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: 'application/json'
+          }
+        }, 'gemini-3.1-flash-lite');
+        const text = response?.text || '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedResult = JSON.parse(jsonMatch[0]);
+        }
+      } catch {
+        // Handled below via curated database fallback
+      }
+    }
+
+    // Check matching local curated database as reliable fallback & supplement
+    const isVanMieu = /văn miếu|quốc tử giám|khuê văn các/i.test(searchQuery);
+    const isDaiNoiHue = /đại nội|cung đình huế|ngọ môn|cố đô huế|hoàng thành huế/i.test(searchQuery);
+    const isHoiAn = /hội an|chùa cầu|lai viễn kiều|cầu nhật bản|phố cổ hội an/i.test(searchQuery);
+
+    const matchingLocalPhotos = VIETNAM_LANDMARK_PHOTOS.filter(photo => {
+      if (isVanMieu) {
+        return photo.id.startsWith('hn-van-mieu') || photo.id.startsWith('hn-khue-van-cac');
+      }
+      if (isDaiNoiHue) {
+        return photo.id.startsWith('hue-dai-noi');
+      }
+      if (isHoiAn) {
+        return photo.id.startsWith('qn-hoi-an') || photo.id.startsWith('qn-chua-cau');
+      }
+      const target = `${photo.landmarkName} ${photo.title} ${photo.cityName} ${photo.province}`.toLowerCase();
+      const terms = searchQuery.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+      return terms.some(t => target.includes(t));
+    });
+
+    const bestLocal = matchingLocalPhotos[0];
+
+    // Ensure candidate images list has high quality valid images
+    let candidates = Array.isArray(parsedResult?.candidateImages) ? parsedResult.candidateImages : [];
+    
+    // Supplement with curated photos if candidates are empty or have invalid links
+    if ((candidates.length === 0 || isVanMieu || isDaiNoiHue || isHoiAn) && matchingLocalPhotos.length > 0) {
+      const curatedCandidates = matchingLocalPhotos.slice(0, 4).map(p => ({
+        url: p.imageUrl,
+        title: p.title,
+        source: p.source || 'Kho Di Sản & Di Tích Quốc Gia',
+        photographer: p.photographer || 'Nhiếp ảnh gia Di sản Việt Nam'
+      }));
+      candidates = (isVanMieu || isDaiNoiHue || isHoiAn) ? curatedCandidates : [...candidates, ...curatedCandidates].slice(0, 5);
+    }
+
+    // If bestImageUrl is missing or placeholder, use the first valid candidate or local photo
+    let finalBestUrl = parsedResult?.bestImageUrl;
+    if (isVanMieu || isDaiNoiHue || isHoiAn || !finalBestUrl || !finalBestUrl.startsWith('http') || finalBestUrl.includes('1599707367072') || finalBestUrl.includes('1583417319070') || finalBestUrl.includes('1555939594')) {
+      if (isVanMieu) {
+        finalBestUrl = 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg';
+      } else if (isDaiNoiHue) {
+        finalBestUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg';
+      } else if (isHoiAn) {
+        finalBestUrl = /chùa cầu|lai viễn kiều|cầu nhật bản/i.test(searchQuery)
+          ? 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Cau_Nhat_Ban.jpg'
+          : 'https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg';
+      } else if (candidates.length > 0 && candidates[0].url) {
+        finalBestUrl = candidates[0].url;
+      } else if (bestLocal) {
+        finalBestUrl = bestLocal.imageUrl;
+      } else {
+        // High-quality dynamic photo as safe resilient fallback
+        finalBestUrl = `https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg`;
+      }
+    }
+
+    const payload = {
+      success: true,
+      bestImageUrl: finalBestUrl,
+      landmarkName: parsedResult?.landmarkName || landmarkName || bestLocal?.landmarkName || 'Danh thắng Việt Nam',
+      cityName: parsedResult?.cityName || cityName || bestLocal?.cityName || 'Việt Nam',
+      province: parsedResult?.province || province || bestLocal?.province || cityName || 'Việt Nam',
+      tagline: parsedResult?.tagline || bestLocal?.tagline || `Khám phá vẻ đẹp kỳ vĩ của ${landmarkName || cityName}`,
+      lat: Number(parsedResult?.lat) || bestLocal?.lat || 16.0544,
+      lng: Number(parsedResult?.lng) || bestLocal?.lng || 108.2022,
+      searchSummary: parsedResult?.searchSummary || `Đã tra cứu và tổng hợp hình ảnh phong cảnh chất lượng cao cho danh thắng "${landmarkName || searchQuery}".`,
+      candidateImages: candidates.length > 0 ? candidates : [
+        {
+          url: finalBestUrl,
+          title: landmarkName || 'Cảnh đẹp danh thắng',
+          source: 'Google Search & Kho Di Sản HD',
+          photographer: 'Cộng đồng Nhiếp ảnh'
+        }
+      ]
+    };
+
+    return res.json(payload);
+  } catch (err: any) {
+    console.error('Error in /api/ai/google-find-landmark-image, using safe fallback:', err);
+    
+    // Emergency resilient fallback so the user always receives valid data
+    const query = String(req.body?.landmarkName || req.body?.cityName || 'Việt Nam');
+    const matched = VIETNAM_LANDMARK_PHOTOS.find(p => 
+      p.title.toLowerCase().includes(query.toLowerCase()) || 
+      p.cityName.toLowerCase().includes(query.toLowerCase()) ||
+      p.landmarkName.toLowerCase().includes(query.toLowerCase())
+    ) || VIETNAM_LANDMARK_PHOTOS[0];
+
+    return res.json({
+      success: true,
+      bestImageUrl: matched.imageUrl,
+      landmarkName: req.body?.landmarkName || matched.landmarkName,
+      cityName: req.body?.cityName || matched.cityName,
+      province: req.body?.province || matched.province,
+      tagline: matched.tagline || `Khám phá vẻ đẹp của ${req.body?.landmarkName || matched.landmarkName}`,
+      lat: matched.lat || 16.0544,
+      lng: matched.lng || 108.2022,
+      searchSummary: `Đã kết nối và gắn ảnh đại diện tiêu biểu cho danh thắng "${req.body?.landmarkName || query}".`,
+      candidateImages: [
+        {
+          url: matched.imageUrl,
+          title: matched.title,
+          source: matched.source || 'Kho Ảnh Di Sản HD',
+          photographer: matched.photographer || 'Nhiếp ảnh gia Việt Nam'
+        }
+      ]
+    });
+  }
+});
+
+// ==========================================
 // AI TOUR GUIDE TRAINING & CONFIGURATION
 // ==========================================
 app.get('/api/ai/tour-guide-config', (req: Request, res: Response) => {
@@ -1135,15 +1838,370 @@ app.post('/api/ai/tour-guide-config', (req: Request, res: Response) => {
 });
 
 // ==========================================
+// VIENEU CLOUD TTS PROXY & DIAGNOSTIC ENDPOINTS
+// ==========================================
+
+interface VieNeuTestResult {
+  success: boolean;
+  status?: number;
+  statusText?: string;
+  hostname: string;
+  endpoint: string;
+  httpMethod: string;
+  requestFields: string[];
+  responseTimeMs: number;
+  errorCategory?: string;
+  message: string;
+  responseSnippet?: string;
+  instructions?: string;
+}
+
+async function testVieNeuApiConnection(
+  endpointUrl: string,
+  apiKey?: string,
+  model: string = 'vieneu-v4'
+): Promise<VieNeuTestResult> {
+  const startTime = Date.now();
+  let hostname = '';
+
+  // 1. Validate URL syntax
+  try {
+    const parsed = new URL(endpointUrl);
+    hostname = parsed.hostname;
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return {
+        success: false,
+        hostname: endpointUrl,
+        endpoint: endpointUrl,
+        httpMethod: 'POST',
+        requestFields: ['model', 'input'],
+        responseTimeMs: 0,
+        errorCategory: 'INVALID_PROTOCOL',
+        message: '🔴 Địa chỉ API Endpoint không hợp lệ. Vui lòng sử dụng giao thức http:// hoặc https://',
+        instructions: 'Cần cập nhật biến VIENEU_API_ENDPOINT trong file .env hoặc sửa ô API Endpoint trong Admin thành URL bắt đầu bằng http:// hoặc https://.'
+      };
+    }
+  } catch (e) {
+    return {
+      success: false,
+      hostname: endpointUrl,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields: ['model', 'input'],
+      responseTimeMs: 0,
+      errorCategory: 'INVALID_URL_SYNTAX',
+      message: `🔴 Endpoint hiện tại không hợp lệ ("${endpointUrl}").`,
+      instructions: 'Vui lòng kiểm tra lại cấu hình biến môi trường VIENEU_API_ENDPOINT hoặc nhập lại API Endpoint chuẩn trong trang Admin.'
+    };
+  }
+
+  // 2. Prepare headers securely (never expose API key in error messages)
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey && apiKey.trim().length > 0) {
+    headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+  }
+
+  // 3. Determine API payload format based on endpoint
+  const isAudioSpeech = endpointUrl.includes('audio/speech') || endpointUrl.includes('/speech');
+
+  const requestBody = isAudioSpeech
+    ? {
+        model: model || 'vieneu-v4',
+        input: 'Xin chào Hồn Đất Việt.'
+      }
+    : {
+        text: 'Xin chào Hồn Đất Việt.',
+        speed: 1.0,
+        language: 'vi-VN'
+      };
+
+  const requestFields = isAudioSpeech
+    ? ['model', 'input']
+    : ['text', 'speed', 'language'];
+
+  // Request with timeout (8 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(endpointUrl, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify(requestBody)
+    });
+    clearTimeout(timeoutId);
+
+    const responseTimeMs = Date.now() - startTime;
+    const status = response.status;
+    const statusText = response.statusText || '';
+
+    if (response.ok) {
+      return {
+        success: true,
+        status,
+        statusText,
+        hostname,
+        endpoint: endpointUrl,
+        httpMethod: 'POST',
+        requestFields,
+        responseTimeMs,
+        message: `🟢 Kết nối VieNeu Cloud API thành công (HTTP ${status} OK)! Hostname: ${hostname}`
+      };
+    }
+
+    // Response HTTP status is non-200 (4xx or 5xx)
+    let bodyText = '';
+    try {
+      bodyText = await response.text();
+    } catch (e) {
+      bodyText = '';
+    }
+
+    // Sanitize bodyText snippet to ensure no secret is included
+    const snippet = bodyText.substring(0, 200).replace(/["']?(key|token|secret|authorization)["']?\s*:\s*["']?[^"'\s]+["']?/gi, '$1: "***"');
+
+    let errorCategory = `HTTP_${status}`;
+    let userMsg = '';
+    let instructions = '';
+
+    switch (status) {
+      case 400:
+        errorCategory = '400_BAD_REQUEST';
+        userMsg = `🔴 Lỗi yêu cầu (HTTP 400 Bad Request): VieNeu API báo lỗi cấu trúc request payload.`;
+        instructions = `Nội dung phản hồi từ VieNeu: "${snippet}". Kiểm tra trường gửi sang (cần dùng model, input cho /audio/speech).`;
+        break;
+      case 401:
+        errorCategory = '401_UNAUTHORIZED';
+        userMsg = `🔴 Lỗi xác thực (HTTP 401 Unauthorized): API Key không hợp lệ hoặc đã hết hạn.`;
+        instructions = 'Vui lòng kiểm tra lại "API Key" trong cài đặt Admin VieNeu TTS hoặc biến môi trường VIENEU_API_KEY.';
+        break;
+      case 403:
+        errorCategory = '403_FORBIDDEN';
+        userMsg = `🔴 Lỗi bị cấm truy cập (HTTP 403 Forbidden): Yêu cầu bị máy chủ VieNeu từ chối.`;
+        instructions = 'Kiểm tra xem IP hoặc API Key của bạn có bị giới hạn quyền truy cập trên VieNeu hay không.';
+        break;
+      case 404:
+        errorCategory = '404_NOT_FOUND';
+        userMsg = `🔴 Không tìm thấy Endpoint (HTTP 404 Not Found): Đường dẫn API "${endpointUrl}" không tồn tại trên máy chủ ${hostname}.`;
+        instructions = `Endpoint hiện tại không chính xác. Bạn cần thay đổi biến VIENEU_API_ENDPOINT hoặc ô "API Endpoint" trong Admin (Ví dụ: https://api.vieneu.io/api/v1/audio/speech).`;
+        break;
+      case 429:
+        errorCategory = '429_TOO_MANY_REQUESTS';
+        userMsg = `🔴 Đã vượt quá giới hạn lượt gọi (HTTP 429 Too Many Requests): Hết hạn ngạch hoặc gọi API quá nhanh.`;
+        instructions = 'Chờ vài phút trước khi thử lại hoặc kiểm tra hạn ngạch tài khoản VieNeu API.';
+        break;
+      default:
+        if (status >= 500) {
+          errorCategory = `HTTP_${status}_SERVER_ERROR`;
+          userMsg = `🔴 Máy chủ VieNeu gặp sự cố nội bộ (HTTP ${status} ${statusText}).`;
+          instructions = 'Máy chủ VieNeu đang gặp sự cố. Hãy kiểm tra log server VieNeu hoặc thử lại sau.';
+        } else {
+          userMsg = `🔴 Yêu cầu thất bại với HTTP status ${status} (${statusText}).`;
+        }
+        break;
+    }
+
+    return {
+      success: false,
+      status,
+      statusText,
+      hostname,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields,
+      responseTimeMs,
+      errorCategory,
+      message: userMsg,
+      responseSnippet: snippet,
+      instructions
+    };
+
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    const responseTimeMs = Date.now() - startTime;
+
+    let errorCategory = 'NETWORK_ERROR';
+    let userMsg = '';
+    let instructions = '';
+
+    const causeCode = err?.cause?.code || err?.code;
+    const causeMsg = err?.cause?.message || err?.message || String(err);
+
+    if (err?.name === 'AbortError' || causeCode === 'UND_ERR_CONNECT_TIMEOUT' || causeCode === 'ETIMEDOUT') {
+      errorCategory = 'TIMEOUT';
+      userMsg = `🔴 Quá thời gian chờ (Timeout 8000ms): Máy chủ VieNeu tại "${hostname}" không phản hồi.`;
+      instructions = 'Kiểm tra địa chỉ IP / Domain server VieNeu xem có đang hoạt động hay bị tường lửa chặn cổng.';
+    } else if (causeCode === 'ENOTFOUND') {
+      errorCategory = 'DNS_ENOTFOUND';
+      userMsg = `🔴 Lỗi DNS (ENOTFOUND): Tên miền "${hostname}" không tồn tại hoặc không thể phân giải địa chỉ IP.`;
+      instructions = `Endpoint hiện tại không hợp lệ. Bạn cần thay đổi biến cấu hình VIENEU_API_ENDPOINT trong .env hoặc ô "API Endpoint" trong Admin thành URL server VieNeu thực sự (Ví dụ: https://api.vieneu.io/api/v1/audio/speech).`;
+    } else if (causeCode === 'ECONNREFUSED') {
+      errorCategory = 'ECONNREFUSED';
+      userMsg = `🔴 Kết nối bị từ chối (ECONNREFUSED): Máy chủ tại "${hostname}" không mở cổng hoặc dịch vụ VieNeu TTS chưa khởi động.`;
+      instructions = 'Nếu dùng Docker / Server tự host, hãy kiểm tra container VieNeu TTS đã khởi chạy trên đúng port hay chưa.';
+    } else if (causeCode === 'ECONNRESET') {
+      errorCategory = 'ECONNRESET';
+      userMsg = `🔴 Kết nối bị ngắt đột ngột (ECONNRESET) bởi máy chủ "${hostname}".`;
+      instructions = 'Kiểm tra mạng hoặc cài đặt proxy giữa Hồn Đất Việt server và VieNeu TTS server.';
+    } else {
+      userMsg = `🔴 Lỗi mạng / Không thể kết nối tới "${hostname}": ${causeMsg}`;
+      instructions = 'Kiểm tra lại kết nối mạng hoặc địa chỉ API Endpoint.';
+    }
+
+    return {
+      success: false,
+      hostname,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields: isAudioSpeech ? ['model', 'input'] : ['text', 'speed', 'language'],
+      responseTimeMs,
+      errorCategory,
+      message: userMsg,
+      instructions
+    };
+  }
+}
+
+app.post('/api/tts/vieneu', async (req: Request, res: Response) => {
+  try {
+    const { text, speed = 1.0, endpoint, apiKey, model = 'vieneu-v4', voice } = req.body;
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ success: false, error: 'Thiếu hoặc sai định dạng văn bản cần đọc.' });
+    }
+
+    const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (targetApiKey && targetApiKey.trim().length > 0) {
+      headers['Authorization'] = `Bearer ${targetApiKey.trim()}`;
+      headers['X-API-Key'] = targetApiKey.trim();
+    }
+
+    const isAudioSpeech = targetEndpoint.includes('audio/speech') || targetEndpoint.includes('/speech');
+
+    const requestBody = isAudioSpeech
+      ? {
+          model: model || 'vieneu-v4',
+          input: text,
+          ...(voice ? { voice } : {}),
+          speed: Number(speed) || 1.0
+        }
+      : {
+          text: text,
+          speed: Number(speed) || 1.0,
+          ...(voice ? { voice } : {})
+        };
+
+    const response = await fetch(targetEndpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({
+        success: false,
+        error: `VieNeu API Error (HTTP ${response.status}): ${errText.substring(0, 200) || response.statusText}`
+      });
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const json = await response.json();
+      return res.json({ success: true, ...json });
+    } else {
+      const buffer = await response.arrayBuffer();
+      res.setHeader('Content-Type', contentType || 'audio/mpeg');
+      return res.send(Buffer.from(buffer));
+    }
+  } catch (err: any) {
+    const targetEndpoint = req.body.endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    let hostname = '';
+    try { hostname = new URL(targetEndpoint).hostname; } catch (e) { hostname = targetEndpoint; }
+    
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi kết nối tới VieNeu Cloud API (${hostname}): ${err?.cause?.message || err?.message || err}`
+    });
+  }
+});
+
+app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
+  try {
+    const { provider = 'vieneu', endpoint, apiKey, model = 'vieneu-v4' } = req.body;
+
+    if (provider === 'web_speech') {
+      return res.json({
+        success: true,
+        message: '🟢 Web Speech API (Browser Native) sẵn sàng hoạt động trực tiếp trên trình duyệt.',
+        hostname: 'browser-native',
+        endpoint: 'window.speechSynthesis',
+        httpMethod: 'LOCAL',
+        requestFields: ['text'],
+        responseTimeMs: 1
+      });
+    }
+
+    const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+
+    const testResult = await testVieNeuApiConnection(targetEndpoint, targetApiKey, model);
+    return res.status(testResult.success ? 200 : 400).json(testResult);
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: `🔴 Lỗi server xử lý kiểm tra kết nối: ${err?.message || err}`,
+      hostname: 'server-error',
+      endpoint: '',
+      httpMethod: 'POST',
+      requestFields: [],
+      responseTimeMs: 0
+    });
+  }
+});
+
+// ==========================================
 // 9. VITE SPA FALLBACK & STATIC SERVING
 // ==========================================
 async function startServer() {
+  const httpServer = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Hồn Đất Việt Server is actively running on http://0.0.0.0:${PORT}`);
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
+      server: {
+        middlewareMode: true,
+        hmr: false
+      },
+      appType: 'custom',
     });
     app.use(vite.middlewares);
+
+    app.use('*', async (req: Request, res: Response, next) => {
+      const url = req.originalUrl;
+      // Skip API requests and static assets
+      if (url.startsWith('/api') || url.startsWith('/@') || (url.includes('.') && !url.endsWith('.html'))) {
+        return next();
+      }
+
+      try {
+        const indexPath = path.resolve(process.cwd(), 'index.html');
+        let html = fs.readFileSync(indexPath, 'utf-8');
+        html = await vite.transformIndexHtml(url, html);
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
+      } catch (e: any) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
@@ -1151,10 +2209,6 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`HeritageAI Server is actively running on http://0.0.0.0:${PORT}`);
-  });
 }
 
 startServer();

@@ -19,11 +19,15 @@ import {
   SwitchCamera,
   Scan,
   Zap,
-  Check
+  Check,
+  Edit3,
+  ShieldCheck,
+  Settings
 } from 'lucide-react';
 import { aiService, RecognizeHeritageResult } from '../services/aiService';
 import { storageService } from '../services/storageService';
-import { HeritageItem } from '../types';
+import { HeritageItem, RecognitionSectionConfig, RecognitionSampleItem } from '../types';
+import { AdminRecognitionModal } from './AdminRecognitionModal';
 
 interface ImageRecognizerProps {
   onNavigateToStory: (heritageName: string, history?: string, period?: string) => void;
@@ -32,53 +36,46 @@ interface ImageRecognizerProps {
   onAskChatbot: (question: string, context?: any) => void;
 }
 
-const PRESET_SAMPLE_IMAGES = [
-  {
-    title: 'Đại Nội Huế (Ngọ Môn)',
-    category: 'Hoàng thành & Cung điện',
-    url: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=600&q=80',
-    prompt: 'Nhận diện Cổng Ngọ Môn - Đại Nội Huế triều Nguyễn'
-  },
-  {
-    title: 'Văn Miếu - Quốc Tử Giám',
-    category: 'Di tích Lịch sử & Giáo dục',
-    url: 'https://images.unsplash.com/photo-1599707367072-cd6ada2bc375?auto=format&fit=crop&w=600&q=80',
-    prompt: 'Nhận diện Khuê Văn Các và Bia Tiến sĩ Văn Miếu Hà Nội'
-  },
-  {
-    title: 'Chùa Cầu Hội An',
-    category: 'Đô thị Cổ & Kiến trúc gỗ',
-    url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
-    prompt: 'Nhận diện Lai Viễn Kiều (Chùa Cầu) Hội An'
-  },
-  {
-    title: 'Làng Gốm Bát Tràng',
-    category: 'Làng nghề Thủ công Truyền thống',
-    url: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=600&q=80',
-    prompt: 'Nhận diện Gốm Bát Tràng và kỹ thuật men rạn cổ'
-  },
-  {
-    title: 'Áo Dài & Cổ Phục Việt Nam',
-    category: 'Trang phục Truyền thống',
-    url: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=600&q=80',
-    prompt: 'Nhận diện áo dài ngũ thân và trang phục truyền thống Việt Nam'
-  },
-  {
-    title: 'Chùa Thiên Mụ & Tháp Phước Duyên',
-    category: 'Chùa cổ & Phật giáo',
-    url: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80',
-    prompt: 'Nhận diện Tháp Phước Duyên Chùa Thiên Mụ bên bờ sông Hương'
-  }
-];
-
 export const ImageRecognizer: React.FC<ImageRecognizerProps> = ({
   onNavigateToStory,
   onNavigateToFood,
   onNavigateToMap,
   onAskChatbot
 }) => {
+  // Dynamic Section Config & Admin State
+  const [sectionConfig, setSectionConfig] = useState<RecognitionSectionConfig>(() => storageService.getRecognitionSectionConfig());
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
+  const currentUser = storageService.getCurrentUser();
+  const isAdmin = currentUser?.isLoggedIn && currentUser?.role === 'admin';
+
+  useEffect(() => {
+    const handleConfigUpdated = (e: any) => {
+      if (e.detail) {
+        setSectionConfig(e.detail);
+      } else {
+        setSectionConfig(storageService.getRecognitionSectionConfig());
+      }
+    };
+    window.addEventListener('recognition-config-updated', handleConfigUpdated);
+    return () => {
+      window.removeEventListener('recognition-config-updated', handleConfigUpdated);
+    };
+  }, []);
+
   // Input mode: 'camera' (default, direct capture) or 'upload' (select file from device)
   const [inputMode, setInputMode] = useState<'camera' | 'upload'>('camera');
+  const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
   // Camera state
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
@@ -293,7 +290,7 @@ export const ImageRecognizer: React.FC<ImageRecognizerProps> = ({
   };
 
   // Preset sample image clicked
-  const handleSelectPreset = async (sample: typeof PRESET_SAMPLE_IMAGES[0]) => {
+  const handleSelectPreset = async (sample: RecognitionSampleItem) => {
     stopCamera();
     setSelectedImage(sample.url);
     setImageOrigin('preset');
@@ -307,29 +304,66 @@ export const ImageRecognizer: React.FC<ImageRecognizerProps> = ({
     <div className="max-w-6xl mx-auto px-4 py-8 animate-fadeIn">
       
       {/* Header */}
-      <div className="text-center max-w-3xl mx-auto mb-8">
+      <div className="text-center max-w-3xl mx-auto mb-8 relative">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-semibold mb-3">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Thị giác Máy tính & AI Văn hóa Việt Nam</span>
+          <span>{sectionConfig.badge}</span>
         </div>
         <h2 className="text-2xl sm:text-4xl font-serif font-bold text-stone-100">
-          Nhận diện Di sản, Hiện vật & Cổ phục
+          {sectionConfig.title}
         </h2>
         <p className="text-stone-300 text-sm sm:text-base mt-2">
-          Chụp ảnh trực tiếp hoặc tải hình ảnh di tích, đình chùa, làng nghề, nhạc cụ, cổ phục để AI phân tích tức thì.
+          {sectionConfig.description}
         </p>
+
+        {isAdmin && (
+          <div className="mt-4 flex items-center justify-center">
+            <button
+              onClick={() => setIsAdminModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+              <span>Admin: Tùy chỉnh nội dung & ảnh mẫu nhận diện</span>
+            </button>
+          </div>
+        )}
+
+        {isOffline && (
+          <div className="mt-4 max-w-xl mx-auto p-3 bg-amber-950/70 border border-amber-500/50 rounded-2xl text-amber-300 text-xs flex items-center justify-between gap-3 shadow-lg animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="font-bold">⚡ Đang ở Chế độ Nhận Diện AI Ngoại Tuyến (Offline Visual Engine)</span>
+            </div>
+            <p className="text-[11px] text-amber-200 hidden sm:block">
+              Phân tích đặc trưng & đối chiếu kho tư liệu di sản lưu trong thiết bị
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Preset One-Click Test Images */}
       <div className="mb-8">
-        <p className="text-xs font-semibold text-amber-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Ảnh mẫu thử nghiệm nhanh một chạm:</span>
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {PRESET_SAMPLE_IMAGES.map((sample, idx) => (
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <p className="text-xs font-semibold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{sectionConfig.samplesLabel}</span>
+          </p>
+
+          {isAdmin && (
             <button
-              key={idx}
+              onClick={() => setIsAdminModalOpen(true)}
+              className="px-3 py-1 rounded-lg bg-stone-800/80 hover:bg-stone-700/80 border border-stone-700 text-amber-400 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Edit3 className="w-3 h-3" />
+              <span>Quản lý {sectionConfig.samples.length} ảnh mẫu</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {sectionConfig.samples.map((sample, idx) => (
+            <button
+              key={sample.id || idx}
               onClick={() => handleSelectPreset(sample)}
               disabled={loading}
               className="group relative rounded-xl overflow-hidden border border-stone-800 hover:border-amber-400/60 transition-all text-left bg-stone-900 shadow-md hover:scale-105 disabled:opacity-50 cursor-pointer"
@@ -339,6 +373,10 @@ export const ImageRecognizer: React.FC<ImageRecognizerProps> = ({
                   src={sample.url} 
                   alt={sample.title} 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=600&q=80';
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent opacity-80" />
               </div>
@@ -858,6 +896,15 @@ export const ImageRecognizer: React.FC<ImageRecognizerProps> = ({
         </div>
 
       </div>
+
+      {/* Admin Recognition Modal */}
+      {isAdmin && (
+        <AdminRecognitionModal
+          isOpen={isAdminModalOpen}
+          onClose={() => setIsAdminModalOpen(false)}
+          onSaved={(newCfg) => setSectionConfig(newCfg)}
+        />
+      )}
 
     </div>
   );

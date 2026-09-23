@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ShieldCheck, 
   Check, 
@@ -32,14 +32,20 @@ import {
   Star,
   Compass,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
   Image as ImageIcon
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
-import { CommunityContribution, UserProfile, UserActivityLog, HeritageItem, PlaceItem, CityLandmarkBackground } from '../types';
+import { CommunityContribution, UserProfile, UserActivityLog, HeritageItem, PlaceItem, CityLandmarkBackground, RecognitionSectionConfig } from '../types';
 import { HeritageEditModal } from './HeritageEditModal';
 import { PlaceEditModal } from './PlaceEditModal';
 import { LandmarkEditModal } from './LandmarkEditModal';
 import { AITourGuideTrainer } from './AITourGuideTrainer';
+import { AdminStoryEditModal } from './AdminStoryEditModal';
+import { AdminAIDashboard } from './AdminAIDashboard';
+import { AdminRecognitionModal } from './AdminRecognitionModal';
 
 interface AdminDashboardProps {
   currentUser?: UserProfile;
@@ -51,11 +57,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUserChange
 }) => {
   const [user, setUser] = useState<UserProfile>(propsUser || storageService.getCurrentUser());
-  const [activeTab, setActiveTab] = useState<'audit_logs' | 'users' | 'pending' | 'heritages' | 'places' | 'landmarks' | 'ai_status' | 'tour_guide'>('audit_logs');
+  const [activeTab, setActiveTab] = useState<'audit_logs' | 'users' | 'pending' | 'heritages' | 'places' | 'landmarks' | 'ai_status' | 'tour_guide' | 'recognition'>('audit_logs');
   const [contributions, setContributions] = useState<CommunityContribution[]>([]);
   const [heritages, setHeritages] = useState<HeritageItem[]>(storageService.getHeritages());
   const [placesMap, setPlacesMap] = useState<Record<string, PlaceItem[]>>(storageService.getPlaces());
   const [landmarks, setLandmarks] = useState<CityLandmarkBackground[]>(storageService.getLandmarkBackgrounds());
+  const [recognitionConfig, setRecognitionConfig] = useState<RecognitionSectionConfig>(() => storageService.getRecognitionSectionConfig());
   const [accounts, setAccounts] = useState<UserProfile[]>([]);
   const [auditLogs, setAuditLogs] = useState<UserActivityLog[]>([]);
 
@@ -66,7 +73,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [editingPlace, setEditingPlace] = useState<PlaceItem | null>(null);
   const [isLandmarkModalOpen, setIsLandmarkModalOpen] = useState(false);
   const [editingLandmark, setEditingLandmark] = useState<CityLandmarkBackground | null>(null);
+  const [isRecognitionModalOpen, setIsRecognitionModalOpen] = useState(false);
   const [selectedHeritageForPlaces, setSelectedHeritageForPlaces] = useState<string>('all');
+
+  // AI Custom Story Edit Modal State (Admin)
+  const [isAdminStoryModalOpen, setIsAdminStoryModalOpen] = useState(false);
+  const [storyEditHeritage, setStoryEditHeritage] = useState<HeritageItem | null>(null);
+
+  // Tab Scrollbar & Range Slider ("Thanh Kéo Nav Tabs")
+  const tabNavRef = useRef<HTMLDivElement>(null);
+  const [tabScrollPercent, setTabScrollPercent] = useState<number>(0);
+
+  const handleTabsScroll = () => {
+    if (!tabNavRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = tabNavRef.current;
+    const maxScroll = scrollWidth - clientWidth;
+    if (maxScroll <= 0) {
+      setTabScrollPercent(0);
+    } else {
+      const pct = Math.round((scrollLeft / maxScroll) * 100);
+      setTabScrollPercent(pct);
+    }
+  };
+
+  const handleTabSliderChange = (pct: number) => {
+    setTabScrollPercent(pct);
+    if (!tabNavRef.current) return;
+    const { scrollWidth, clientWidth } = tabNavRef.current;
+    const maxScroll = scrollWidth - clientWidth;
+    if (maxScroll > 0) {
+      tabNavRef.current.scrollLeft = (pct / 100) * maxScroll;
+    }
+  };
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (!tabNavRef.current) return;
+    const offset = direction === 'left' ? -250 : 250;
+    tabNavRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  };
 
   // Search & Filter
   const [heritageSearchQuery, setHeritageSearchQuery] = useState('');
@@ -95,6 +139,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setHeritages(storageService.getHeritages());
     setPlacesMap(storageService.getPlaces());
     setLandmarks(storageService.getLandmarkBackgrounds());
+    setRecognitionConfig(storageService.getRecognitionSectionConfig());
 
     // Fetch from central server database
     const serverAccountsList = await storageService.fetchAccounts();
@@ -148,7 +193,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleReject = (id: string) => {
-    if (confirm('Bạn có chắc muốn từ chối và gỡ bỏ bài đóng góp này?')) {
+    if (confirm('Bạn có chắc muốn từ chối bài đóng góp này?')) {
       storageService.updatePostStatus(id, 'rejected');
       refreshData();
       setFeedbackMessage('Đã từ chối bài đóng góp và lưu lại lịch sử thao tác.');
@@ -156,9 +201,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const handleDeleteAccount = (targetUserId: string, targetName: string) => {
+  const handleDeletePost = (id: string, postTitle: string) => {
+    if (confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn bài đăng "${postTitle}" khỏi hệ thống?`)) {
+      storageService.deleteCommunityContribution(id);
+      refreshData();
+      setFeedbackMessage('Đã xóa bài đăng cộng đồng thành công!');
+      setTimeout(() => setFeedbackMessage(null), 3000);
+    }
+  };
+
+  const handleDeleteAccount = async (targetUserId: string, targetName: string) => {
     if (confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản "${targetName}" khỏi hệ thống web?`)) {
-      const res = storageService.deleteAccount(targetUserId);
+      const res = await storageService.deleteAccount(targetUserId);
       if (res.success) {
         refreshData();
         setFeedbackMessage(`Đã xóa tài khoản "${targetName}" và lưu vết thao tác.`);
@@ -392,112 +446,174 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-stone-800 pb-3 mb-6 overflow-x-auto no-scrollbar">
-        
-        {/* TAB 1: AUDIT LOGS */}
-        <button
-          onClick={() => setActiveTab('audit_logs')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-            activeTab === 'audit_logs'
-              ? 'bg-amber-600 text-stone-950 shadow'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <History className="w-3.5 h-3.5" />
-          <span>Nhật Ký Thao Tác ({auditLogs.length})</span>
-        </button>
+      {/* Navigation Tabs with Draggable Slider Bar ("Thanh Kéo Nav Tabs") */}
+      <div className="space-y-2 mb-6">
+        <div className="relative group">
+          {/* Left Scroll Arrow Button */}
+          <button
+            type="button"
+            onClick={() => scrollTabs('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 rounded-r-xl bg-stone-950/90 border border-stone-800 text-amber-400 hover:text-amber-300 shadow-2xl backdrop-blur transition-all cursor-pointer hover:bg-stone-800"
+            title="Cuộn các tab sang trái"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
 
-        {/* TAB 2: WEB ACCOUNTS */}
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-            activeTab === 'users'
-              ? 'bg-amber-600 text-stone-950 shadow'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <Users className="w-3.5 h-3.5" />
-          <span>Tài Khoản Lưu Trên Web ({accounts.length})</span>
-        </button>
+          {/* Scrollable Tabs Wrapper */}
+          <div
+            ref={tabNavRef}
+            onScroll={handleTabsScroll}
+            className="flex gap-2 border-b border-stone-800 pb-3 overflow-x-auto custom-scrollbar scroll-smooth px-8"
+          >
+            
+            {/* TAB 1: AUDIT LOGS */}
+            <button
+              onClick={() => setActiveTab('audit_logs')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'audit_logs'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Nhật Ký Thao Tác ({auditLogs.length})</span>
+            </button>
 
-        {/* TAB 3: PENDING CONTRIBUTIONS */}
-        <button
-          onClick={() => setActiveTab('pending')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-            activeTab === 'pending'
-              ? 'bg-amber-600 text-stone-950 shadow'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>Kiểm Duyệt Đóng Góp ({pendingCount})</span>
-        </button>
+            {/* TAB 2: WEB ACCOUNTS */}
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'users'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Tài Khoản Lưu Trên Web ({accounts.length})</span>
+            </button>
 
-        {/* TAB 4: HERITAGES */}
-        <button
-          onClick={() => setActiveTab('heritages')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-            activeTab === 'heritages'
-              ? 'bg-amber-600 text-stone-950 shadow'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <Database className="w-3.5 h-3.5" />
-          <span>Quản Lý Di Sản ({heritages.length})</span>
-        </button>
+            {/* TAB 3: PENDING CONTRIBUTIONS */}
+            <button
+              onClick={() => setActiveTab('pending')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'pending'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Kiểm Duyệt Đóng Góp ({pendingCount})</span>
+            </button>
 
-        {/* TAB 5: PLACES */}
-        <button
-          onClick={() => setActiveTab('places')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-            activeTab === 'places'
-              ? 'bg-amber-600 text-stone-950 shadow'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <Utensils className="w-3.5 h-3.5" />
-          <span>Ẩm Thực & Trải Nghiệm Lân Cận</span>
-        </button>
+            {/* TAB 4: HERITAGES */}
+            <button
+              onClick={() => setActiveTab('heritages')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'heritages'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>Quản Lý Di Sản ({heritages.length})</span>
+            </button>
 
-        {/* TAB 6: LANDMARK BACKGROUNDS */}
-        <button
-          onClick={() => setActiveTab('landmarks')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-            activeTab === 'landmarks'
-              ? 'bg-amber-600 text-stone-950 shadow'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Ảnh Nền Danh Thắng ({landmarks.length})</span>
-        </button>
+            {/* TAB 5: PLACES */}
+            <button
+              onClick={() => setActiveTab('places')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'places'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <Utensils className="w-3.5 h-3.5" />
+              <span>Ẩm Thực & Trải Nghiệm Lân Cận</span>
+            </button>
 
-        {/* TAB 6: AI STATUS */}
-        <button
-          onClick={() => setActiveTab('ai_status')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-            activeTab === 'ai_status'
-              ? 'bg-amber-600 text-stone-950 shadow'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <Cpu className="w-3.5 h-3.5" />
-          <span>Giám Sát AI</span>
-        </button>
+            {/* TAB 6: LANDMARK BACKGROUNDS */}
+            <button
+              onClick={() => setActiveTab('landmarks')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'landmarks'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Ảnh Nền Danh Thắng ({landmarks.length})</span>
+            </button>
 
-        {/* TAB 7: AI TOUR GUIDE TRAINING */}
-        <button
-          onClick={() => setActiveTab('tour_guide')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
-            activeTab === 'tour_guide'
-              ? 'bg-amber-600 text-stone-950 shadow'
-              : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-          }`}
-        >
-          <Compass className="w-3.5 h-3.5" />
-          <span>Huấn Luyện Hướng Dẫn Viên AI</span>
-        </button>
+            {/* TAB 7: AI & API CONFIGURATION */}
+            <button
+              onClick={() => setActiveTab('ai_status')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'ai_status'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>⚙️ Cài Đặt AI & API</span>
+            </button>
+
+            {/* TAB 8: AI TOUR GUIDE TRAINING */}
+            <button
+              onClick={() => setActiveTab('tour_guide')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'tour_guide'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Huấn Luyện Hướng Dẫn Viên AI</span>
+            </button>
+
+            {/* TAB 9: AI RECOGNITION SECTION CONFIG */}
+            <button
+              onClick={() => setActiveTab('recognition')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'recognition'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>Ảnh & Mẫu Nhận Diện AI ({recognitionConfig.samples.length})</span>
+            </button>
+          </div>
+
+          {/* Right Scroll Arrow Button */}
+          <button
+            type="button"
+            onClick={() => scrollTabs('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 rounded-l-xl bg-stone-950/90 border border-stone-800 text-amber-400 hover:text-amber-300 shadow-2xl backdrop-blur transition-all cursor-pointer hover:bg-stone-800"
+            title="Cuộn các tab sang phải"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Draggable Range Slider Bar ("Thanh Kéo Nav Tabs Admin") */}
+        <div className="bg-stone-950/90 border border-stone-800/80 rounded-2xl p-2.5 px-4 flex items-center gap-3 text-xs text-stone-400 shadow-inner">
+          <Sliders className="w-4 h-4 text-amber-400 shrink-0" />
+          <span className="text-[11px] font-semibold text-amber-200 shrink-0 hidden sm:inline">
+            Thanh Kéo Nav Tabs Admin:
+          </span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={tabScrollPercent}
+            onChange={(e) => handleTabSliderChange(Number(e.target.value))}
+            className="w-full h-2 bg-stone-800 accent-amber-500 rounded-lg cursor-pointer transition-all hover:bg-stone-700"
+            title="Kéo thanh trượt để di chuyển giữa các thanh tab quản trị & giám sát web"
+          />
+          <span className="text-[10px] font-mono text-amber-300 font-bold shrink-0">
+            {tabScrollPercent}%
+          </span>
+        </div>
       </div>
 
       {/* ==========================================
@@ -867,7 +983,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                     <button
                       onClick={() => handleReject(item.id)}
-                      className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-red-950 hover:text-red-400 text-stone-400 text-xs font-medium border border-stone-700"
+                      className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-amber-950 hover:text-amber-400 text-stone-400 text-xs font-medium border border-stone-700"
                     >
                       <X className="w-3.5 h-3.5" />
                       <span>Từ chối</span>
@@ -879,6 +995,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     Đã duyệt xuất bản
                   </span>
                 )}
+
+                <button
+                  onClick={() => handleDeletePost(item.id, item.title)}
+                  className="px-3 py-2 rounded-xl bg-red-950/80 hover:bg-red-600 text-red-200 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1 shadow transition-all"
+                  title="Xóa bài đăng vĩnh viễn"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Xóa bài</span>
+                </button>
               </div>
             </div>
           ))}
@@ -914,9 +1039,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (window.confirm('Bạn có chắc chắn muốn khôi phục toàn bộ danh sách di sản về trạng thái chuẩn hóa ban đầu?')) {
-                    storageService.resetHeritages();
+                    await storageService.resetHeritages();
                     refreshData();
                   }
                 }}
@@ -992,23 +1117,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                   <div className="pt-2 border-t border-stone-800 flex items-center justify-between text-xs">
                     <span className="text-[10px] text-stone-500 truncate">ID: {h.id}</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setStoryEditHeritage(h);
+                          setIsAdminStoryModalOpen(true);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500 text-amber-300 hover:text-stone-950 border border-amber-500/30 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Biên tập câu chuyện AI cho di sản này"
+                      >
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>Kể Chuyện AI</span>
+                      </button>
+
                       <button
                         onClick={() => {
                           setEditingHeritage(h);
                           setIsHeritageModalOpen(true);
                         }}
                         className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-stone-950 font-bold text-[11px] flex items-center gap-1 transition-colors cursor-pointer"
-                        title="Chỉnh sửa nội dung di sản"
+                        title="Chỉnh sửa thông tin di sản"
                       >
                         <Edit className="w-3 h-3" />
                         <span>Sửa</span>
                       </button>
 
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (window.confirm(`Bạn có chắc muốn xóa di sản "${h.name}" khỏi hệ thống?`)) {
-                            storageService.deleteHeritage(h.id);
+                            await storageService.deleteHeritage(h.id);
                             refreshData();
                           }
                         }}
@@ -1055,9 +1192,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (window.confirm('Bạn có chắc muốn khôi phục toàn bộ danh sách ẩm thực lân cận về dữ liệu chuẩn ban đầu?')) {
-                    storageService.resetPlaces();
+                    await storageService.resetPlaces();
                     refreshData();
                   }
                 }}
@@ -1221,9 +1358,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </button>
 
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (window.confirm(`Bạn có chắc muốn xóa địa điểm "${place.name}" khỏi danh sách?`)) {
-                              storageService.deletePlace(heritageId, place.id);
+                              await storageService.deletePlace(heritageId, place.id);
                               refreshData();
                             }
                           }}
@@ -1400,48 +1537,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           TAB 6: AI MONITORING & RELIABILITY
           ========================================== */}
       {activeTab === 'ai_status' && (
-        <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-fadeIn">
-          
-          <div className="border-b border-stone-800 pb-4">
-            <h4 className="font-serif font-bold text-amber-100 text-lg">
-              Cấu Hình & Kiểm Soát Độ Tin Cậy Của AI
-            </h4>
-            <p className="text-xs text-stone-400 mt-0.5">
-              Hệ thống giám sát nguyên tắc bảo tồn tính chân xác lịch sử và an toàn dữ liệu.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="p-4 bg-stone-950 rounded-2xl border border-stone-800 space-y-2">
-              <span className="text-emerald-400 font-bold block">✓ Nguyên tắc Phân Biệt Chính Sử vs Huyền Tích:</span>
-              <p className="text-stone-300 leading-relaxed">
-                Mọi kết quả trả về từ Gemini đều được kiểm duyệt bằng prompt hệ thống, bắt buộc gắn thẻ nhãn nguồn gốc truyền thuyết rõ ràng.
-              </p>
-            </div>
-
-            <div className="p-4 bg-stone-950 rounded-2xl border border-stone-800 space-y-2">
-              <span className="text-emerald-400 font-bold block">✓ Bảo Mật API Key & Server Proxy:</span>
-              <p className="text-stone-300 leading-relaxed">
-                Khóa bí mật được bảo vệ 100% tại backend Express Server (<code>server.ts</code>), không để lộ ra phía trình duyệt khách.
-              </p>
-            </div>
-
-            <div className="p-4 bg-stone-950 rounded-2xl border border-stone-800 space-y-2">
-              <span className="text-emerald-400 font-bold block">✓ Google Places Attribution:</span>
-              <p className="text-stone-300 leading-relaxed">
-                Hiển thị rõ ràng nguồn dữ liệu, liên kết trực tiếp tới Google Maps và tuân thủ các quy chuẩn địa điểm.
-              </p>
-            </div>
-
-            <div className="p-4 bg-stone-950 rounded-2xl border border-stone-800 space-y-2">
-              <span className="text-emerald-400 font-bold block">✓ Minh Bạch Phục Dựng AI:</span>
-              <p className="text-stone-300 leading-relaxed">
-                Tất cả hình ảnh hoặc kiến trúc 3D tạo bởi AI đều được gán nhãn bắt buộc <em>[Ảnh phục dựng bằng AI – không phải ảnh lịch sử nguyên bản]</em>.
-              </p>
-            </div>
-          </div>
-
-        </div>
+        <AdminAIDashboard />
       )}
 
       {/* ==========================================
@@ -1449,6 +1545,113 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           ========================================== */}
       {activeTab === 'tour_guide' && (
         <AITourGuideTrainer />
+      )}
+
+      {/* ==========================================
+          TAB 8: AI RECOGNITION SECTION & SAMPLES
+          ========================================== */}
+      {activeTab === 'recognition' && (
+        <div className="space-y-6">
+          {/* Header Card */}
+          <div className="bg-stone-900 border border-stone-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shadow-inner">
+                  <ImageIcon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-serif font-bold text-stone-100 flex items-center gap-2">
+                    <span>Nội Dung & Ảnh Mẫu Nhận Diện AI</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-sans font-semibold">
+                      {recognitionConfig.samples.length} mẫu thử nghiệm
+                    </span>
+                  </h3>
+                  <p className="text-xs text-stone-400 mt-0.5">
+                    Quản lý toàn diện tiêu đề banner, lời dẫn, các mẫu ảnh thử nghiệm nhanh một chạm và câu lệnh kiểm thử AI.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => setIsRecognitionModalOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs shadow-lg shadow-amber-950/40 transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>Mở Trình Biên Tập Chi Tiết</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Current Banner Summary */}
+            <div className="mt-5 pt-4 border-t border-stone-800 grid grid-cols-1 md:grid-cols-3 gap-3 bg-stone-950/60 p-4 rounded-2xl">
+              <div>
+                <span className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold block">Huy hiệu banner</span>
+                <span className="text-xs text-amber-300 font-medium">{recognitionConfig.badge}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold block">Tiêu đề chính</span>
+                <span className="text-xs text-stone-200 font-serif font-bold">{recognitionConfig.title}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold block">Nhãn danh sách ảnh mẫu</span>
+                <span className="text-xs text-stone-300">{recognitionConfig.samplesLabel}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Samples Cards Display */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recognitionConfig.samples.map((sample, idx) => (
+              <div 
+                key={sample.id || idx}
+                className="bg-stone-900 border border-stone-800 hover:border-stone-700 rounded-2xl overflow-hidden shadow-lg transition-all group"
+              >
+                <div className="h-40 w-full relative bg-stone-950 overflow-hidden">
+                  <img 
+                    src={sample.url} 
+                    alt={sample.title} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=600&q=80';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/30 to-transparent" />
+                  <div className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-stone-950/80 backdrop-blur text-[10px] font-bold text-amber-400 border border-stone-800">
+                    Mẫu #{idx + 1}
+                  </div>
+                  <div className="absolute bottom-2 left-3 right-3">
+                    <h4 className="text-sm font-bold text-stone-100 line-clamp-1">{sample.title}</h4>
+                    <p className="text-xs text-amber-400 line-clamp-1">{sample.category}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 space-y-2.5">
+                  <div className="bg-stone-950/80 p-2.5 rounded-xl border border-stone-800">
+                    <span className="text-[10px] text-stone-500 uppercase tracking-wider font-semibold block mb-0.5">Prompt thử nghiệm AI:</span>
+                    <p className="text-xs text-stone-300 italic line-clamp-2">"{sample.prompt}"</p>
+                  </div>
+
+                  {sample.description && (
+                    <p className="text-xs text-stone-400 line-clamp-2">{sample.description}</p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-stone-800 text-[11px] text-stone-500">
+                    <span>Nguồn: {sample.source || 'Kho Di sản'}</span>
+                    <button
+                      onClick={() => setIsRecognitionModalOpen(true)}
+                      className="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-amber-400 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      <span>Sửa</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Admin Modals */}
@@ -1489,6 +1692,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           refreshData();
         }}
         onDelete={() => {
+          refreshData();
+        }}
+      />
+
+      {storyEditHeritage && (
+        <AdminStoryEditModal
+          isOpen={isAdminStoryModalOpen}
+          onClose={() => {
+            setIsAdminStoryModalOpen(false);
+            setStoryEditHeritage(null);
+          }}
+          heritage={storyEditHeritage}
+          onSaved={() => {
+            refreshData();
+          }}
+        />
+      )}
+
+      <AdminRecognitionModal
+        isOpen={isRecognitionModalOpen}
+        onClose={() => setIsRecognitionModalOpen(false)}
+        onSaved={(newCfg) => {
+          setRecognitionConfig(newCfg);
           refreshData();
         }}
       />

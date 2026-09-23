@@ -21,11 +21,17 @@ import {
   Clock,
   Award,
   VolumeX,
-  BookOpen
+  BookOpen,
+  AlertTriangle,
+  Sliders
 } from 'lucide-react';
 import { aiService } from '../services/aiService';
+import { speechService } from '../services/speechService';
 import { storageService } from '../services/storageService';
+import { ttsService, TTSStatus, mobileAudioUnlocker } from '../services/ttsService';
+import { getTTSConfig, TTSConfig } from '../config/ttsConfig';
 import { ChatMessage, HeritageItem, AITourGuideConfig } from '../types';
+import { VoiceSettingsModal } from './VoiceSettingsModal';
 
 interface AIChatAssistantProps {
   initialContext?: HeritageItem | null;
@@ -69,12 +75,35 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+  const [ttsStatusMap, setTtsStatusMap] = useState<Record<string, TTSStatus>>({});
+  const [ttsProviderMap, setTtsProviderMap] = useState<Record<string, string>>({});
+  const [ttsConfig, setTtsConfig] = useState<TTSConfig>(() => getTTSConfig());
   const [autoSpeech, setAutoSpeech] = useState(false);
+  const [isVoiceSettingsOpen, setIsVoiceSettingsOpen] = useState(false);
+  const [isOffline, setIsOffline] = useState<boolean>(!navigator.onLine);
+
+  // Sync TTS config whenever VoiceSettingsModal closes
+  useEffect(() => {
+    if (!isVoiceSettingsOpen) {
+      setTtsConfig(getTTSConfig());
+    }
+  }, [isVoiceSettingsOpen]);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
 
   // Listen to config updates from Admin Studio
   useEffect(() => {
@@ -117,32 +146,41 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
 
   // Handle Speech-to-Text via Web Speech API
   const handleToggleRecord = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Trình duyệt không hỗ trợ Web Speech Recognition. Hãy dùng Chrome hoặc Edge.');
+    setVoiceNotice(null);
+
+    if (isRecording) {
+      speechService.stopListening();
+      setIsRecording(false);
       return;
     }
 
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-    } else {
-      const recognition = new SpeechRecognition();
-      recognition.lang = language === 'en' ? 'en-US' : 'vi-VN';
-      recognition.continuous = false;
-      recognition.interimResults = false;
+    if (!speechService.isSupported()) {
+      setVoiceNotice('Trình duyệt hiện tại chưa hỗ trợ nhận diện giọng nói. Vui lòng sử dụng Chrome hoặc Edge.');
+      return;
+    }
 
-      recognition.onstart = () => setIsRecording(true);
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setInput((prev) => (prev ? prev + ' ' + transcript : transcript));
+    const success = speechService.startListening({
+      lang: language === 'en' ? 'en-US' : 'vi-VN',
+      onStart: () => {
+        setIsRecording(true);
+        setVoiceNotice(null);
+      },
+      onResult: (transcript) => {
+        if (transcript) {
+          setInput((prev) => (prev.trim() ? prev.trim() + ' ' + transcript : transcript));
+        }
+      },
+      onError: (errMsg) => {
         setIsRecording(false);
-      };
-      recognition.onerror = () => setIsRecording(false);
-      recognition.onend = () => setIsRecording(false);
+        setVoiceNotice(errMsg);
+      },
+      onEnd: () => {
+        setIsRecording(false);
+      }
+    });
 
-      recognitionRef.current = recognition;
-      recognition.start();
+    if (!success) {
+      setIsRecording(false);
     }
   };
 
@@ -151,6 +189,11 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
     if (!query.trim() || loading) return;
 
     const isGuide = mode === 'tour_guide';
+
+    // Prime mobile audio for automatic playback upon response
+    if (autoSpeech) {
+      mobileAudioUnlocker.unlock();
+    }
 
     const userMsg: ChatMessage = {
       id: 'msg-' + Date.now(),
@@ -223,14 +266,37 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
   };
 
   const handleSpeak = (id: string, text: string) => {
-    if (speakingMsgId === id) {
-      aiService.stopSpeaking();
+    ttsService.prepareForMobilePlayback();
+    const currentStatus = ttsStatusMap[id] || 'idle';
+
+    if (speakingMsgId === id && (currentStatus === 'playing' || currentStatus === 'generating' || currentStatus === 'loading')) {
+      ttsService.stop();
       setSpeakingMsgId(null);
+      setTtsStatusMap((prev) => ({ ...prev, [id]: 'stopped' }));
     } else {
       setSpeakingMsgId(id);
-      aiService.speakText(text, {
+      setTtsStatusMap((prev) => ({ ...prev, [id]: 'loading' }));
+
+      const currentConfig = getTTSConfig();
+      setTtsConfig(currentConfig);
+
+      ttsService.speak(text, {
         lang: language === 'en' ? 'en-US' : 'vi-VN',
-        onEnd: () => setSpeakingMsgId(null)
+        provider: currentConfig.provider || 'vieneu',
+        voice: currentConfig.voice || 'Ngọc Lan',
+        speaker: currentConfig.voice || 'Ngọc Lan',
+        onStatusChange: (status) => {
+          setTtsStatusMap((prev) => ({ ...prev, [id]: status }));
+          setTtsProviderMap((prev) => ({ ...prev, [id]: ttsService.getActiveProviderName() }));
+        },
+        onEnd: () => {
+          setSpeakingMsgId(null);
+          setTtsStatusMap((prev) => ({ ...prev, [id]: 'idle' }));
+        },
+        onError: () => {
+          setSpeakingMsgId(null);
+          setTtsStatusMap((prev) => ({ ...prev, [id]: 'error' }));
+        }
       });
     }
   };
@@ -280,47 +346,59 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
       
       {/* Mode Switcher Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-stone-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6 pb-4 border-b border-stone-800">
         
         {/* Left: Mode Toggle Pills */}
-        <div className="flex items-center gap-1.5 p-1 bg-stone-900 border border-stone-800 rounded-2xl shadow-inner">
+        <div className="grid grid-cols-2 sm:flex items-center gap-1.5 p-1 bg-stone-900 border border-stone-800 rounded-2xl shadow-inner">
           <button
             onClick={() => handleSwitchMode('tour_guide')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 py-2 sm:px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer min-h-[40px] ${
               mode === 'tour_guide'
-                ? 'bg-amber-500 text-stone-950 shadow-md scale-[1.02]'
+                ? 'bg-amber-500 text-stone-950 shadow-md scale-[1.01]'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            <Compass className="w-4 h-4" />
-            <span>Hướng Dẫn Viên Du Lịch AI</span>
-            <span className="text-[10px] px-1.5 py-0.2 bg-stone-950/20 rounded font-normal">
+            <Compass className="w-4 h-4 shrink-0" />
+            <span className="truncate">HDV Du Lịch AI</span>
+            <span className="hidden md:inline text-[10px] px-1.5 py-0.2 bg-stone-950/20 rounded font-normal">
               Tour Guide
             </span>
           </button>
 
           <button
             onClick={() => handleSwitchMode('cultural_assistant')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 py-2 sm:px-3.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer min-h-[40px] ${
               mode === 'cultural_assistant'
-                ? 'bg-amber-500 text-stone-950 shadow-md scale-[1.02]'
+                ? 'bg-amber-500 text-stone-950 shadow-md scale-[1.01]'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
-            <span>Trợ Lý Văn Hóa & Lịch Sử</span>
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span className="truncate">Trợ Lý Lịch Sử</span>
           </button>
         </div>
 
         {/* Right Tools */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0">
+          {/* Voice Settings Button */}
+          <button
+            onClick={() => setIsVoiceSettingsOpen(true)}
+            className="px-2.5 sm:px-3 py-2 rounded-xl text-xs bg-stone-900 border border-amber-500/40 text-amber-300 hover:text-amber-200 hover:bg-stone-800 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 min-h-[38px] shadow-sm"
+            title="Cài đặt công nghệ đọc VieNeu AI hoặc tùy chỉnh tốc độ, giọng đọc"
+          >
+            <Sliders className="w-3.5 h-3.5 text-amber-400" />
+            <span className="font-semibold">
+              {ttsConfig.provider === 'vieneu' ? `Giọng: VieNeu (${ttsConfig.voice || 'Ngọc Lan'})` : 'Giọng: Trình duyệt'}
+            </span>
+          </button>
+
           {/* Audio Guide Auto-Speak toggle */}
           <button
             onClick={() => setAutoSpeech(!autoSpeech)}
-            className={`px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 border transition-all ${
+            className={`px-2.5 sm:px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 border transition-all cursor-pointer shrink-0 min-h-[38px] ${
               autoSpeech
                 ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
                 : 'bg-stone-900 border-stone-800 text-stone-400 hover:text-stone-300'
@@ -328,20 +406,33 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
             title="Tự động đọc giọng nói thuyết minh mỗi khi AI phản hồi"
           >
             <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Audio Guide: {autoSpeech ? 'Bật' : 'Tắt'}</span>
+            <span>Audio: {autoSpeech ? 'Bật' : 'Tắt'}</span>
           </button>
 
           <button
             onClick={handleClearChat}
-            className="px-3 py-1.5 rounded-xl text-xs text-stone-400 hover:text-red-400 hover:bg-stone-800 flex items-center gap-1.5 transition-colors border border-stone-800"
+            className="px-2.5 sm:px-3 py-2 rounded-xl text-xs text-stone-400 hover:text-red-400 hover:bg-stone-800 flex items-center gap-1.5 transition-colors border border-stone-800 cursor-pointer shrink-0 min-h-[38px]"
             title="Làm mới lịch sử trò chuyện"
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Làm mới</span>
+            <span className="hidden sm:inline">Làm mới</span>
           </button>
         </div>
 
       </div>
+
+      {/* Offline Mode Banner */}
+      {isOffline && (
+        <div className="mb-4 p-3 bg-amber-950/60 border border-amber-500/50 rounded-2xl text-amber-300 text-xs flex items-center justify-between gap-3 shadow-md animate-fade-in">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="font-bold">⚡ Chế độ Hướng Dẫn Viên AI Ngoại Tuyến (Offline)</span>
+          </div>
+          <p className="text-[11px] text-amber-200 hidden sm:block">
+            Trích xuất tri thức di sản & văn hóa trực tiếp từ bộ dữ liệu lưu trữ thiết bị
+          </p>
+        </div>
+      )}
 
       {/* Profile Header for Tour Guide Mode */}
       {mode === 'tour_guide' ? (
@@ -364,6 +455,17 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
                   Thẻ HDV Quốc Gia #{guideConfig.experienceYears} Năm Nghề
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setIsVoiceSettingsOpen(true)}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                  title="Bấm để tùy chỉnh giọng đọc VieNeu AI cho HDV Bảo An"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-400" />
+                  <span>
+                    {ttsConfig.provider === 'vieneu' ? `VieNeu AI (${ttsConfig.voice || 'Ngọc Lan'})` : 'Giọng Trình duyệt'}
+                  </span>
+                </button>
               </div>
               <p className="text-xs text-stone-300 font-medium mt-0.5">
                 {guideConfig.title}
@@ -454,34 +556,65 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
 
                 {/* Assistant message action controls */}
                 {!isUser && (
-                  <div className="mt-3 pt-2 border-t border-stone-700/50 flex items-center justify-between text-[11px] text-stone-400">
-                    <span className="text-[10px] text-stone-500">
-                      {mode === 'tour_guide' ? `HDV ${guideConfig.guideName} • ` : 'Trợ lý AI • '}
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+                  <div className="mt-3 pt-2 border-t border-stone-700/50 flex flex-wrap items-center justify-between gap-2 text-[11px] text-stone-400">
+                    <div className="flex items-center gap-1.5 text-[10px] text-stone-500">
+                      <span>
+                        {mode === 'tour_guide' ? `HDV ${guideConfig.guideName} • ` : 'Trợ lý AI • '}
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {/* Provider Badge */}
+                      <span className={`px-2 py-0.5 rounded font-bold border text-[9px] flex items-center gap-1 ${
+                        (ttsProviderMap[msg.id] || ttsConfig.provider) === 'vieneu'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-stone-800 text-stone-300 border-stone-700'
+                      }`}>
+                        <span>🎙️</span>
+                        <span>
+                          {(ttsProviderMap[msg.id] || ttsConfig.provider) === 'vieneu' ? 'VieNeu AI' : 'Giọng Máy'}
+                        </span>
+                      </span>
+                    </div>
 
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleSpeak(msg.id, msg.text)}
-                        className="hover:text-amber-300 flex items-center gap-1 transition-colors"
-                        title="Đọc to thuyết minh"
+                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all text-xs font-medium cursor-pointer ${
+                          ttsStatusMap[msg.id] === 'playing'
+                            ? 'bg-red-950/80 border border-red-500/40 text-red-300 animate-pulse'
+                            : ttsStatusMap[msg.id] === 'generating' || ttsStatusMap[msg.id] === 'loading'
+                            ? 'bg-amber-950/80 border border-amber-500/40 text-amber-300 animate-pulse'
+                            : ttsStatusMap[msg.id] === 'error'
+                            ? 'bg-rose-950/80 border border-rose-500/40 text-rose-300'
+                            : 'bg-stone-900/80 hover:bg-stone-700 text-stone-300 border border-stone-700'
+                        }`}
+                        title="Nghe HDV Bảo An đọc bằng công nghệ VieNeu AI (Text-to-Speech)"
                       >
-                        {speakingMsgId === msg.id ? (
+                        {ttsStatusMap[msg.id] === 'playing' ? (
                           <>
                             <Square className="w-3 h-3 text-red-400 fill-current" />
-                            <span className="text-red-400">Dừng đọc</span>
+                            <span>⏹ Dừng</span>
+                          </>
+                        ) : ttsStatusMap[msg.id] === 'generating' || ttsStatusMap[msg.id] === 'loading' ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
+                            <span>⏳ VieNeu đang đọc...</span>
+                          </>
+                        ) : ttsStatusMap[msg.id] === 'error' ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 text-rose-400" />
+                            <span>🔄 Thử lại</span>
                           </>
                         ) : (
                           <>
-                            <Volume2 className="w-3 h-3 text-amber-400" />
-                            <span>Nghe đọc</span>
+                            <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                            <span>🔊 Đọc (VieNeu)</span>
                           </>
                         )}
                       </button>
 
                       <button
                         onClick={() => handleCopy(msg.id, msg.text)}
-                        className="hover:text-amber-300 flex items-center gap-1 transition-colors"
+                        className="hover:text-amber-300 flex items-center gap-1 px-2 py-1 rounded-lg bg-stone-900/60 border border-stone-700/60 transition-colors cursor-pointer"
                         title="Sao chép nội dung"
                       >
                         {copiedId === msg.id ? (
@@ -491,7 +624,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                           </>
                         ) : (
                           <>
-                            <Copy className="w-3 h-3" />
+                            <Copy className="w-3 h-3 text-stone-400" />
                             <span>Chép</span>
                           </>
                         )}
@@ -599,18 +732,42 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
         )}
       </div>
 
+      {/* Voice Notification Banner */}
+      {voiceNotice && (
+        <div className="mt-3 px-3 py-2 bg-amber-950/70 border border-amber-600/40 rounded-xl text-xs text-amber-200 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+          <span className="flex-1">{voiceNotice}</span>
+          <button 
+            onClick={() => setVoiceNotice(null)}
+            className="text-amber-400 hover:text-white text-xs font-bold px-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Input Box with Voice & Send */}
-      <div className="mt-4 flex items-center gap-2 bg-stone-900 border border-stone-700 rounded-2xl p-2 shadow-xl focus-within:border-amber-500">
+      <div className="mt-3 flex items-center gap-1.5 sm:gap-2 bg-stone-900 border border-stone-700 rounded-2xl p-1.5 sm:p-2 shadow-xl focus-within:border-amber-500">
         <button
           onClick={handleToggleRecord}
-          className={`p-2.5 rounded-xl transition-all ${
+          className={`px-3 py-2.5 rounded-xl transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer shrink-0 min-h-[44px] ${
             isRecording 
-              ? 'bg-red-600 text-white animate-pulse' 
-              : 'bg-stone-800 text-stone-300 hover:text-amber-300'
+              ? 'bg-red-600 text-white animate-pulse shadow-lg shadow-red-900/50' 
+              : 'bg-stone-800 text-stone-200 hover:bg-stone-700 hover:text-amber-300 border border-stone-700'
           }`}
-          title={isRecording ? 'Đang nghe... Bấm để dừng' : 'Bấm để nói bằng giọng nói (Micro)'}
+          title={isRecording ? 'Đang nghe... Bấm để dừng' : 'Bấm để nói bằng giọng nói tiếng Việt'}
         >
-          {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          {isRecording ? (
+            <>
+              <MicOff className="w-4 h-4 text-white" />
+              <span className="hidden xs:inline">Đang nghe...</span>
+            </>
+          ) : (
+            <>
+              <Mic className="w-4 h-4 text-amber-400" />
+              <span className="hidden xs:inline sm:inline">Nói</span>
+            </>
+          )}
         </button>
 
         <input
@@ -621,24 +778,31 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
           onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
           placeholder={
             isRecording 
-              ? 'Đang lắng nghe giọng nói của bạn...' 
+              ? 'Đang lắng nghe giọng nói...' 
               : mode === 'tour_guide'
-                ? `Hỏi HDV ${guideConfig.guideName} về lộ trình, ẩm thực, góc chụp ảnh, lịch sử...`
-                : 'Hỏi bất kỳ điều gì về lịch sử, di sản, ẩm thực Việt Nam...'
+                ? `Hỏi HDV ${guideConfig.guideName}...`
+                : 'Hỏi về di sản Việt Nam...'
           }
-          className="flex-1 bg-transparent text-sm text-stone-100 placeholder-stone-400 focus:outline-none px-2"
+          className="flex-1 bg-transparent text-base sm:text-sm text-stone-100 placeholder-stone-400 focus:outline-none px-2 py-1 min-w-0"
         />
 
         <button
           id="btn-chat-send"
           onClick={() => handleSendMessage()}
           disabled={!input.trim() || loading}
-          className="p-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow cursor-pointer"
+          className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow cursor-pointer flex items-center gap-1.5 text-xs shrink-0 min-h-[44px] active:scale-95"
           title="Gửi câu hỏi"
         >
-          <Send className="w-4 h-4" />
+          <span>Gửi</span>
+          <Send className="w-3.5 h-3.5" />
         </button>
       </div>
+
+      {/* Voice Settings Modal */}
+      <VoiceSettingsModal
+        isOpen={isVoiceSettingsOpen}
+        onClose={() => setIsVoiceSettingsOpen(false)}
+      />
 
     </div>
   );

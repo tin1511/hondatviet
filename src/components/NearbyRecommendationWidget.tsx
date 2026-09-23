@@ -37,6 +37,7 @@ import {
 import { storageService } from '../services/storageService';
 import { HeritageEditModal } from './HeritageEditModal';
 import { PlaceEditModal } from './PlaceEditModal';
+import { HeritageDetailModal } from './HeritageDetailModal';
 
 interface NearbyRecommendationWidgetProps {
   currentUser?: UserProfile;
@@ -44,6 +45,7 @@ interface NearbyRecommendationWidgetProps {
   onNavigateToStory?: (heritageName: string, history?: string, period?: string) => void;
   onNavigateToFood: (heritageId: string) => void;
   onNavigateToMap: () => void;
+  onAskAI?: (heritage: HeritageItem, initialQuestion?: string) => void;
 }
 
 export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProps> = ({
@@ -51,7 +53,8 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
   onSelectHeritage,
   onNavigateToStory,
   onNavigateToFood,
-  onNavigateToMap
+  onNavigateToMap,
+  onAskAI
 }) => {
   const [currentLocation, setCurrentLocation] = useState<UserLocation | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false);
@@ -59,6 +62,18 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
   const [activeTab, setActiveTab] = useState<'heritages' | 'places'>('heritages');
   const [nearbyHeritages, setNearbyHeritages] = useState<NearbyHeritageRecommendation[]>([]);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlaceRecommendation[]>([]);
+
+  // Heritage Detail Modal state
+  const [selectedDetailHeritage, setSelectedDetailHeritage] = useState<HeritageItem | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+
+  const handleOpenDetail = (item: HeritageItem) => {
+    setSelectedDetailHeritage(item);
+    setIsDetailModalOpen(true);
+    if (onSelectHeritage) {
+      onSelectHeritage(item);
+    }
+  };
 
   // Admin edit modal states
   const [editingHeritage, setEditingHeritage] = useState<HeritageItem | null>(null);
@@ -359,7 +374,10 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
                 key={item.id}
                 className="bg-stone-950/80 border border-stone-800 hover:border-amber-500/40 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 flex flex-col justify-between group relative"
               >
-                <div>
+                <div 
+                  onClick={() => handleOpenDetail(item)}
+                  className="cursor-pointer"
+                >
                   <div className="relative h-44 w-full overflow-hidden bg-stone-900">
                     <img
                       src={item.imageUrl}
@@ -412,7 +430,8 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
                       </h4>
                       {isAdmin && (
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setEditingHeritage(item);
                             setIsHeritageModalOpen(true);
                           }}
@@ -435,27 +454,17 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
                 </div>
 
                 <div className="p-4 pt-0 border-t border-stone-800/80 mt-2 grid grid-cols-2 gap-2">
-                  {onSelectHeritage ? (
-                    <button
-                      onClick={() => onSelectHeritage(item)}
-                      className="py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Compass className="w-3.5 h-3.5" />
-                      <span>Xem chi tiết</span>
-                    </button>
-                  ) : onNavigateToStory ? (
-                    <button
-                      onClick={() => onNavigateToStory(item.name, item.history, item.period)}
-                      className="py-2 px-3 rounded-xl bg-red-600/90 hover:bg-red-600 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <Volume2 className="w-3.5 h-3.5" />
-                      <span>Nghe kể chuyện</span>
-                    </button>
-                  ) : null}
+                  <button
+                    onClick={() => handleOpenDetail(item)}
+                    className="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-md active:scale-95"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                    <span>Xem chi tiết</span>
+                  </button>
 
                   <button
                     onClick={() => onNavigateToFood(item.id)}
-                    className="py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-xs flex items-center justify-center gap-1.5 border border-stone-700 transition-colors cursor-pointer"
+                    className="py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-xs flex items-center justify-center gap-1.5 border border-stone-700 transition-colors cursor-pointer active:scale-95"
                   >
                     <Utensils className="w-3.5 h-3.5" />
                     <span>Ăn uống gần đây</span>
@@ -581,6 +590,20 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
         )}
 
       </div>
+
+      {/* Heritage Detail Modal (Xem chi tiết di sản) */}
+      <HeritageDetailModal
+        heritage={selectedDetailHeritage}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedDetailHeritage(null);
+        }}
+        onNavigateToStory={onNavigateToStory}
+        onNavigateToFood={onNavigateToFood}
+        onAskAI={onAskAI}
+        onNavigateToMap={onNavigateToMap}
+      />
 
       {/* Admin Heritage Edit Modal */}
       <HeritageEditModal

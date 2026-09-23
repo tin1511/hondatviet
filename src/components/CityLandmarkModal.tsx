@@ -4,16 +4,21 @@ import {
   Navigation, 
   RefreshCw, 
   X, 
-  CheckCircle2,
-  Plus,
-  Edit,
-  ShieldCheck,
-  RotateCcw
+  CheckCircle2, 
+  Plus, 
+  Edit, 
+  ShieldCheck, 
+  RotateCcw,
+  Sparkles,
+  Camera,
+  Search
 } from 'lucide-react';
 import { geolocationService } from '../services/geolocationService';
 import { storageService } from '../services/storageService';
 import { CityLandmarkBackground } from '../types';
 import { LandmarkEditModal } from './LandmarkEditModal';
+import { AILandmarkImagePickerModal } from './AILandmarkImagePickerModal';
+import { LandmarkPhotoItem } from '../data/landmarkImagesDatabase';
 
 interface CityLandmarkModalProps {
   isOpen: boolean;
@@ -35,6 +40,8 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
   const [landmarks, setLandmarks] = useState<CityLandmarkBackground[]>([]);
   const [editingLandmark, setEditingLandmark] = useState<CityLandmarkBackground | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAIPickerOpen, setIsAIPickerOpen] = useState(false);
+  const [aiTargetLandmark, setAiTargetLandmark] = useState<CityLandmarkBackground | null>(null);
 
   const currentUser = storageService.getCurrentUser();
   const isAdmin = currentUser?.isLoggedIn && currentUser?.role === 'admin';
@@ -112,15 +119,28 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setAiTargetLandmark(null);
+                  setIsAIPickerOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
+                title="Dùng AI tìm kiếm ảnh danh lam thắng cảnh Việt Nam"
+              >
+                <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                <span>AI Tìm ảnh</span>
+              </button>
+
               {isAdmin && (
                 <button
                   type="button"
                   onClick={handleAddNew}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1 shadow-md transition-all cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 font-bold text-xs flex items-center gap-1 shadow-md transition-all cursor-pointer"
                   title="Thêm ảnh nền danh thắng mới"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Thêm danh thắng</span>
+                  <span className="hidden sm:inline">Thêm thủ công</span>
                 </button>
               )}
 
@@ -217,6 +237,19 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
                             </span>
                           )}
 
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAiTargetLandmark(landmark);
+                              setIsAIPickerOpen(true);
+                            }}
+                            className="p-1 rounded bg-stone-800/80 hover:bg-amber-500 hover:text-stone-950 text-amber-400 transition-colors shadow"
+                            title="Dùng AI tìm ảnh mới cho danh thắng này"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                          </button>
+
                           {isAdmin && (
                             <button
                               type="button"
@@ -271,6 +304,70 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
         }}
         onDelete={() => {
           loadLandmarks();
+        }}
+      />
+
+      {/* AI Landmark Image Picker Modal */}
+      <AILandmarkImagePickerModal
+        isOpen={isAIPickerOpen}
+        onClose={() => {
+          setIsAIPickerOpen(false);
+          setAiTargetLandmark(null);
+        }}
+        initialCityName={aiTargetLandmark?.cityName}
+        initialLandmarkName={aiTargetLandmark?.landmarkName}
+        initialQuery={aiTargetLandmark?.landmarkName || aiTargetLandmark?.cityName || ''}
+        onSelectPhoto={(photo, autoFill) => {
+          if (aiTargetLandmark) {
+            // Update the existing targeted landmark
+            const updated: CityLandmarkBackground = {
+              ...aiTargetLandmark,
+              imageUrl: photo.imageUrl,
+              ...(autoFill ? {
+                landmarkName: photo.landmarkName || aiTargetLandmark.landmarkName,
+                tagline: photo.tagline || aiTargetLandmark.tagline,
+                lat: photo.lat || aiTargetLandmark.lat,
+                lng: photo.lng || aiTargetLandmark.lng,
+              } : {})
+            };
+            storageService.saveLandmarkBackground(updated);
+            loadLandmarks();
+            onSelectLandmark(updated);
+          } else {
+            // Check if there is already a landmark matching this photo
+            const existing = landmarks.find(
+              l => l.cityName.toLowerCase() === photo.cityName.toLowerCase() || 
+                   l.landmarkName.toLowerCase().includes(photo.landmarkName.toLowerCase())
+            );
+
+            if (existing) {
+              const updated: CityLandmarkBackground = {
+                ...existing,
+                imageUrl: photo.imageUrl,
+                landmarkName: photo.landmarkName || existing.landmarkName,
+                tagline: photo.tagline || existing.tagline
+              };
+              storageService.saveLandmarkBackground(updated);
+              loadLandmarks();
+              onSelectLandmark(updated);
+            } else {
+              // Create a brand new landmark background entry
+              const newLandmark: CityLandmarkBackground = {
+                id: `landmark-${Date.now()}`,
+                cityName: photo.cityName,
+                province: photo.province || photo.cityName,
+                landmarkName: photo.landmarkName || photo.title,
+                tagline: photo.tagline || 'Cảnh đẹp danh thắng Việt Nam',
+                imageUrl: photo.imageUrl,
+                lat: photo.lat || 16.0544,
+                lng: photo.lng || 108.2022
+              };
+              storageService.saveLandmarkBackground(newLandmark);
+              loadLandmarks();
+              onSelectLandmark(newLandmark);
+            }
+          }
+          setAiTargetLandmark(null);
         }}
       />
     </>

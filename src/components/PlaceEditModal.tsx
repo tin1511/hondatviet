@@ -140,7 +140,7 @@ export const PlaceEditModal: React.FC<PlaceEditModalProps> = ({
     }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -171,7 +171,7 @@ export const PlaceEditModal: React.FC<PlaceEditModalProps> = ({
       specialties: (formData.specialties || []).filter(s => s.trim().length > 0)
     };
 
-    storageService.updatePlace(selectedHeritageId, placeToSave);
+    await storageService.updatePlace(selectedHeritageId, placeToSave);
     setSuccessMessage('Đã lưu thông tin địa điểm ăn uống & trải nghiệm thành công!');
 
     if (onSaveSuccess) {

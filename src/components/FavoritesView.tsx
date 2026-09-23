@@ -21,13 +21,15 @@ interface FavoritesViewProps {
   onNavigateToFood: (heritageId: string) => void;
   onNavigateToMap: () => void;
   onNavigateToTab: (tab: string) => void;
+  onSelectHeritage?: (heritage: HeritageItem) => void;
 }
 
 export const FavoritesView: React.FC<FavoritesViewProps> = ({
   onNavigateToStory,
   onNavigateToFood,
   onNavigateToMap,
-  onNavigateToTab
+  onNavigateToTab,
+  onSelectHeritage
 }) => {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [savedItineraries, setSavedItineraries] = useState<ItineraryPlan[]>([]);
@@ -132,7 +134,10 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                   key={heritage.id}
                   className="bg-stone-900 border border-stone-800 hover:border-amber-500/40 rounded-3xl overflow-hidden shadow-xl flex flex-col transition-all group"
                 >
-                  <div className="relative h-48 sm:h-52 overflow-hidden">
+                  <div 
+                    onClick={() => onSelectHeritage?.(heritage)}
+                    className="relative h-48 sm:h-52 overflow-hidden cursor-pointer"
+                  >
                     <img
                       src={heritage.imageUrl}
                       alt={heritage.name}
@@ -141,8 +146,11 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                     <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/20 to-transparent"></div>
                     
                     <button
-                      onClick={() => handleRemoveFavorite(heritage.id, heritage.name)}
-                      className="absolute top-3 right-3 p-2 rounded-full bg-black/60 backdrop-blur-md text-red-400 hover:bg-red-950 hover:text-red-300 border border-red-500/30 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFavorite(heritage.id, heritage.name);
+                      }}
+                      className="absolute top-3 right-3 p-2 rounded-full bg-black/60 backdrop-blur-md text-red-400 hover:bg-red-950 hover:text-red-300 border border-red-500/30 transition-colors cursor-pointer z-10"
                       title="Bỏ lưu di sản này"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -152,7 +160,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-amber-500/90 text-stone-950">
                         {heritage.categoryLabel}
                       </span>
-                      <h3 className="font-serif font-bold text-lg text-stone-100 mt-1 truncate">
+                      <h3 className="font-serif font-bold text-lg text-stone-100 mt-1 truncate group-hover:text-amber-300 transition-colors">
                         {heritage.name}
                       </h3>
                       <p className="text-xs text-stone-300 flex items-center gap-1">

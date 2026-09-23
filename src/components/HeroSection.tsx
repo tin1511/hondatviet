@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { 
   Compass, 
   Camera, 
@@ -10,7 +11,7 @@ import {
   ChevronRight, 
   MapPin, 
   ShieldCheck, 
-  Mic, 
+  CalendarDays, 
   PlayCircle,
   LocateFixed,
   Navigation,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 import { geolocationService, CITY_LANDMARK_PRESETS } from '../services/geolocationService';
+import { getHeritageForLandmark } from '../services/landmarkHeritageService';
 import { HeritageItem, CityLandmarkBackground } from '../types';
 
 interface HeroSectionProps {
@@ -34,6 +36,7 @@ interface HeroSectionProps {
   gpsError?: string | null;
   onDetectGps?: () => void;
   onOpenCityPicker?: () => void;
+  onExploreLandmark?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -45,7 +48,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   isDetectingGps: propIsDetecting,
   gpsError: propGpsError,
   onDetectGps,
-  onOpenCityPicker
+  onOpenCityPicker,
+  onExploreLandmark
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<HeritageItem[]>([]);
@@ -56,6 +60,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const locationSource = propLocationSource || 'default';
   const isDetectingGps = propIsDetecting || false;
   const gpsError = propGpsError || null;
+
+  const handleExploreLandmark = () => {
+    if (onExploreLandmark) {
+      onExploreLandmark();
+      return;
+    }
+    if (onSelectHeritage) {
+      const item = getHeritageForLandmark(currentLandmark);
+      onSelectHeritage(item);
+    }
+  };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -82,18 +97,31 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Top Tagline & GPS Landmark Badge */}
-        <div className="flex flex-col items-center text-center max-w-4xl mx-auto mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="flex flex-col items-center text-center max-w-4xl mx-auto mb-8"
+        >
           
           {/* GPS Location & Landmark Pill Badge */}
           <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900/90 border border-amber-500/40 text-xs text-stone-200 shadow-md backdrop-blur-md">
+            
+            {/* Thẻ hiển thị danh thắng hiện tại - Có thể bấm trực tiếp để xem giới thiệu */}
+            <button
+              type="button"
+              id="btn-hero-landmark-pill"
+              onClick={handleExploreLandmark}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-900/90 hover:bg-stone-800 hover:border-amber-400/80 border border-amber-500/40 text-xs text-stone-200 shadow-md backdrop-blur-md transition-all active:scale-95 cursor-pointer text-left group"
+              title={`Nhấn để xem giới thiệu chi tiết di sản "${currentLandmark.landmarkName}"`}
+            >
               <span className="relative flex h-2 w-2 shrink-0">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${locationSource === 'gps' ? 'bg-emerald-400' : 'bg-amber-400'} opacity-75`}></span>
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${locationSource === 'gps' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
               </span>
-              <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
               <span className="text-stone-400 hidden sm:inline">Ảnh nền GPS:</span>
-              <span className="font-semibold text-amber-300 truncate max-w-[220px] sm:max-w-[320px]">
+              <span className="font-semibold text-amber-300 truncate max-w-[200px] sm:max-w-[320px] group-hover:text-amber-200">
                 {detectedLocationName} • {currentLandmark.landmarkName}
               </span>
               {currentLandmark.distanceKm !== undefined && (
@@ -101,7 +129,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   (~{currentLandmark.distanceKm} km)
                 </span>
               )}
-            </div>
+            </button>
+
+            {/* ⭐ NÚT KHÁM PHÁ DI SẢN HÌNH NỀN: Bấm vào để giới thiệu di sản đang làm hình nền */}
+            <button
+              type="button"
+              id="btn-hero-explore-wallpaper-heritage"
+              onClick={handleExploreLandmark}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs shadow-lg shadow-amber-950/40 hover:shadow-amber-500/20 transition-all active:scale-95 cursor-pointer border border-amber-300/80 ring-1 ring-amber-400/50"
+              title={`Khám phá & đọc giới thiệu chi tiết về "${currentLandmark.landmarkName}"`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-stone-950 shrink-0 animate-pulse" />
+              <span>Khám phá di sản này</span>
+            </button>
 
             {onDetectGps && (
               <button
@@ -141,28 +181,28 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <span>Nền tảng AI Di sản & Văn hóa Việt Nam Toàn diện</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-extrabold tracking-tight text-stone-100 leading-tight drop-shadow-md">
+          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-serif font-extrabold tracking-tight text-stone-100 leading-tight drop-shadow-md">
             Khám phá Việt Nam bằng <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-amber-400 via-amber-200 to-amber-500 bg-clip-text text-transparent">
               Trí tuệ Nhân tạo
             </span>
           </h1>
 
-          <p className="mt-4 text-base sm:text-xl text-stone-200 font-light max-w-2xl leading-relaxed drop-shadow">
-            Hiểu lịch sử. Khám phá di sản. Tìm trải nghiệm. Lưu giữ ký ức.
+          <p className="mt-3 sm:mt-4 text-sm sm:text-lg text-stone-200 font-light max-w-2xl leading-relaxed drop-shadow">
+            Hiểu lịch sử. Khám phá di sản. Tìm trải nghiệm. Lên lịch trình.
           </p>
 
           {/* Quick Universal Search Bar */}
-          <div className="mt-8 w-full max-w-xl relative">
+          <div className="mt-6 sm:mt-8 w-full max-w-xl relative">
             <div className="relative flex items-center shadow-2xl rounded-2xl overflow-hidden border border-amber-500/30 bg-stone-900/90 focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all backdrop-blur-md">
-              <Search className="w-5 h-5 text-amber-400 ml-4 shrink-0" />
+              <Search className="w-5 h-5 text-amber-400 ml-3.5 sm:ml-4 shrink-0" />
               <input
                 id="hero-search-input"
                 type="text"
                 value={searchTerm}
                 onChange={handleSearch}
-                placeholder="Tìm di sản, địa danh, món ăn, tỉnh thành (Huế, Hà Nội, Hội An...)"
-                className="w-full py-3.5 px-4 bg-transparent text-sm text-stone-100 placeholder-stone-400 focus:outline-none"
+                placeholder="Tìm di sản, địa danh, món ăn (Huế, Hội An, Phố cổ...)"
+                className="w-full py-3 sm:py-3.5 px-3 sm:px-4 bg-transparent text-xs sm:text-sm text-stone-100 placeholder-stone-400 focus:outline-none"
               />
               {searchTerm && (
                 <button 
@@ -205,8 +245,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             )}
           </div>
 
-          {/* 5 Primary Main CTA Buttons */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5">
+          {/* Primary Main CTA Buttons */}
+          <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             
             <button
               id="hero-cta-gps"
@@ -218,72 +258,75 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   onNavigate('map');
                 }
               }}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-950 font-bold text-sm transition-all shadow-lg shadow-emerald-950/40 flex items-center gap-2 hover:scale-[1.02]"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-950 font-bold text-xs sm:text-sm transition-all shadow-lg shadow-emerald-950/40 flex items-center gap-1.5 sm:gap-2 active:scale-95"
             >
-              <LocateFixed className="w-4 h-4 text-stone-950" />
+              <LocateFixed className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-950" />
               <span>Gần Bạn Nhất (GPS)</span>
             </button>
 
             <button
               id="hero-cta-heritage"
               onClick={() => onNavigate('heritage')}
-              className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-semibold text-sm transition-all shadow-lg shadow-amber-900/40 flex items-center gap-2 border border-amber-400/40 hover:scale-[1.02]"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-amber-900/40 flex items-center gap-1.5 sm:gap-2 border border-amber-400/40 active:scale-95"
             >
-              <Compass className="w-4 h-4 text-stone-950" />
+              <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-950" />
               <span>Khám phá Di sản</span>
             </button>
 
             <button
               id="hero-cta-recognizer"
               onClick={() => onNavigate('recognizer')}
-              className="px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-sm transition-all border border-amber-500/30 flex items-center gap-2 hover:scale-[1.02]"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-xs sm:text-sm transition-all border border-amber-500/30 flex items-center gap-1.5 sm:gap-2 active:scale-95"
             >
-              <Camera className="w-4 h-4 text-amber-400" />
+              <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>Nhận diện bằng AI</span>
             </button>
 
             <button
               id="hero-cta-chat"
               onClick={() => onNavigate('chat')}
-              className="px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-sm transition-all border border-stone-700 flex items-center gap-2 hover:scale-[1.02]"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-xs sm:text-sm transition-all border border-stone-700 flex items-center gap-1.5 sm:gap-2 active:scale-95"
             >
-              <MessageSquareQuote className="w-4 h-4 text-sky-400" />
+              <MessageSquareQuote className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
               <span>Hỏi Trợ lý AI</span>
             </button>
 
             <button
               id="hero-cta-food"
               onClick={() => onNavigate('food')}
-              className="px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-sm transition-all border border-stone-700 flex items-center gap-2 hover:scale-[1.02]"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-xs sm:text-sm transition-all border border-stone-700 flex items-center gap-1.5 sm:gap-2 active:scale-95"
             >
-              <Utensils className="w-4 h-4 text-orange-400" />
+              <Utensils className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" />
               <span>Ăn uống & Vui chơi</span>
             </button>
 
             <button
               id="hero-cta-map"
               onClick={() => onNavigate('map')}
-              className="px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-sm transition-all border border-stone-700 flex items-center gap-2 hover:scale-[1.02]"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-xs sm:text-sm transition-all border border-stone-700 flex items-center gap-1.5 sm:gap-2 active:scale-95"
             >
-              <Globe className="w-4 h-4 text-emerald-400" />
+              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
               <span>Bản đồ Văn hóa</span>
             </button>
 
             <button
               id="hero-cta-profile"
               onClick={() => onNavigate('profile')}
-              className="px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-sm transition-all border border-amber-500/30 flex items-center gap-2 hover:scale-[1.02]"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-xs sm:text-sm transition-all border border-amber-500/30 flex items-center gap-1.5 sm:gap-2 active:scale-95"
             >
-              <Award className="w-4 h-4 text-amber-400" />
+              <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>Hồ sơ & Danh hiệu</span>
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* 4 Feature Value Pillars */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
           
-          <div 
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
             onClick={() => onNavigate('recognizer')}
             className="p-5 rounded-2xl bg-stone-900/60 border border-stone-800 hover:border-amber-500/40 hover:bg-stone-800/60 transition-all cursor-pointer group"
           >
@@ -296,9 +339,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <p className="text-xs text-stone-400 mt-1.5 leading-relaxed">
               Nhận diện di tích, hiện vật, cổ phục, nhạc cụ và làng nghề qua ảnh chụp với độ chính xác cao.
             </p>
-          </div>
+          </motion.div>
 
-          <div 
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.18 }}
             onClick={() => onNavigate('storyteller')}
             className="p-5 rounded-2xl bg-stone-900/60 border border-stone-800 hover:border-amber-500/40 hover:bg-stone-800/60 transition-all cursor-pointer group"
           >
@@ -311,9 +357,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <p className="text-xs text-stone-400 mt-1.5 leading-relaxed">
               5 phong cách kể chuyện từ thiếu nhi, học sinh đến khách quốc tế, phân biệt rõ lịch sử và huyền tích.
             </p>
-          </div>
+          </motion.div>
 
-          <div 
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.26 }}
             onClick={() => onNavigate('food')}
             className="p-5 rounded-2xl bg-stone-900/60 border border-stone-800 hover:border-amber-500/40 hover:bg-stone-800/60 transition-all cursor-pointer group"
           >
@@ -326,22 +375,25 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <p className="text-xs text-stone-400 mt-1.5 leading-relaxed">
               Tích hợp Google Places, phân tích review trung thực và tìm địa điểm theo nhu cầu cá nhân.
             </p>
-          </div>
+          </motion.div>
 
-          <div 
-            onClick={() => onNavigate('grandparents')}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.34 }}
+            onClick={() => onNavigate('itinerary')}
             className="p-5 rounded-2xl bg-stone-900/60 border border-stone-800 hover:border-amber-500/40 hover:bg-stone-800/60 transition-all cursor-pointer group"
           >
             <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-              <Mic className="w-5 h-5" />
+              <CalendarDays className="w-5 h-5" />
             </div>
             <h3 className="font-serif font-bold text-amber-100 text-base group-hover:text-amber-300">
-              Ký ức Ông bà Kể chuyện
+              Lịch trình Du lịch Thông minh
             </h3>
             <p className="text-xs text-stone-400 mt-1.5 leading-relaxed">
-              Ghi âm giọng nói, AI biên tập và số hóa ký ức gia đình, lưu truyền văn hóa qua các thế hệ.
+              Lên kế hoạch du lịch văn hóa theo thời gian và ngân sách, tối ưu hóa cung đường tham quan.
             </p>
-          </div>
+          </motion.div>
         </div>
 
       </div>

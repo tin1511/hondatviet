@@ -14,13 +14,18 @@ import {
   MapPin,
   Share2,
   Heart,
-  AlertCircle
+  AlertCircle,
+  Edit3,
+  Search,
+  CheckCircle2
 } from 'lucide-react';
 import { aiService } from '../services/aiService';
+import { ttsService } from '../services/ttsService';
 import { storageService } from '../services/storageService';
 import { HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 import { HeritageItem, StoryMode, HeritageStory } from '../types';
 import { cleanVietnameseText } from '../utils/textUtils';
+import { AdminStoryEditModal } from './AdminStoryEditModal';
 
 interface StoryPlayerProps {
   initialHeritageName?: string;
@@ -35,15 +40,23 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
   initialPeriod,
   onSelectHeritageForPlaces
 }) => {
-  const [selectedHeritage, setSelectedHeritage] = useState<HeritageItem>(
-    HERITAGE_DATABASE.find(h => h.name.includes(initialHeritageName || '')) || HERITAGE_DATABASE[0]
-  );
+  const [heritagesList, setHeritagesList] = useState<HeritageItem[]>(storageService.getHeritages());
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const [selectedHeritage, setSelectedHeritage] = useState<HeritageItem>(() => {
+    const list = storageService.getHeritages();
+    return list.find(h => h.name.includes(initialHeritageName || '')) || list[0] || HERITAGE_DATABASE[0];
+  });
+  
   const [mode, setMode] = useState<StoryMode>('student');
   const [loading, setLoading] = useState<boolean>(false);
   const [story, setStory] = useState<HeritageStory | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [speed, setSpeed] = useState<number>(1.0);
+  
+  const [isAdmin, setIsAdmin] = useState<boolean>(storageService.getCurrentUser().role === 'admin');
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState<boolean>(false);
 
   const audienceModes: { id: StoryMode; label: string; icon: string; desc: string }[] = [
     { id: 'children', label: 'Trẻ em', icon: '👦', desc: 'Truyện cổ tích ấm áp, dễ thương, nhân văn' },
@@ -53,6 +66,37 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
     { id: 'foreigner', label: 'Khách quốc tế (EN)', icon: '🌐', desc: 'Clear English cultural narrative' },
   ];
 
+  // Sync initialHeritageName prop when navigating from other screens
+  useEffect(() => {
+    if (initialHeritageName) {
+      const list = storageService.getHeritages();
+      const found = list.find(h => 
+        h.name.toLowerCase().includes(initialHeritageName.toLowerCase()) || 
+        initialHeritageName.toLowerCase().includes(h.name.toLowerCase())
+      );
+      if (found) {
+        setSelectedHeritage(found);
+      }
+    }
+  }, [initialHeritageName]);
+
+  // Sync heritages list and admin role
+  useEffect(() => {
+    const refreshData = () => {
+      const list = storageService.getHeritages();
+      setHeritagesList(list);
+      setIsAdmin(storageService.getCurrentUser().role === 'admin');
+    };
+
+    refreshData();
+    window.addEventListener('heritage-data-updated', refreshData);
+    window.addEventListener('custom-stories-updated', refreshData);
+    return () => {
+      window.removeEventListener('heritage-data-updated', refreshData);
+      window.removeEventListener('custom-stories-updated', refreshData);
+    };
+  }, []);
+
   const fetchStory = async (heritage: HeritageItem, targetMode: StoryMode) => {
     setLoading(true);
     setError(null);
@@ -60,6 +104,16 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       aiService.stopSpeaking();
       setIsPlaying(false);
     }
+
+    // 1. Check if there is an Admin custom story override
+    const customStory = storageService.getCustomStory(heritage.id || heritage.name, targetMode);
+    if (customStory) {
+      setStory(customStory);
+      setLoading(false);
+      return;
+    }
+
+    // 2. Otherwise generate via AI
     try {
       const generated = await aiService.generateStory({
         heritageName: heritage.name,
@@ -87,11 +141,32 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
     }
   };
 
+  // Sync initialHeritageName prop if provided
   useEffect(() => {
+    if (initialHeritageName) {
+      const list = storageService.getHeritages();
+      const match = list.find(h => h.name.toLowerCase().includes(initialHeritageName.toLowerCase()));
+      if (match && match.id !== selectedHeritage.id) {
+        setSelectedHeritage(match);
+      }
+    }
+  }, [initialHeritageName]);
+
+  // Stop TTS speech when component unmounts or user switches tabs
+  useEffect(() => {
+    return () => {
+      aiService.stopSpeaking();
+    };
+  }, []);
+
+  useEffect(() => {
+    aiService.stopSpeaking();
+    setIsPlaying(false);
     fetchStory(selectedHeritage, mode);
-  }, [selectedHeritage.id, mode]);
+  }, [selectedHeritage.id, selectedHeritage.name, mode]);
 
   const handleTogglePlay = () => {
+    ttsService.prepareForMobilePlayback();
     if (isPlaying) {
       aiService.stopSpeaking();
       setIsPlaying(false);
@@ -100,7 +175,11 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       aiService.speakText(story.storyText, {
         rate: speed,
         lang: mode === 'foreigner' ? 'en-US' : 'vi-VN',
-        onEnd: () => setIsPlaying(false)
+        onEnd: () => setIsPlaying(false),
+        onError: (err) => {
+          console.warn('Playback error in StoryPlayer:', err);
+          setIsPlaying(false);
+        }
       });
     }
   };
@@ -117,7 +196,11 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       aiService.speakText(story.storyText, {
         rate: newSpeed,
         lang: mode === 'foreigner' ? 'en-US' : 'vi-VN',
-        onEnd: () => setIsPlaying(false)
+        onEnd: () => setIsPlaying(false),
+        onError: (err) => {
+          console.warn('Playback error in StoryPlayer:', err);
+          setIsPlaying(false);
+        }
       });
     }
   };
@@ -140,25 +223,50 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       </div>
 
       {/* Select Heritage to Tell */}
-      <div className="mb-6 bg-stone-900 border border-stone-800 rounded-2xl p-4 sm:p-5">
-        <label className="block text-xs font-semibold text-amber-300 uppercase tracking-wider mb-2">
-          Chọn di sản để nghe chuyện:
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {HERITAGE_DATABASE.slice(0, 8).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setSelectedHeritage(item)}
-              className={`p-2.5 rounded-xl border text-left transition-all text-xs flex items-center gap-2.5 ${
-                selectedHeritage.id === item.id 
-                  ? 'bg-amber-600/30 border-amber-500 text-amber-200 shadow-md' 
-                  : 'bg-stone-950/60 border-stone-800 text-stone-300 hover:bg-stone-800'
-              }`}
-            >
-              <img src={item.imageUrl} alt={item.name} className="w-9 h-9 rounded-lg object-cover shrink-0" />
-              <span className="font-medium line-clamp-2">{item.name}</span>
-            </button>
-          ))}
+      <div className="mb-6 bg-stone-900 border border-stone-800 rounded-2xl p-4 sm:p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label className="block text-xs font-semibold text-amber-300 uppercase tracking-wider">
+            Chọn di sản để nghe chuyện ({heritagesList.length}):
+          </label>
+
+          {/* Search box for Heritages */}
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm di sản để nghe chuyện..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-200 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+          {heritagesList
+            .filter(item => 
+              !searchQuery.trim() || 
+              item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.province?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.categoryLabel?.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setSelectedHeritage(item)}
+                className={`p-2.5 rounded-xl border text-left transition-all text-xs flex items-center gap-2.5 cursor-pointer ${
+                  selectedHeritage.id === item.id 
+                    ? 'bg-amber-600/30 border-amber-500 text-amber-200 shadow-md ring-1 ring-amber-500/40' 
+                    : 'bg-stone-950/60 border-stone-800 text-stone-300 hover:bg-stone-800'
+                }`}
+              >
+                <img src={item.imageUrl} alt={item.name} className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                <div className="overflow-hidden">
+                  <span className="font-medium line-clamp-1 block">{item.name}</span>
+                  <span className="text-[10px] text-stone-400 block truncate">{item.province}</span>
+                </div>
+              </button>
+            ))}
         </div>
       </div>
 
@@ -172,7 +280,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
             <button
               key={item.id}
               onClick={() => setMode(item.id)}
-              className={`p-3 rounded-xl border text-left transition-all relative ${
+              className={`p-3 rounded-xl border text-left transition-all relative cursor-pointer ${
                 mode === item.id 
                   ? 'bg-red-950/50 border-red-500 text-stone-100 ring-2 ring-red-500/20' 
                   : 'bg-stone-900 border-stone-800 text-stone-400 hover:bg-stone-800/80 hover:text-stone-200'
@@ -198,6 +306,19 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/60 to-transparent" />
           
+          <div className="absolute top-4 right-4 z-10">
+            {isAdmin && (
+              <button
+                onClick={() => setIsStoryModalOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-lg transition-all cursor-pointer"
+                title="Chỉnh sửa nội dung câu chuyện AI cho đối tượng đã chọn"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Sửa Nội Dung AI (Admin)</span>
+              </button>
+            )}
+          </div>
+
           <div className="absolute bottom-4 left-4 sm:left-6 right-4 sm:right-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -363,6 +484,17 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
         </div>
 
       </div>
+
+      <AdminStoryEditModal
+        isOpen={isStoryModalOpen}
+        onClose={() => setIsStoryModalOpen(false)}
+        heritage={selectedHeritage}
+        initialMode={mode}
+        currentStory={story}
+        onSaved={(updatedStory) => {
+          setStory(updatedStory);
+        }}
+      />
 
     </div>
   );

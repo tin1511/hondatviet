@@ -29,9 +29,9 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Điện Thái Hòa là nơi cử hành các đại lễ trọng đại như đăng quang, sinh nhật vua và đón tiếp sứ thần.'
     ],
     conservationStatus: 'Được bảo tồn và phục hồi quy mô lớn bởi Trung tâm Bảo tồn Di tích Cố đô Huế và các đối tác quốc tế.',
-    imageUrl: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=1200&q=80',
-    historicImageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
-    historicImageYear: 'Ảnh tư liệu năm 1925',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Annam_-_Hu%C3%A9_-_Porte_d%27entr%C3%A9e_du_Palais_Royal.jpg',
+    historicImageYear: 'Ảnh tư liệu Cổng Ngọ Môn Cung Đình Huế (Đầu thế kỷ 20)',
     aiReconstructionNote: '',
     verifiedStatus: 'verified',
     verifiedNote: 'Tư liệu lịch sử được chứng thực bởi UNESCO và Viện Sử học Việt Nam.',
@@ -67,9 +67,9 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Chu Văn An - người thầy mẫu mực muôn đời của Việt Nam từng giữ chức Tư nghiệp Quốc Tử Giám.'
     ],
     conservationStatus: 'Di tích Quốc gia đặc biệt được giữ gìn nguyên vẹn qua nhiều thế kỷ.',
-    imageUrl: 'https://images.unsplash.com/photo-1599707367072-cd6ada2bc375?auto=format&fit=crop&w=1200&q=80',
-    historicImageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80',
-    historicImageYear: 'Ảnh tư liệu thời Pháp thuộc năm 1895',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/77/Constellation_of_Literature_pavilion_%28Temple_of_Literature%2C_Hanoi%29.jpg',
+    historicImageYear: 'Ảnh tư liệu Khuê Văn Các - Gác Sao Khuê',
     verifiedStatus: 'verified',
     verifiedNote: 'Hồ sơ Di sản tư liệu UNESCO và Tư liệu Viện Nghiên cứu Hán Nôm.',
     lat: 21.0287,
@@ -104,9 +104,9 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Vào đêm 14 âm lịch hàng tháng, cả phố cổ tắt đèn điện và thắp sáng bằng đèn lồng lung linh.'
     ],
     conservationStatus: 'Khu bảo tồn đặc biệt với quy chế kiểm soát nghiêm ngặt kiến trúc và không gian sinh hoạt.',
-    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80',
-    historicImageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
-    historicImageYear: 'Tư liệu thương cảng Faifo thế kỷ 18',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Cau_Nhat_Ban.jpg',
+    historicImageYear: 'Chùa Cầu (Lai Viễn Kiều) - Di tích biểu tượng hơn 400 năm tuổi',
     verifiedStatus: 'verified',
     verifiedNote: 'Chứng nhận Di sản Văn hóa Thế giới UNESCO số 948.',
     lat: 15.8801,
@@ -140,7 +140,9 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Địa thế núi non hiểm trở đã từng là thành lũy tự nhiên bất khả xâm phạm bảo vệ kinh đô Hoa Lư.'
     ],
     conservationStatus: 'Khu Di sản Thế giới được quy hoạch và quản lý bền vững nghiêm ngặt.',
-    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Muaxuantamcoc.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/8/84/Lehoidendinh.jpg',
+    historicImageYear: 'Lễ hội Đền Vua Đinh Cố đô Hoa Lư',
     verifiedStatus: 'verified',
     verifiedNote: 'UNESCO World Heritage Mixed Site Dossier #1438.',
     lat: 20.2536,
@@ -173,7 +175,9 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Chuông Đại Hồng Chung đúc năm 1710 thời chúa Nguyễn Phúc Chu nặng hơn 2 tấn, tiếng ngân vang xa hàng chục dặm.'
     ],
     conservationStatus: 'Di tích được bảo tồn tốt, nơi tu học của chư tăng và điểm hành hương du lịch trọng điểm.',
-    imageUrl: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/ThienMuPagoda.jpg/1280px-ThienMuPagoda.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/ThienMuPagoda.jpg/1280px-ThienMuPagoda.jpg',
+    historicImageYear: 'Tháp Phước Duyên 7 tầng soi bóng sông Hương',
     verifiedStatus: 'folk_legend',
     verifiedNote: 'Lịch sử xây dựng chùa có thật (năm 1601), sự tích Bà Tiên áo đỏ là truyền thuyết dân gian khởi nguồn tên gọi.',
     lat: 16.4532,
@@ -206,7 +210,9 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Hệ thống hầm chỉ huy kiên cố dưới lòng đất có thể chịu được bom hạng nặng.'
     ],
     conservationStatus: 'Di tích được bảo quản trang thiết bị, phòng khánh tiết và hiện vật nguyên bản.',
-    imageUrl: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/20190923_Independence_Palace-10.jpg/1280px-20190923_Independence_Palace-10.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/20190923_Independence_Palace-10.jpg/1280px-20190923_Independence_Palace-10.jpg',
+    historicImageYear: 'Mặt tiền rèm hoa đá kiến trúc Dinh Độc Lập',
     verifiedStatus: 'verified',
     verifiedNote: 'Di tích Lịch sử cấp Quốc gia Đặc biệt được Bộ Văn hóa Thể thao & Du lịch công nhận.',
     lat: 10.7770,
@@ -239,7 +245,9 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Mỗi ngọn tháp là một vũ trụ thu nhỏ (Núi Meru) theo thế giới quan thần thoại Hindu giáo.'
     ],
     conservationStatus: 'Được trùng tu hợp tác chặt chẽ với các chuyên gia khảo cổ học Ý, Ấn Độ và Việt Nam.',
-    imageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg/1280px-A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg/1280px-A_far_view_of_the_ruins_at_My_Son_%2830992152933%29.jpg',
+    historicImageYear: 'Tháp gạch Chăm Pa cổ thế kỷ 4 - 13',
     verifiedStatus: 'verified',
     verifiedNote: 'UNESCO World Heritage List #949.',
     lat: 15.7959,
@@ -271,7 +279,9 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Chứa đựng các nền văn hóa khảo cổ nổi tiếng tiền sử như Văn hóa Soi Nhụ, Cái Bèo, Hạ Long.'
     ],
     conservationStatus: 'Khu Di sản Quốc tế được bảo vệ môi trường biển khắt khe.',
-    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Ha_Long_Bay_in_2019.jpg/1280px-Ha_Long_Bay_in_2019.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Ha_Long_Bay_in_2019.jpg/1280px-Ha_Long_Bay_in_2019.jpg',
+    historicImageYear: 'Kỳ quan đảo đá vôi Vịnh Hạ Long',
     verifiedStatus: 'folk_legend',
     verifiedNote: 'Giá trị địa chất cảnh quan đã được UNESCO chứng thực khoa học; Tên gọi Vịnh Hạ Long bắt nguồn từ truyền thuyết Rồng Hạ.',
     lat: 20.9101,
@@ -285,7 +295,7 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Tại sao Vịnh lại có tên là Hạ Long theo truyện tích dân gian?',
       'Quá trình Karst hóa địa chất tạo nên các hang động thạch nhũ tại Hạ Long diễn ra bao lâu?'
     ]
-  }
+  },
 ];
 
 export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
@@ -852,11 +862,11 @@ export const TIMELINE_MILESTONES: TimelineMilestone[] = [
 export const PAST_AND_PRESENT: PastAndPresentItem[] = [
   {
     id: 'ngo-mon-hue',
-    name: 'Cổng Ngọ Môn - Đại Nội Huế',
+    name: 'Cổng Ngọ Môn - Đại Nội Cung Đình Huế',
     location: 'Thành phố Huế',
-    presentImageUrl: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=1200&q=80',
-    historicImageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80',
-    historicYear: 'Năm 1932 (Thời vua Bảo Đại)',
+    presentImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Annam_-_Hu%C3%A9_-_Porte_d%27entr%C3%A9e_du_Palais_Royal.jpg',
+    historicYear: 'Ảnh tư liệu thời Pháp thuộc (Đầu thế kỷ 20)',
     isAiReconstructed: false,
     changeDescription: 'Ngọ Môn thời thuộc địa bị rêu phong và hư hại lầu Ngũ Phụng do chiến tranh. Qua nhiều đợt đại trùng tu từ năm 1993 đến nay với công nghệ xử lý gỗ và sơn ta truyền thống, công trình đã lấy lại vẻ uy nghiêm tráng lệ.',
     conservationDetails: 'Dự án bảo tồn có sự tham gia của các chuyên gia di sản UNESCO, CHLB Đức và Viện Bảo tồn Di tích.'
@@ -865,9 +875,9 @@ export const PAST_AND_PRESENT: PastAndPresentItem[] = [
     id: 'chua-cau-hoi-an',
     name: 'Chùa Cầu (Lai Viễn Kiều)',
     location: 'Hội An, Quảng Nam',
-    presentImageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80',
-    historicImageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
-    historicYear: 'Năm 1910 (Ảnh tư liệu Viễn Đông Bác Cổ EFEO)',
+    presentImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Cau_Nhat_Ban.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg',
+    historicYear: 'Không gian kiến trúc Phố cổ Hội An thế kỷ 17 - 19',
     isAiReconstructed: false,
     changeDescription: 'Cây cầu gỗ mái ngói âm dương biểu tượng của Hội An vừa trải qua đợt trùng tu hạ giải toàn diện (2022 - 2024), gia cố mố trụ chống lún sụt do dòng nước và giữ lại tối đa các cấu kiện gỗ nguyên bản cổ xưa.',
     conservationDetails: 'Mọi thanh gỗ, đinh chốt và màu vôi được đo đạc bằng công nghệ quét 3D laser trước khi hạ giải.'
@@ -876,12 +886,23 @@ export const PAST_AND_PRESENT: PastAndPresentItem[] = [
     id: 'dien-kinh-thien-ai',
     name: 'Phục dựng 3D Điện Kính Thiên (Hoàng Thành Thăng Long)',
     location: 'Hà Nội',
-    presentImageUrl: 'https://images.unsplash.com/photo-1599707367072-cd6ada2bc375?auto=format&fit=crop&w=1200&q=80',
-    historicImageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1200&q=80',
-    historicYear: 'Khảo cổ học & Phục dựng AI',
+    presentImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg',
+    historicYear: 'Khảo cổ học Hoàng Thành Thăng Long',
     isAiReconstructed: true,
     changeDescription: 'Hiện nay chỉ còn bậc thềm rồng đá thời Lê sơ. Mô hình số phục dựng kiến trúc gỗ 2 tầng mái lợp ngói rồng vàng bằng công nghệ đồ họa AI dựa trên tư liệu hố khai quật khảo cổ học.',
     conservationDetails: 'Ảnh phục dựng bằng AI & Khảo cổ số – không phải ảnh lịch sử nguyên bản. Được tham vấn bởi các nhà sử học Viện Khảo cổ.'
+  },
+  {
+    id: 'dinh-doc-lap-past-present',
+    name: 'Dinh Độc Lập (Hội trường Thống Nhất)',
+    location: 'Quận 1, TP. Hồ Chí Minh',
+    presentImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/20190923_Independence_Palace-10.jpg/1280px-20190923_Independence_Palace-10.jpg',
+    historicImageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/20190923_Independence_Palace-10.jpg/1280px-20190923_Independence_Palace-10.jpg',
+    historicYear: 'Kiến trúc Ngô Viết Thụ (1966 - 1975)',
+    isAiReconstructed: false,
+    changeDescription: 'Kiệt tác kiến trúc của KTS Ngô Viết Thụ với hoa văn rèm hoa đá hình đốt trúc, phòng Khánh tiết và hầm chỉ huy lịch sử được bảo tồn nguyên vẹn 100% trang thiết bị từ thời điểm lịch sử trưa ngày 30/4/1975.',
+    conservationDetails: 'Di tích Lịch sử cấp Quốc gia Đặc biệt được tu bổ định kỳ giữ nguyên lớp sơn, nội thất thảm dệt và hiện vật trưng bày.'
   }
 ];
 
