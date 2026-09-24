@@ -28,7 +28,13 @@ import {
   Flame,
   ArrowRight,
   KeyRound,
-  Key
+  Key,
+  RefreshCw,
+  Check,
+  Inbox,
+  Send,
+  ArrowLeft,
+  Copy
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { UserProfile, UserActivityLog, UserActionType } from '../types';
@@ -128,24 +134,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
+    if (!regPassword.trim() || regPassword.length < 6) {
+      setErrorMessage('Mật khẩu cần tối thiểu 6 ký tự để bảo vệ tài khoản.');
+      return;
+    }
+
+    const emailCheck = storageService.validateEmailIntegrity(regEmail);
+    if (!emailCheck.valid) {
+      setErrorMessage(emailCheck.error || 'Email không hợp lệ.');
+      return;
+    }
+
     const res = storageService.register({
       displayName: regName,
       email: regEmail,
-      password: regPassword || '123456',
+      password: regPassword,
       role: regRole,
       city: regCity,
-      interests: ['Di sản Việt Nam', 'Ẩm thực truyền thống']
+      interests: ['Di sản Việt Nam', 'Ẩm thực truyền thống'],
+      emailVerified: true
     });
 
     if (!res.success || !res.user) {
-      setErrorMessage(res.error || 'Đăng ký không thành công.');
+      setErrorMessage(res.error || 'Đăng ký tài khoản không thành công.');
       return;
     }
 
     setCurrentUser(res.user);
     onUserChange(res.user);
     setActivities(storageService.getActivities(res.user.id));
-    setSuccessMessage(`Đăng ký thành công! Chào mừng ${res.user.displayName}`);
+    setSuccessMessage(`Đăng ký thành công! Chào mừng ${res.user.displayName} gia nhập Hồn Đất Việt (+100 XP)`);
     setTimeout(() => {
       setActiveTab('profile');
       setSuccessMessage('');
@@ -240,7 +258,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden"
         >
           {/* Modal Container */}
           <motion.div 
@@ -248,7 +266,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="bg-stone-900 border border-stone-800 rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden relative"
+            className="bg-stone-900 border border-stone-800 rounded-3xl max-w-2xl w-full max-h-[96vh] flex flex-col shadow-2xl overflow-hidden relative"
           >
         
         {/* Header with Navigation Tabs */}
@@ -390,16 +408,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         )}
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-5 space-y-4">
 
           {/* ==========================================
               TAB 1: LOGIN VIEW
               ========================================== */}
           {activeTab === 'login' && (
-            <div className="space-y-6">
-              <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-stone-300 mb-1 uppercase tracking-wider">
                     Tên đăng nhập hoặc Email
                   </label>
                   <div className="relative">
@@ -410,13 +428,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       placeholder="admin hoặc email của bạn"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2.5 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500 transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-stone-300 mb-1 uppercase tracking-wider">
                     Mật khẩu
                   </label>
                   <div className="relative">
@@ -427,12 +445,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       placeholder="Nhập mật khẩu..."
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-10 py-2.5 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-10 py-2 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500 transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-2.5 text-stone-500 hover:text-stone-300"
+                      className="absolute right-3 top-2.5 text-stone-500 hover:text-stone-300 cursor-pointer"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -441,21 +459,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-950/40 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-950/40 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Lock className="w-4 h-4" />
                   <span>Đăng Nhập</span>
                 </button>
               </form>
 
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('register')}
-                  className="text-xs text-amber-400 hover:underline"
-                >
-                  Chưa có tài khoản? Bấm vào đây để Đăng ký mới
-                </button>
+              <div className="text-center pt-1 border-t border-stone-800/60">
+                <p className="text-xs text-stone-400">
+                  Chưa có tài khoản?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('register')}
+                    className="text-amber-400 hover:text-amber-300 font-semibold underline cursor-pointer"
+                  >
+                    Bấm vào đây để Đăng ký mới
+                  </button>
+                </p>
               </div>
             </div>
           )}
@@ -464,101 +485,120 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               TAB 2: REGISTER VIEW
               ========================================== */}
           {activeTab === 'register' && (
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
+                <label className="block text-xs font-semibold text-stone-300 mb-1 uppercase tracking-wider">
                   Họ và tên của bạn:
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-stone-500 absolute left-3.5 top-3" />
+                  <User className="w-4 h-4 text-stone-500 absolute left-3.5 top-2.5" />
                   <input
                     type="text"
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
                     placeholder="Ví dụ: Nguyễn Hoàng Nam"
-                    className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2.5 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500"
+                    className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-stone-300 mb-1 uppercase tracking-wider">
                     Địa chỉ Email:
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-stone-500 absolute left-3.5 top-3" />
+                    <Mail className="w-4 h-4 text-stone-500 absolute left-3.5 top-2.5" />
                     <input
                       type="email"
                       required
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
                       placeholder="email@vidu.com"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2.5 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
+                  <label className="block text-xs font-semibold text-stone-300 mb-1 uppercase tracking-wider">
+                    Mật khẩu khởi tạo:
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-stone-500 absolute left-3.5 top-2.5" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      minLength={6}
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="Tối thiểu 6 ký tự..."
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-10 py-2 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-stone-500 hover:text-stone-300 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-300 mb-1 uppercase tracking-wider">
                     Tỉnh / Thành phố:
                   </label>
                   <div className="relative">
-                    <MapPin className="w-4 h-4 text-stone-500 absolute left-3.5 top-3" />
+                    <MapPin className="w-4 h-4 text-stone-500 absolute left-3.5 top-2.5" />
                     <input
                       type="text"
                       value={regCity}
                       onChange={(e) => setRegCity(e.target.value)}
                       placeholder="Hà Nội, Huế, TP.HCM..."
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2.5 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500"
                     />
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
-                  Vai trò trải nghiệm:
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'student', label: 'Học sinh / Sinh viên' },
-                    { id: 'user', label: 'Du khách / Người yêu văn hóa' },
-                    { id: 'researcher', label: 'Nhà nghiên cứu' }
-                  ].map((r) => (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => setRegRole(r.id as any)}
-                      className={`p-2.5 rounded-xl text-xs font-medium border text-center transition-all ${
-                        regRole === r.id
-                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
-                          : 'bg-stone-950 border-stone-800 text-stone-400 hover:text-stone-200'
-                      }`}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
+                <div>
+                  <label className="block text-xs font-semibold text-stone-300 mb-1 uppercase tracking-wider">
+                    Vai trò trải nghiệm:
+                  </label>
+                  <select
+                    value={regRole}
+                    onChange={(e) => setRegRole(e.target.value as any)}
+                    className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 text-xs focus:outline-none focus:border-amber-500 font-medium"
+                  >
+                    <option value="student">Học sinh / Sinh viên</option>
+                    <option value="user">Du khách / Yêu văn hóa</option>
+                    <option value="researcher">Nhà nghiên cứu</option>
+                  </select>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-950/40 transition-all flex items-center justify-center gap-2"
+                className="w-full py-2.5 mt-1 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-950/40 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Hoàn Tất Đăng Ký Tài Khoản</span>
+                <span>✨ Đăng Ký Tài Khoản Ngay (+100 XP)</span>
               </button>
 
-              <div className="text-center pt-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('login')}
-                  className="text-xs text-amber-400 hover:underline"
-                >
-                  Đã có tài khoản? Bấm vào đây để Đăng nhập
-                </button>
+              <div className="text-center pt-1 border-t border-stone-800/60">
+                <p className="text-xs text-stone-400">
+                  Đã có tài khoản?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('login')}
+                    className="text-amber-400 hover:text-amber-300 font-semibold underline cursor-pointer"
+                  >
+                    Bấm vào đây để Đăng nhập
+                  </button>
+                </p>
               </div>
             </form>
           )}

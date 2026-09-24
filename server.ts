@@ -1,7 +1,10 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import dotenv from 'dotenv';
+import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { HERITAGE_DATABASE } from './src/data/vietnamHeritageData';
@@ -1089,6 +1092,85 @@ Tối ưu hóa:
 });
 
 // ==========================================
+// 9. AI PLACE IMAGE FINDER
+// ==========================================
+app.post('/api/ai/find-place-image', async (req: Request, res: Response) => {
+  try {
+    const { placeName = '', categoryLabel = '', address = '' } = req.body;
+    const ai = getGemini();
+
+    const systemPrompt = `Bạn là Trợ lý AI Tìm kiếm Ảnh Cao cấp của Hồn Đất Việt.
+Nhiệm vụ của bạn: Dựa trên tên địa điểm ẩm thực, nghỉ dưỡng, giải trí ("${placeName}"), phân loại ("${categoryLabel}"), và địa chỉ ("${address}"), hãy tìm kiếm và đề xuất 1 liên kết ảnh Unsplash (hoặc Pexels/Wikimedia) THỰC SỰ TỒN TẠI, CHẤT LƯỢNG CAO, không có watermark và khớp chính xác nhất với văn hóa Việt Nam.
+
+Gợi ý danh mục một số ảnh Unsplash Việt Nam chất lượng tuyệt hảo bạn có thể chọn hoặc tùy biến tham số:
+1. Phở / Súp: https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80
+2. Bánh mì: https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=800&q=80
+3. Đồ ăn Việt Nam / Spring rolls: https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80
+4. Cà phê sữa đá / Cafe: https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80
+5. Cà phê trứng / Đồ uống ấm: https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80
+6. Khách sạn / Nghỉ dưỡng / Homestay: https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80
+7. Khách sạn sang trọng / Biệt thự: https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80
+8. Sân khấu giải trí / Show diễn: https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=800&q=80
+9. Thủ công mỹ nghệ / Đồ lưu niệm: https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80
+10. Phong cảnh Hội An / Phố cổ sông nước: https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=800&q=80
+
+Nếu không tìm thấy ảnh cụ thể có sẵn, hãy sử dụng URL tìm kiếm thông minh từ Source Unsplash hoặc Pexels có từ khóa tiếng Anh tương ứng để trả về ảnh ngẫu nhiên nhưng chuẩn xác nhất. Ví dụ: https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80.
+
+Hãy trả về đúng định dạng JSON:
+{
+  "photoUrl": "URL_ẢNH_ĐƯỢC_CHỌN",
+  "reason": "Giải thích ngắn gọn lý do chọn ảnh này"
+}`;
+
+    const response = await generateContentWithResilience(ai, {
+      contents: `Tìm ảnh cho địa điểm sau:
+- Tên địa điểm: ${placeName}
+- Danh mục: ${categoryLabel}
+- Địa chỉ: ${address}`,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            photoUrl: { type: Type.STRING, description: 'Đường dẫn URL trực tiếp đến ảnh' },
+            reason: { type: Type.STRING, description: 'Lý do lựa chọn ảnh' }
+          },
+          required: ['photoUrl', 'reason']
+        }
+      }
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    return res.json({ success: true, photoUrl: parsed.photoUrl, reason: parsed.reason });
+  } catch (error: any) {
+    console.error('Error finding place image with Gemini:', error);
+    // Dynamic high-quality fallback based on keywords in placeName or categoryLabel
+    const pName = String(req.body.placeName || '').toLowerCase();
+    const cat = String(req.body.categoryLabel || '').toLowerCase();
+
+    let fallbackUrl = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80'; // general culinary
+    if (pName.includes('phở') || pName.includes('pho') || cat.includes('phở') || cat.includes('pho')) {
+      fallbackUrl = 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80';
+    } else if (pName.includes('bánh mì') || pName.includes('banh mi')) {
+      fallbackUrl = 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?auto=format&fit=crop&w=800&q=80';
+    } else if (pName.includes('cà phê') || pName.includes('cafe') || pName.includes('coffee')) {
+      fallbackUrl = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80';
+    } else if (pName.includes('trứng') || pName.includes('muối')) {
+      fallbackUrl = 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80';
+    } else if (pName.includes('hotel') || pName.includes('homestay') || pName.includes('resort') || pName.includes('nghỉ') || cat.includes('nghỉ ngơi')) {
+      fallbackUrl = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80';
+    } else if (pName.includes('giải trí') || pName.includes('hát') || pName.includes('nhạc') || pName.includes('ca') || cat.includes('giải trí')) {
+      fallbackUrl = 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=800&q=80';
+    } else if (pName.includes('bánh') || pName.includes('chè')) {
+      fallbackUrl = 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80';
+    }
+
+    return res.json({ success: true, photoUrl: fallbackUrl, reason: 'Tìm kiếm ảnh dựa trên từ khóa danh mục địa phương.' });
+  }
+});
+
+// ==========================================
 // ACCOUNTS & ACTIVITIES SERVER PERSISTENCE
 // ==========================================
 
@@ -2167,14 +2249,499 @@ app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
   }
 });
 
+// Test EmailJS API Configuration
+app.post('/api/emailjs/test-connection', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  try {
+    const { serviceId, templateId, publicKey, privateKey, testEmail } = req.body;
+    
+    const targetServiceId = serviceId || process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+    const targetTemplateId = templateId || process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID;
+    const targetPublicKey = publicKey || process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
+    const targetPrivateKey = privateKey || process.env.EMAILJS_PRIVATE_KEY;
+    const recipientEmail = testEmail || 'test@heritageai.vn';
+
+    if (!targetServiceId || !targetTemplateId || !targetPublicKey) {
+      return res.status(400).json({
+        success: false,
+        message: '🔴 Thiếu thông tin: Cần đầy đủ Service ID, Template ID và Public Key.',
+        responseTimeMs: Date.now() - startTime
+      });
+    }
+
+    const payload: any = {
+      service_id: targetServiceId,
+      template_id: targetTemplateId,
+      user_id: targetPublicKey,
+      template_params: {
+        to_email: recipientEmail,
+        to_name: 'Quản trị viên',
+        otp_code: '888999',
+        passcode: '888999',
+        code: '888999',
+        expire_time: '5 phút',
+        company_name: 'Hồn Đất Việt',
+        app_name: 'Hồn Đất Việt Admin Test'
+      }
+    };
+
+    if (targetPrivateKey) {
+      payload.accessToken = targetPrivateKey;
+    }
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const responseTimeMs = Date.now() - startTime;
+    const responseText = await response.text();
+
+    if (response.ok) {
+      return res.json({
+        success: true,
+        message: `🟢 Kết nối EmailJS thành công (${response.status} OK)! Đã gửi email thử nghiệm.`,
+        status: response.status,
+        responseTimeMs,
+        responseSnippet: responseText
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: `🔴 EmailJS trả về lỗi (${response.status}): ${responseText}`,
+        status: response.status,
+        responseTimeMs,
+        responseSnippet: responseText
+      });
+    }
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: `🔴 Lỗi kết nối EmailJS: ${err?.message || err}`,
+      responseTimeMs: Date.now() - startTime
+    });
+  }
+});
+
+// ==========================================
+// 8. RESEND EMAIL OTP VERIFICATION SERVICE
+// ==========================================
+const OTP_SALT = process.env.OTP_SALT || 'heritage-otp-secret-salt-2026';
+const OTP_EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes lifetime
+const OTP_COOLDOWN_MS = 60 * 1000; // 60s cooldown between send requests
+const MAX_VERIFY_ATTEMPTS = 5;
+const MAX_HOURLY_SENDS = 5;
+
+interface HashedPendingOtp {
+  hashedOtp: string;
+  expiresAt: number;
+  lastSentAt: number;
+  attempts: number;
+  sendCountHourly: number;
+  firstSendInWindow: number;
+  displayName?: string;
+}
+
+const serverPendingOtps = new Map<string, HashedPendingOtp>();
+
+function hashOtpCode(email: string, code: string): string {
+  return crypto
+    .createHash('sha256')
+    .update(`${email.trim().toLowerCase()}:${code.trim()}:${OTP_SALT}`)
+    .digest('hex');
+}
+
+function generateEmailHtml(displayName: string, code: string): string {
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mã xác thực OTP tài khoản Hồn Đất Việt</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0c0a09; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f5f5f4;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0c0a09; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width: 560px; background-color: #1c1917; border: 1px solid #44403c; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
+          <!-- Header Banner -->
+          <tr>
+            <td style="padding: 28px 24px; text-align: center; background: linear-gradient(135deg, #78350f 0%, #b45309 50%, #d97706 100%);">
+              <h1 style="margin: 0; color: #fef3c7; font-size: 24px; font-weight: 800; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🇻🇳 HỒN ĐẤT VIỆT</h1>
+              <p style="margin: 6px 0 0; color: #fde68a; font-size: 13px; font-weight: 500;">Bảo Tồn & Khám Phá Di Sản Văn Hóa Việt Nam</p>
+            </td>
+          </tr>
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 32px 28px;">
+              <p style="margin: 0 0 14px; font-size: 16px; color: #f5f5f4; font-weight: 600;">
+                Xin chào ${displayName || 'bạn mến mộ di sản'},
+              </p>
+              <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #d6d3d1;">
+                Bạn đang thực hiện thao tác xác thực tài khoản trên nền tảng <strong>Hồn Đất Việt</strong>. Dưới đây là mã xác thực OTP 6 chữ số bí mật của bạn:
+              </p>
+              
+              <!-- OTP Box -->
+              <div style="background-color: #0c0a09; border: 2px dashed #f59e0b; border-radius: 12px; padding: 22px 16px; text-align: center; margin: 24px 0;">
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #fbbf24; display: block; margin-bottom: 8px; font-weight: 700;">
+                  MÃ XÁC THỰC OTP (5 PHÚT)
+                </span>
+                <span style="font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #fef08a; display: inline-block;">
+                  ${code}
+                </span>
+              </div>
+
+              <!-- Security Information Note -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px; background-color: #292524; border-radius: 8px; padding: 14px 16px;">
+                <tr>
+                  <td style="font-size: 13px; color: #d6d3d1; line-height: 1.6;">
+                    ⏱️ <strong>Thời hạn hiệu lực:</strong> Mã này có giá trị trong đúng <strong>5 phút</strong>.<br>
+                    🔒 <strong>Bảo mật:</strong> Tuyệt đối không chia sẻ mã này cho bất kỳ ai. Quản trị viên không bao giờ yêu cầu cung cấp OTP.
+                  </td>
+                </tr>
+              </table>
+              
+              <hr style="border: 0; border-top: 1px solid #44403c; margin: 24px 0;">
+              
+              <p style="margin: 0; font-size: 12px; color: #78716c; line-height: 1.5;">
+                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email. Tài khoản của bạn vẫn được an toàn tuyệt đối.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 24px; background-color: #0c0a09; text-align: center; border-top: 1px solid #292524;">
+              <p style="margin: 0; font-size: 11px; color: #78716c; line-height: 1.5;">
+                © 2026 Hồn Đất Việt — Nền tảng số hóa di sản & văn hóa dân tộc.<br>
+                Powered by Resend Email API Delivery.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+async function sendOtpWithEmailJS(email: string, displayName: string, code: string): Promise<{ success: boolean; id?: string; error?: string }> {
+  const serviceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID;
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY || process.env.EMAILJS_USER_ID || process.env.VITE_EMAILJS_PUBLIC_KEY;
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+
+  if (!serviceId || !templateId || !publicKey) {
+    return { success: false, error: 'Chưa cấu hình EmailJS keys' };
+  }
+
+  try {
+    const payload: any = {
+      service_id: serviceId,
+      template_id: templateId,
+      user_id: publicKey,
+      template_params: {
+        to_email: email,
+        to_name: displayName,
+        otp_code: code,
+        passcode: code,
+        code: code,
+        expire_time: '5 phút',
+        company_name: 'Hồn Đất Việt',
+        app_name: 'Hồn Đất Việt'
+      }
+    };
+
+    if (privateKey) {
+      payload.accessToken = privateKey;
+    }
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      const responseText = await response.text();
+      console.log(`[EmailJS REST API] OTP successfully sent to ${email} (Response: ${responseText})`);
+      return { success: true, id: `emailjs-${Date.now()}` };
+    } else {
+      const errorText = await response.text();
+      console.warn('[EmailJS REST API Error]:', response.status, errorText);
+      return { success: false, error: `EmailJS error ${response.status}: ${errorText}` };
+    }
+  } catch (err: any) {
+    console.error('[EmailJS Dispatch Exception]:', err?.message || err);
+    return { success: false, error: err?.message || 'Lỗi kết nối đến EmailJS API' };
+  }
+}
+
+async function sendOtpWithResend(email: string, displayName: string, code: string): Promise<{ success: boolean; id?: string; error?: string }> {
+  const emailJsServiceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+  const emailJsPublicKey = process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
+
+  // 1. Check if EmailJS is configured
+  if (emailJsServiceId && emailJsPublicKey) {
+    const emailJsRes = await sendOtpWithEmailJS(email, displayName, code);
+    if (emailJsRes.success) {
+      return emailJsRes;
+    }
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.FROM_EMAIL || process.env.RESEND_FROM || 'onboarding@resend.dev';
+  const fromHeader = fromEmail.includes('<') ? fromEmail : `Hồn Đất Việt <${fromEmail}>`;
+  const subject = `[Hồn Đất Việt] Mã xác thực OTP của bạn: ${code}`;
+  const html = generateEmailHtml(displayName, code);
+
+  // 2. Try Resend API
+  if (apiKey) {
+    try {
+      const resend = new Resend(apiKey);
+      const { data, error } = await resend.emails.send({
+        from: fromHeader,
+        to: [email],
+        subject: subject,
+        html: html,
+      });
+
+      if (error) {
+        console.warn('[Resend API Error]:', error);
+        return { success: false, error: error.message || 'Lỗi gửi qua Resend API' };
+      }
+
+      console.log(`[Resend SDK] OTP successfully sent to ${email} (ID: ${data?.id})`);
+      return { success: true, id: data?.id };
+    } catch (sdkErr: any) {
+      console.warn('[Resend SDK Exception]:', sdkErr?.message || sdkErr);
+      
+      // Secondary fallback via direct REST fetch to Resend
+      try {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: fromHeader,
+            to: [email],
+            subject: subject,
+            html: html
+          })
+        });
+        const resJson = await response.json();
+        if (response.ok) {
+          console.log(`[Resend REST] OTP sent to ${email} (ID: ${resJson.id})`);
+          return { success: true, id: resJson.id };
+        } else {
+          return { success: false, error: resJson.message || resJson.error || 'Resend API từ chối gửi email.' };
+        }
+      } catch (fetchErr: any) {
+        return { success: false, error: fetchErr.message };
+      }
+    }
+  }
+
+  // 3. Fallback: Check Nodemailer SMTP if configured
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS;
+  if (smtpHost || (smtpUser && smtpPass)) {
+    try {
+      let transporter: any;
+      if (smtpUser && smtpPass && (smtpUser.includes('@gmail.com') || process.env.GMAIL_USER)) {
+        transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user: smtpUser, pass: smtpPass }
+        });
+      } else {
+        const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+        transporter = nodemailer.createTransport({
+          host: smtpHost || 'smtp.gmail.com',
+          port: smtpPort,
+          secure: process.env.SMTP_SECURE === 'true' || smtpPort === 465,
+          auth: { user: smtpUser, pass: smtpPass },
+          tls: { rejectUnauthorized: false }
+        });
+      }
+
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"Hồn Đất Việt" <${smtpUser || 'no-reply@heritageai.vn'}>`,
+        to: email,
+        subject: subject,
+        html: html
+      });
+
+      console.log(`[Nodemailer Fallback] Sent OTP to ${email} (ID: ${info.messageId})`);
+      return { success: true, id: info.messageId };
+    } catch (smtpErr: any) {
+      console.warn('[Nodemailer Fallback Error]:', smtpErr?.message || smtpErr);
+    }
+  }
+
+  // 4. Fallback when keys are pending configuration in local development
+  console.log(`\n======================================================`);
+  console.log(`📬 [MÃ XÁC THỰC EMAIL (OTP - EMAILJS / RESEND)] -> ${email} (${displayName})`);
+  console.log(`🔑 MÃ OTP: ${code} (Thời hạn 5 phút)`);
+  console.log(`ℹ️ Cấu hình EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY (hoặc RESEND_API_KEY) trong file .env để gửi email tự động.`);
+  console.log(`======================================================\n`);
+
+  return { success: true, id: `local-dev-${Date.now()}` };
+}
+
+app.post('/api/auth/send-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, displayName } = req.body;
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ success: false, error: 'Địa chỉ email không hợp lệ.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : 'Bạn';
+    const now = Date.now();
+
+    const existingRecord = serverPendingOtps.get(cleanEmail);
+
+    // 1. Anti-spam: Rate-limit 60-second cooldown
+    if (existingRecord && (now - existingRecord.lastSentAt) < OTP_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((OTP_COOLDOWN_MS - (now - existingRecord.lastSentAt)) / 1000);
+      return res.status(429).json({
+        success: false,
+        error: `Vui lòng chờ ${waitSeconds} giây trước khi yêu cầu gửi lại mã mới.`,
+        cooldownRemaining: waitSeconds
+      });
+    }
+
+    // 2. Anti-spam: Hourly max send limit (5 sends per hour)
+    let sendCount = 1;
+    let firstSendTime = now;
+    if (existingRecord) {
+      if (now - existingRecord.firstSendInWindow < 60 * 60 * 1000) {
+        if (existingRecord.sendCountHourly >= MAX_HOURLY_SENDS) {
+          return res.status(429).json({
+            success: false,
+            error: 'Bạn đã vượt quá giới hạn 5 lần gửi mã trong 1 giờ. Vui lòng thử lại sau.'
+          });
+        }
+        sendCount = existingRecord.sendCountHourly + 1;
+        firstSendTime = existingRecord.firstSendInWindow;
+      }
+    }
+
+    // 3. Generate random 6-digit numeric OTP code
+    const rawOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = now + OTP_EXPIRATION_MS; // Exactly 5 minutes
+    const hashedOtp = hashOtpCode(cleanEmail, rawOtp);
+
+    // 4. Send via Resend API
+    const sendResult = await sendOtpWithResend(cleanEmail, cleanName, rawOtp);
+    if (!sendResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: sendResult.error || 'Không thể gửi email OTP qua Resend. Vui lòng kiểm tra cấu hình RESEND_API_KEY.'
+      });
+    }
+
+    // 5. Store hashed OTP in memory (never plaintext)
+    serverPendingOtps.set(cleanEmail, {
+      hashedOtp,
+      expiresAt,
+      lastSentAt: now,
+      attempts: 0,
+      sendCountHourly: sendCount,
+      firstSendInWindow: firstSendTime,
+      displayName: cleanName
+    });
+
+    // DO NOT return raw OTP in response
+    return res.json({
+      success: true,
+      message: `Mã xác thực OTP 6 số đã được gửi trực tiếp đến ${cleanEmail}. Mã có hiệu lực trong 5 phút.`,
+      expiresAt,
+      cooldownSeconds: 60
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi máy chủ gửi OTP: ${err?.message || err}`
+    });
+  }
+});
+
+app.post('/api/auth/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp email và mã OTP 6 số.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanCode = String(code).trim().replace(/[^0-9]/g, '');
+
+    if (cleanCode.length !== 6) {
+      return res.status(400).json({ success: false, error: 'Mã OTP phải có đúng 6 chữ số.' });
+    }
+
+    const record = serverPendingOtps.get(cleanEmail);
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phiên xác thực đã hết hạn hoặc chưa từng yêu cầu gửi mã. Vui lòng bấm gửi lại mã.'
+      });
+    }
+
+    const now = Date.now();
+    // Check 5-minute lifetime
+    if (now > record.expiresAt) {
+      serverPendingOtps.delete(cleanEmail);
+      return res.status(400).json({
+        success: false,
+        error: 'Mã OTP đã hết thời hạn hiệu lực (5 phút). Vui lòng yêu cầu gửi mã mới.'
+      });
+    }
+
+    // Compare Hashed OTP
+    const enteredHash = hashOtpCode(cleanEmail, cleanCode);
+    if (enteredHash !== record.hashedOtp) {
+      record.attempts += 1;
+      if (record.attempts >= MAX_VERIFY_ATTEMPTS) {
+        serverPendingOtps.delete(cleanEmail);
+        return res.status(400).json({
+          success: false,
+          error: 'Bạn đã nhập sai mã OTP quá 5 lần. Mã đã bị vô hiệu hóa vì lý do bảo mật. Vui lòng yêu cầu gửi mã mới.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        error: `Mã xác thực OTP không chính xác. Bạn còn ${MAX_VERIFY_ATTEMPTS - record.attempts} lần thử.`
+      });
+    }
+
+    // Success: Delete pending OTP record to prevent replay attacks
+    serverPendingOtps.delete(cleanEmail);
+
+    return res.json({
+      success: true,
+      email: cleanEmail,
+      message: 'Xác thực email thành công!'
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi máy chủ xác thực OTP: ${err?.message || err}`
+    });
+  }
+});
+
 // ==========================================
 // 9. VITE SPA FALLBACK & STATIC SERVING
 // ==========================================
 async function startServer() {
-  const httpServer = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Hồn Đất Việt Server is actively running on http://0.0.0.0:${PORT}`);
-  });
-
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: {
@@ -2209,6 +2776,10 @@ async function startServer() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Hồn Đất Việt Server is actively running on http://0.0.0.0:${PORT}`);
+  });
 }
 
 startServer();

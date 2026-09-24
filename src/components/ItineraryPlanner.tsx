@@ -14,17 +14,22 @@ import {
   Check, 
   Share2,
   Info,
-  Car
+  Car,
+  Lock,
+  User,
+  X
 } from 'lucide-react';
 import { aiService } from '../services/aiService';
 import { storageService } from '../services/storageService';
-import { ItineraryPlan } from '../types';
+import { ItineraryPlan, UserProfile } from '../types';
 
 interface ItineraryPlannerProps {
   onNavigateToFood?: (heritageId: string) => void;
+  currentUser?: UserProfile;
+  onRequireAuth?: () => void;
 }
 
-export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateToFood }) => {
+export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateToFood, currentUser, onRequireAuth }) => {
   const [destination, setDestination] = useState<string>('Thành phố Huế');
   const [duration, setDuration] = useState<string>('1 ngày');
   const [companion, setCompanion] = useState<string>('Gia đình có trẻ em');
@@ -33,6 +38,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateTo
   const [loading, setLoading] = useState<boolean>(false);
   const [itinerary, setItinerary] = useState<ItineraryPlan | null>(null);
   const [saved, setSaved] = useState<boolean>(false);
+  const [showAuthNoticeModal, setShowAuthNoticeModal] = useState<boolean>(false);
 
   const interestOptions = [
     'Di tích Cung đình & Lịch sử',
@@ -52,6 +58,13 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateTo
   };
 
   const handleGenerate = async () => {
+    // Check authentication: Guest user cannot generate itineraries
+    const activeUser = currentUser || storageService.getCurrentUser();
+    if (!activeUser || !activeUser.isLoggedIn) {
+      setShowAuthNoticeModal(true);
+      return;
+    }
+
     setLoading(true);
     setSaved(false);
     try {
@@ -71,6 +84,12 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateTo
   };
 
   const handleSaveItinerary = () => {
+    const activeUser = currentUser || storageService.getCurrentUser();
+    if (!activeUser || !activeUser.isLoggedIn) {
+      setShowAuthNoticeModal(true);
+      return;
+    }
+
     if (itinerary) {
       storageService.saveItinerary(itinerary);
       setSaved(true);
@@ -329,6 +348,55 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateTo
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* Guest Authentication Requirement Modal */}
+      {showAuthNoticeModal && (
+        <div className="fixed inset-0 z-50 bg-stone-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-stone-900 border border-amber-500/40 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 text-center relative">
+            <button
+              onClick={() => setShowAuthNoticeModal(false)}
+              className="absolute top-4 right-4 p-1 rounded-xl bg-stone-800 text-stone-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 mx-auto flex items-center justify-center">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-extrabold uppercase border border-amber-500/30">
+                Tính năng yêu cầu Đăng nhập
+              </span>
+              <h3 className="text-xl font-serif font-bold text-stone-100 mt-2">
+                Tạo Lịch Trình Thông Minh AI
+              </h3>
+              <p className="text-xs text-stone-300 mt-2 leading-relaxed">
+                Khách tham quan có thể trải nghiệm tự do toàn bộ tính năng trên Hồn Đất Việt! Tuy nhiên, tính năng <strong className="text-amber-400">Tạo & Lưu Lịch trình AI</strong> yêu cầu đăng nhập tài khoản để cá nhân hóa và đồng bộ hành trình.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setShowAuthNoticeModal(false);
+                  if (onRequireAuth) onRequireAuth();
+                }}
+                className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <User className="w-4 h-4" />
+                <span>Đăng Nhập / Đăng Ký Ngay</span>
+              </button>
+              <button
+                onClick={() => setShowAuthNoticeModal(false)}
+                className="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-stone-300 font-semibold text-xs rounded-xl transition cursor-pointer"
+              >
+                Trải nghiệm tính năng khác
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

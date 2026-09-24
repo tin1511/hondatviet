@@ -26,6 +26,7 @@ import { HeritageItem } from '../types';
 import { storageService } from '../services/storageService';
 import { ttsService, TTSStatus } from '../services/ttsService';
 import { geolocationService, calculateDistanceKm, formatTravelEstimate } from '../services/geolocationService';
+import { getSafeHeritageImageUrl, handleImageError } from '../utils/imageUtils';
 
 interface HeritageDetailModalProps {
   heritage: HeritageItem | null;
@@ -143,7 +144,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/85 backdrop-blur-md overflow-hidden"
           onClick={onClose}
         >
           <motion.div 
@@ -151,14 +152,17 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 12 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="relative w-full max-w-3xl max-h-[92vh] bg-stone-900 border border-amber-500/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10"
+            className="relative w-full max-w-3xl max-h-[96vh] bg-stone-900 border border-amber-500/40 rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10"
             onClick={(e) => e.stopPropagation()}
           >
         {/* Top Header / Image Banner */}
         <div className="relative h-64 sm:h-80 w-full overflow-hidden bg-stone-950 shrink-0">
           <img
-            src={showHistoricImage && heritage.historicImageUrl ? heritage.historicImageUrl : heritage.imageUrl}
+            src={getSafeHeritageImageUrl(showHistoricImage && heritage.historicImageUrl ? heritage.historicImageUrl : heritage.imageUrl, heritage.id)}
             alt={heritage.name}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={(e) => handleImageError(e)}
             className="w-full h-full object-cover transition-all duration-500 hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-stone-900 via-stone-900/30 to-black/60" />

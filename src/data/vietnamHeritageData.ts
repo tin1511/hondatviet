@@ -296,6 +296,429 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
       'Quá trình Karst hóa địa chất tạo nên các hang động thạch nhũ tại Hạ Long diễn ra bao lâu?'
     ]
   },
+  {
+    id: 'phong-nha-ke-bang',
+    name: 'Vườn Quốc Gia Phong Nha - Kẻ Bàng & Hang Sơn Đoòng',
+    vietnameseName: 'Phong Nha - Kẻ Bàng',
+    englishName: 'Phong Nha - Ke Bang National Park & Son Doong Cave',
+    category: 'monument',
+    categoryLabel: 'Di sản Thiên nhiên Thế giới',
+    region: 'central',
+    province: 'Quảng Bình',
+    period: 'Kiến tạo địa chất 400 triệu năm',
+    history: 'Hệ thống hang động carxtơ cổ nhất châu Á với niên đại hình thành hơn 400 triệu năm. Được UNESCO công nhận là Di sản Thiên nhiên Thế giới năm 2003 và mở rộng năm 2015.',
+    culturalSignificance: 'Khu vực sở hữu Hang Sơn Đoòng – hang động tự nhiên lớn nhất thế giới cùng hàng trăm hang động kỳ vĩ như Động Phong Nha, Động Thiên Đường.',
+    interestingFacts: [
+      'Hang Sơn Đoòng rộng tới mức có thể chứa cả một khu phố ở New York với những tòa nhà 40 tầng.',
+      'Động Phong Nha có sông ngầm dài nhất thế giới và cửa động rộng mở đón thuyền du khách.',
+      'Thảm thực vật nguyên sinh độc đáo phát triển ngay bên trong lòng hang do có giếng trời chiếu sáng.'
+    ],
+    conservationStatus: 'Vườn quốc gia bảo tồn nghiêm ngặt tài nguyên hang động và đa dạng sinh học.',
+    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Cửa động Phong Nha đón thuyền du lịch',
+    verifiedStatus: 'verified',
+    verifiedNote: 'UNESCO World Heritage Natural Site #951.',
+    lat: 17.5912,
+    lng: 106.2831,
+    address: 'Xã Sơn Trạch, Huyện Bố Trạch, Tỉnh Quảng Bình',
+    visitingHours: '07:30 - 16:30 hàng ngày',
+    ticketPrice: '150.000 VNĐ / vé động Phong Nha + Vé thuyền du lịch',
+    googleMapsUri: 'https://maps.google.com/?q=Phong+Nha+Ke+Bang+National+Park',
+    tags: ['Phong Nha', 'Quảng Bình', 'UNESCO', 'Hang động', 'Sơn Đoòng'],
+    suggestedQuestions: [
+      'Hang Sơn Đoòng được phát hiện như thế nào?',
+      'Vì sao Phong Nha - Kẻ Bàng được ví là Vương quốc hang động của thế giới?'
+    ]
+  },
+  {
+    id: 'chua-bai-dinh',
+    name: 'Quần thể Tâm linh Chùa Bái Đính',
+    vietnameseName: 'Chùa Bái Đính',
+    englishName: 'Bai Dinh Temple Complex',
+    category: 'temple',
+    categoryLabel: 'Chùa cổ & Trung tâm Tâm linh',
+    region: 'north',
+    province: 'Ninh Bình',
+    period: 'Khởi dựng 1136 (Bái Đính cổ) & Mở rộng 2003',
+    dynasty: 'Thời Lý (Thiền sư Nguyễn Minh Không)',
+    history: 'Chùa Bái Đính cổ do Thiền sư Nguyễn Minh Không khởi dựng năm 1136 trên đỉnh núi Bái Đính. Quần thể chùa Bái Đính mới được mở rộng hoành tráng từ năm 2003, giữ nhiều kỷ lục Đông Nam Á.',
+    culturalSignificance: 'Nằm trong Quần thể Di sản Thế giới Tràng An, là trung tâm hành hương Phật giáo lớn bậc nhất Việt Nam.',
+    interestingFacts: [
+      'Sở hữu Hành lang 500 tượng La Hán bằng đá xanh nguyên khối dài nhất châu Á (gần 3km).',
+      'Tượng Phật Bằng Đồng dát vàng lớn nhất châu Á và Bảo Tháp cao 100m lưu giữ Xá lợi Phật.',
+      'Chuông đồng Đại Hồng Chung nặng 36 tấn lớn nhất Việt Nam.'
+    ],
+    conservationStatus: 'Quần thể di tích tâm linh được giữ gìn trang nghiêm.',
+    imageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1548013146-72479768bbaa?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Toàn cảnh Quần thể Chùa Bái Đính Ninh Bình',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Di tích thuộc Quần thể Di sản Hỗn hợp Tràng An UNESCO.',
+    lat: 20.2745,
+    lng: 105.8562,
+    address: 'Xã Gia Sinh, Huyện Gia Viễn, Tỉnh Ninh Bình',
+    visitingHours: '06:00 - 21:00 hàng ngày',
+    ticketPrice: 'Vé xe điện 60.000 VNĐ / lượt khứ hồi, Vé lên Bảo tháp 50.000 VNĐ',
+    googleMapsUri: 'https://maps.google.com/?q=Bai+Dinh+Pagoda',
+    tags: ['Bái Đính', 'Ninh Bình', 'Chùa lớn nhất', 'La Hán', 'Tràng An'],
+    suggestedQuestions: [
+      'Những kỷ lục châu Á nào thuộc về Chùa Bái Đính?',
+      'Thiền sư Nguyễn Minh Không đã có công trạng gì gắn với di tích này?'
+    ]
+  },
+  {
+    id: 'thap-ba-ponagar',
+    name: 'Quần thể Tháp Bà Ponagar Nha Trang',
+    vietnameseName: 'Tháp Bà Ponagar',
+    englishName: 'Po Nagar Cham Towers',
+    category: 'architecture',
+    categoryLabel: 'Kiến trúc Cổ & Tháp Chăm',
+    region: 'central',
+    province: 'Khánh Hòa',
+    period: 'Thế kỷ 8 - 13',
+    dynasty: 'Vương quốc Chăm Pa',
+    history: 'Khởi công xây dựng từ khoảng thế kỷ 8 đến thế kỷ 13 dưới thời các vị vua Chăm Pa để thờ Thiên Y A Na Thánh Mẫu (Mẹ xứ sở) – vị thần sáng tạo và bảo vệ mùa màng.',
+    culturalSignificance: 'Công trình kiến trúc nghệ thuật đền tháp Chăm cổ nguyên vẹn nhất tại khu vực duyên hải Nam Trung Bộ, biểu tượng tâm linh thiêng liêng của Nha Trang.',
+    interestingFacts: [
+      'Tháp chính cao hơn 23m thờ nữ thần Ponagar với tượng đá cẩm thạch đen xám uy nghi.',
+      'Tổ chức Lễ hội Tháp Bà Ponagar từ 20-23/3 âm lịch thu hút hàng vạn người dân Chăm và Việt hành hương.',
+      'Suối khoáng nóng tự nhiên ngay sau lưng tháp là điểm thư giãn nổi tiếng.'
+    ],
+    conservationStatus: 'Di tích Kiến trúc Nghệ thuật cấp Quốc gia được tôn tạo bền vững.',
+    imageUrl: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Tháp Bà Ponagar Nha Trang kiêu hãnh bên dòng sông Cái',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Di tích Kiến trúc Nghệ thuật Cấp Quốc gia đặc biệt.',
+    lat: 12.2654,
+    lng: 109.1968,
+    address: 'Đường 2/4, Phường Vĩnh Phước, Thành phố Nha Trang, Tỉnh Khánh Hòa',
+    visitingHours: '06:00 - 17:30 hàng ngày',
+    ticketPrice: '30.000 VNĐ / khách',
+    googleMapsUri: 'https://maps.google.com/?q=Po+Nagar+Cham+Towers+Nha+Trang',
+    tags: ['Nha Trang', 'Tháp Chăm', 'Ponagar', 'Khánh Hòa', 'Di tích Quốc gia'],
+    suggestedQuestions: [
+      'Thiên Y A Na Thánh Mẫu có ý nghĩa thế nào trong đời sống tâm linh Nam Trung Bộ?',
+      'Kiến trúc Tháp Bà Ponagar có nét đặc sắc gì so với Mỹ Sơn?'
+    ]
+  },
+  {
+    id: 'fansipan-sapa',
+    name: 'Đỉnh Fansipan - Mái Nhà Đông Dương & Thị Trấn Sapa',
+    vietnameseName: 'Đỉnh Fansipan & Sapa',
+    englishName: 'Fansipan Peak & Sapa Valley',
+    category: 'monument',
+    categoryLabel: 'Danh thắng Thiên nhiên & Văn hóa Tây Bắc',
+    region: 'north',
+    province: 'Lào Cai',
+    period: 'Kiến tạo dãy Hoàng Liên Sơn',
+    history: 'Fansipan cao 3.143m là ngọn núi cao nhất 3 nước Đông Dương. Sapa được người Pháp phát hiện và chọn làm trạm nghỉ dưỡng mây ngàn từ đầu thế kỷ 20.',
+    culturalSignificance: 'Trung tâm giao thoa văn hóa đặc sắc của các dân tộc H\'Mông, Dao Đỏ, Tày, Giáy với những thửa ruộng bậc thang kỳ vĩ được bình chọn đẹp nhất thế giới.',
+    interestingFacts: [
+      'Cột mốc Fansipan 3.143m được ví như cột mốc thiên đường giữa ngàn mây.',
+      'Hệ thống cáp treo Fansipan đạt 2 kỷ lục thế giới đưa du khách vượt thung lũng Mường Hoa.',
+      'Quần thể tâm linh Kim Sơn Bảo Thắng Tự sừng sững ẩn hiện trong sương mù đỉnh núi.'
+    ],
+    conservationStatus: 'Vườn quốc gia Hoàng Liên bảo tồn thảm thực vật Hoàng Liên Sơn.',
+    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Cột mốc Đỉnh Fansipan 3.143m ngợp mây trời',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Danh thắng Quốc gia & Vườn Mộc Di sản ASEAN.',
+    lat: 22.3034,
+    lng: 103.7750,
+    address: 'Thị xã Sapa, Tỉnh Lào Cai',
+    visitingHours: '07:30 - 17:00 hàng ngày',
+    ticketPrice: '800.000 VNĐ / vé cáp treo khứ hồi',
+    googleMapsUri: 'https://maps.google.com/?q=Fansipan+Peak+Sapa',
+    tags: ['Fansipan', 'Sapa', 'Mái nhà Đông Dương', 'Tây Bắc', 'Ruộng bậc thang'],
+    suggestedQuestions: [
+      'Truyền thuyết về dãy núi Hoàng Liên Sơn được người H\'mông kể như thế nào?',
+      'Tại sao ruộng bậc thang Sapa lại được báo chí quốc tế tôn vinh kỳ quan du lịch?'
+    ]
+  },
+  {
+    id: 'cau-vang-bana-hills',
+    name: 'Quần thể Du lịch Bà Nà Hills & Biểu tượng Cầu Vàng',
+    vietnameseName: 'Cầu Vàng Bà Nà Hills',
+    englishName: 'Golden Bridge & Ba Na Hills',
+    category: 'architecture',
+    categoryLabel: 'Kiến trúc & Danh thắng Biểu tượng',
+    region: 'central',
+    province: 'Đà Nẵng',
+    period: 'Được phát hiện năm 1901 & Phát triển hiện đại',
+    history: 'Bà Nà được đại úy người Pháp Debay phát hiện năm 1901. Năm 2018, công trình Cầu Vàng (Golden Bridge) ra đời trên đỉnh Núi Chúa đã gây bão truyền thông toàn cầu.',
+    culturalSignificance: 'Biểu tượng kiến trúc du lịch hiện đại của Việt Nam trên bản đồ thế giới, từng đứng đầu danh sách Những điểm đến tuyệt vời nhất thế giới do tạp chí TIME bình chọn.',
+    interestingFacts: [
+      'Cầu Vàng vươn ra từ sườn núi được nâng đỡ bởi hai bàn tay rêu phong khổng lồ bằng đá.',
+      'Nằm ở độ cao 1.487m so với mực nước biển với khí hậu 4 mùa trong 1 ngày.',
+      'Ngôi làng Pháp cổ kính và chùa Linh Ứng Bà Nà với tượng Phật Thích Ca cao 27m.'
+    ],
+    conservationStatus: 'Quần thể du lịch tiêu chuẩn quốc tế được bảo dưỡng hoàn hảo.',
+    imageUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Cầu Vàng Bà Nà Hills - Bàn tay thần nâng đỡ dải lụa vàng',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Công trình kiến trúc vinh danh thế giới của Đà Nẵng.',
+    lat: 15.9961,
+    lng: 107.9872,
+    address: 'Thôn An Sơn, Xã Hòa Ninh, Huyện Hòa Vàng, TP. Đà Nẵng',
+    visitingHours: '07:00 - 20:00 hàng ngày',
+    ticketPrice: '900.000 VNĐ / người lớn (trọn gói cáp treo & Cầu Vàng)',
+    googleMapsUri: 'https://maps.google.com/?q=Golden+Bridge+Ba+Na+Hills',
+    tags: ['Đà Nẵng', 'Cầu Vàng', 'Bà Nà Hills', 'Bàn tay đá', 'Kỳ quan'],
+    suggestedQuestions: [
+      'Ý tưởng thiết kế đôi bàn tay khổng lồ của Cầu Vàng bắt nguồn từ đâu?',
+      'Khí hậu 4 mùa trong một ngày tại Bà Nà Hills diễn ra thế nào?'
+    ]
+  },
+  {
+    id: 'cho-ben-thanh',
+    name: 'Chợ Bến Thành - Biểu Tượng Văn Hóa Sài Gòn',
+    vietnameseName: 'Chợ Bến Thành',
+    englishName: 'Ben Thanh Market',
+    category: 'ancient_house',
+    categoryLabel: 'Đô thị Cổ & Di tích Thương mại',
+    region: 'south',
+    province: 'TP. Hồ Chí Minh',
+    period: 'Khởi dựng 1912 - Khánh thành 1914',
+    history: 'Ban đầu nằm ven sông Bến Nghé (gần bến thành lũy), năm 1912 người Pháp khởi công xây chợ Bến Thành mới tại vị trí hiện nay và khánh thành vào tháng 3/1914.',
+    culturalSignificance: 'Biểu tượng văn hóa, lịch sử và nhịp sống kinh tế sôi động bậc nhất của TP. Hồ Chí Minh suốt hơn 100 năm qua.',
+    interestingFacts: [
+      'Tháp đồng hồ 4 mặt ở cửa Nam là hình ảnh biểu tượng xuất hiện trên vô số tem thư và quà lưu niệm Sài Gòn.',
+      'Chợ có 4 cửa chính hướng ra 4 con phố trung tâm và 12 cửa phụ.',
+      'Thiên đường ẩm thực đêm Sài Gòn với các món chè, hủ tiếu, bún riêu, bánh xèo truyền thống.'
+    ],
+    conservationStatus: 'Di tích Lịch sử Đô thị được chỉnh trang tôn tạo kiến trúc nguyên bản.',
+    imageUrl: 'https://images.unsplash.com/photo-1565035010268-a3816f98589a?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1565035010268-a3816f98589a?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Tháp đồng hồ Chợ Bến Thành biểu tượng Sài Gòn',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Di tích Lịch sử Văn hóa Cấp Thành Phố.',
+    lat: 10.7725,
+    lng: 106.6980,
+    address: 'Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh',
+    visitingHours: '06:00 - 18:00 (Chợ ngày) & 18:00 - 22:00 (Chợ đêm)',
+    ticketPrice: 'Vào cửa tự do',
+    googleMapsUri: 'https://maps.google.com/?q=Ben+Thanh+Market+Ho+Chi+Minh+City',
+    tags: ['Sài Gòn', 'Chợ Bến Thành', 'Quận 1', 'Ẩm thực', 'Biểu tượng'],
+    suggestedQuestions: [
+      'Lịch sử tên gọi "Bến Thành" bắt nguồn từ bến sông nào?',
+      'Kiến trúc mái lợp ngói và tháp đồng hồ Chợ Bến Thành có nét độc đáo gì?'
+    ]
+  },
+  {
+    id: 'thac-ban-gioc',
+    name: 'Thác Bản Giốc - Kiệt Tác Thiên Nhiên Đông Bắc',
+    vietnameseName: 'Thác Bản Giốc',
+    englishName: 'Ban Gioc Waterfalls',
+    category: 'monument',
+    categoryLabel: 'Danh thắng Thiên nhiên Quốc gia',
+    region: 'north',
+    province: 'Cao Bằng',
+    period: 'Hình thành tự nhiên ngàn năm',
+    history: 'Thác nước tự nhiên nằm trên dòng sông Quây Sơn nối liền biên giới Việt - Trung, được xếp vào danh sách các thác nước xuyên quốc gia đẹp nhất thế giới.',
+    culturalSignificance: 'Thác nước lớn thứ 4 thế giới trong số các thác nước nằm trên đường biên giới giữa các quốc gia, thắng cảnh tự nhiên vô giá của vùng núi phía Bắc.',
+    interestingFacts: [
+      'Thác cao hơn 60m với tầng đổ dốc xuống 3 tầng bọt tung trắng xóa kỳ vĩ.',
+      'Mùa nước đổ từ tháng 8 đến tháng 10 hàng năm nước trong xanh ngọc bích hòa quyện ruộng lúa chín vàng.',
+      'Chùa Phật Tích Trúc Lâm Bản Giốc tọa lạc trên ngọn núi tựa lưng ngắm toàn cảnh thác.'
+    ],
+    conservationStatus: 'Danh thắng Quốc gia được bảo tồn cảnh quan tự nhiên sinh thái.',
+    imageUrl: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Dòng thác Bản Giốc cuồn cuộn đổ giữa núi rừng Cao Bằng',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Danh thắng Quốc gia & Công viên Địa chất Thế giới UNESCO Cao Bằng.',
+    lat: 22.8541,
+    lng: 106.7225,
+    address: 'Xã Đàm Thủy, Huyện Trùng Khánh, Tỉnh Cao Bằng',
+    visitingHours: '07:00 - 17:30 hàng ngày',
+    ticketPrice: '45.000 VNĐ / khách',
+    googleMapsUri: 'https://maps.google.com/?q=Ban+Gioc+Waterfall+Cao+Bang',
+    tags: ['Thác Bản Giốc', 'Cao Bằng', 'Đông Bắc', 'Biên giới', 'Kỳ quan'],
+    suggestedQuestions: [
+      'Vẻ đẹp 3 tầng thác đổ của Bản Giốc thay đổi theo mùa như thế nào?',
+      'Công viên địa chất UNESCO Cao Bằng mang giá trị địa chất gì đặc biệt?'
+    ]
+  },
+  {
+    id: 'nui-ba-den',
+    name: 'Quần thể Tâm linh Núi Bà Đen - Nóc Nhà Nam Bộ',
+    vietnameseName: 'Núi Bà Đen',
+    englishName: 'Ba Den Mountain',
+    category: 'temple',
+    categoryLabel: 'Danh thắng & Trung tâm Tâm linh',
+    region: 'south',
+    province: 'Tây Ninh',
+    period: 'Khởi nguồn tín ngưỡng thế kỷ 18',
+    history: 'Gắn liền với truyền thuyết về Linh Sơn Thánh Mẫu (Bà Đen - Linh Sơn Tiên Hương) che chở cho nhân dân. Là ngọn núi cao nhất miền Nam Việt Nam (986m).',
+    culturalSignificance: 'Trung tâm hành hương tâm linh lớn nhất Nam Bộ thu hút hàng triệu du khách mỗi dịp Hội Xuân Núi Bà và Lễ Vía Linh Sơn Thánh Mẫu.',
+    interestingFacts: [
+      'Tượng Phật Bà Tây Bổ Đà Sơn bằng đồng đúc đồi cao nhất châu Á (72m) tọa lạc trên đỉnh núi.',
+      'Nhà ga cáp treo Núi Bà Đen đạt kỷ lục Guinness là Nhà ga cáp treo lớn nhất thế giới.',
+      'Biển mây vờn quanh đỉnh núi 986m được mệnh danh là Đà Lạt của Đông Nam Bộ.'
+    ],
+    conservationStatus: 'Khu du lịch di tích lịch sử - văn hóa danh thắng quốc gia được tôn tạo khang trang.',
+    imageUrl: 'https://images.unsplash.com/photo-1508873696983-2df5293cb32b?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1508873696983-2df5293cb32b?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Tượng Phật Bà Tây Bổ Đà Sơn ẩn hiện trong mây Núi Bà Đen',
+    verifiedStatus: 'folk_legend',
+    verifiedNote: 'Di tích Danh thắng Quốc gia; Truyền thuyết Linh Sơn Thánh Mẫu là nét đẹp dân gian Nam Bộ.',
+    lat: 11.3712,
+    lng: 106.1685,
+    address: 'Xã Thạnh Tân, Thành phố Tây Ninh, Tỉnh Tây Ninh',
+    visitingHours: '05:30 - 21:00 hàng ngày',
+    ticketPrice: '350.000 VNĐ / vé cáp treo đỉnh núi',
+    googleMapsUri: 'https://maps.google.com/?q=Ba+Den+Mountain+Tay+Ninh',
+    tags: ['Tây Ninh', 'Núi Bà Đen', 'Nóc nhà Nam Bộ', 'Linh Sơn Thánh Mẫu', 'Cáp treo'],
+    suggestedQuestions: [
+      'Sự tích Linh Sơn Thánh Mẫu Núi Bà Đen bắt nguồn từ câu chuyện gì?',
+      'Trải nghiệm săn mây trên đỉnh núi 986m diễn ra vào thời gian nào đẹp nhất?'
+    ]
+  },
+  {
+    id: 'chua-huong',
+    name: 'Quần thể Danh thắng Hương Sơn (Chùa Hương)',
+    vietnameseName: 'Chùa Hương',
+    englishName: 'Perfume Pagoda Complex',
+    category: 'temple',
+    categoryLabel: 'Đền miếu & Chùa cổ',
+    region: 'north',
+    province: 'Hà Nội',
+    period: 'Thế kỷ 17 (Thời Lê Trung Hưng)',
+    history: 'Khởi dựng từ cuối thế kỷ 17, do chúa Trịnh Tố và các vị thiền sư phát hiện và tôn tạo. Động Hương Tích được chúa Trịnh Sâm ban tặng danh hiệu "Nam thiên đệ nhất động".',
+    culturalSignificance: 'Di tích Quốc gia Đặc biệt. Lễ hội Chùa Hương diễn ra từ mùng 6 tháng Giêng đến hết tháng 3 âm lịch là lễ hội Phật giáo kéo dài nhất Việt Nam.',
+    interestingFacts: [
+      'Hành trình đi đò xuôi dòng suối Yến thơ mộng rợp bóng hoa súng và cảnh núi non xanh biếc.',
+      'Động Hương Tích có hình dáng như hàm rồng khổng lồ thờ Phật Bà Quan Âm Nam Hải.',
+      'Chùa Thiên Trù (Bếp Trời) mang nét kiến trúc tâm linh cổ kính tráng lệ.'
+    ],
+    conservationStatus: 'Di tích Quốc gia Đặc biệt được quy hoạch tổng thể quản lý lễ hội xanh.',
+    imageUrl: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Quần thể Động Hương Tích - Nam Thiên Đệ Nhất Động',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Di tích Lịch sử & Danh thắng Cấp Quốc gia Đặc biệt.',
+    lat: 20.6178,
+    lng: 105.7834,
+    address: 'Xã Hương Sơn, Huyện Mỹ Đức, Hà Nội',
+    visitingHours: '05:00 - 18:00 hàng ngày (đặc biệt sôi động mùa Lễ hội Xuân)',
+    ticketPrice: '130.000 VNĐ / vé tham quan + vé đò Suối Yến',
+    googleMapsUri: 'https://maps.google.com/?q=Perfume+Pagoda+Hanoi',
+    tags: ['Chùa Hương', 'Hà Nội', 'Suối Yến', 'Động Hương Tích', 'Lễ hội Xuân'],
+    suggestedQuestions: [
+      'Vì sao Chúa Trịnh Sâm gọi Động Hương Tích là Nam thiên đệ nhất động?',
+      'Trải nghiệm đi đò Suối Yến mùa hoa súng có gì hấp dẫn du khách?'
+    ]
+  },
+  {
+    id: 'dia-dao-cu-chi',
+    name: 'Khu Di tích Lịch sử Địa đạo Củ Chi',
+    vietnameseName: 'Địa đạo Củ Chi',
+    englishName: 'Cu Chi Tunnels',
+    category: 'citadel',
+    categoryLabel: 'Thành lũy & Di tích Quân sự',
+    region: 'south',
+    province: 'TP. Hồ Chí Minh',
+    period: '1946 - 1968',
+    history: 'Hệ thống phòng thủ trong lòng đất được đào bởi quân và dân Củ Chi từ năm 1946, kéo dài hơn 250km xuyên qua lòng đất kỳ diệu.',
+    culturalSignificance: 'Di tích Quốc gia Đặc biệt, kỳ quan nghệ thuật quân sự độc nhất vô nhị trên thế giới thể hiện ý chí kiên cường bất khuất của dân tộc Việt Nam.',
+    interestingFacts: [
+      'Mê cung lòng đất gồm 3 tầng sâu khác nhau (từ 3m đến 12m) có đầy đủ phòng họp, bếp Hoàng Cung, bệnh xá, kho vũ khí.',
+      'Hệ thống bếp Hoàng Cung giấu khói độc đáo giúp đun nấu trong lòng đất mà không bị phát hiện.',
+      'Du khách có thể chui thử đoạn địa đạo nguyên bản để cảm nhận không khí lịch sử hào hùng.'
+    ],
+    conservationStatus: 'Di tích Quốc gia Đặc biệt bảo tồn nguyên vẹn đường ngầm và hào quân sự.',
+    imageUrl: 'https://images.unsplash.com/photo-1578637387939-43c525550085?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1578637387939-43c525550085?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Nắp hầm ngụy trang độc đáo của Mê cung lòng đất Củ Chi',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Di tích Lịch sử Quốc gia Đặc biệt.',
+    lat: 11.1415,
+    lng: 106.4625,
+    address: 'Đường TL15, Xã Phú Mỹ Hưng, Huyện Củ Chi, TP. Hồ Chí Minh',
+    visitingHours: '07:00 - 17:00 hàng ngày',
+    ticketPrice: '35.000 VNĐ / khách Việt Nam, 125.000 VNĐ / khách quốc tế',
+    googleMapsUri: 'https://maps.google.com/?q=Cu+Chi+Tunnels',
+    tags: ['Củ Chi', 'TP.HCM', 'Địa đạo', 'Mê cung lòng đất', 'Lịch sử'],
+    suggestedQuestions: [
+      'Bếp Hoàng Cung trong địa đạo hoạt động theo nguyên lý giấu khói như thế nào?',
+      'Chiều dài tổng cộng của mạng lưới đường hầm Củ Chi lên đến bao nhiêu km?'
+    ]
+  },
+  {
+    id: 'mui-ne-poshanu',
+    name: 'Danh thắng Mũi Né & Tháp Chăm Poshanu',
+    vietnameseName: 'Mũi Né & Tháp Poshanu',
+    englishName: 'Mui Ne Sand Dunes & Poshanu Cham Tower',
+    category: 'architecture',
+    categoryLabel: 'Danh thắng Biển đảo & Tháp cổ',
+    region: 'south',
+    province: 'Bình Thuận',
+    period: 'Thế kỷ 8 (Tháp Poshanu)',
+    dynasty: 'Vương quốc Chăm Pa (Phong cách Hòa Lai)',
+    history: 'Tháp Poshanu được xây dựng từ cuối thế kỷ 8 thờ thần Shiva. Mũi Né từ làng chài hoang sơ trở thành thủ phủ du lịch resort danh tiếng Việt Nam.',
+    culturalSignificance: 'Sự kết hợp hoàn hảo giữa nét đẹp di sản Chăm cổ kính trên đồi Bà Nài và Đồi Cát Bay kỳ thú thu hút du khách quốc tế.',
+    interestingFacts: [
+      'Đồi Cát Bay Mũi Né thay đổi hình dáng liên tục hàng giờ theo ngọn gió biển.',
+      'Tháp Poshanu giữ nguyên nét kiến trúc gạch nung Hòa Lai kỳ ảo còn sót lại.',
+      'Lễ hội Katê truyền thống của người Chăm diễn ra rộn ràng tại tháp vào tháng 9-10 âm lịch.'
+    ],
+    conservationStatus: 'Di tích Nghệ thuật Chăm cổ & Danh thắng thiên nhiên bảo vệ tốt.',
+    imageUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Đồi Cát Bay Mũi Né - Kỳ quan sa mạc thu nhỏ bên biển',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Di tích Kiến trúc Nghệ thuật Cấp Quốc gia.',
+    lat: 10.9332,
+    lng: 108.1341,
+    address: 'Phường Phú Hài & Phường Mũi Né, Thành phố Phan Thiết, Tỉnh Bình Thuận',
+    visitingHours: '06:00 - 18:00 hàng ngày',
+    ticketPrice: '15.000 VNĐ / vé Tháp Poshanu',
+    googleMapsUri: 'https://maps.google.com/?q=Poshanu+Cham+Tower+Mui+Ne',
+    tags: ['Mũi Né', 'Phan Thiết', 'Tháp Poshanu', 'Đồi cát bay', 'Bình Thuận'],
+    suggestedQuestions: [
+      'Vì sao đồi cát Mũi Né được gọi là Đồi Cát Bay?',
+      'Kiến trúc tháp Poshanu mang đặc trưng nào của nghệ thuật Hòa Lai Chăm Pa?'
+    ]
+  },
+  {
+    id: 'phu-quoc-dinh-cau',
+    name: 'Đảo Ngọc Phú Quốc & Di tích Dinh Cậu',
+    vietnameseName: 'Phú Quốc & Dinh Cậu',
+    englishName: 'Phu Quoc Island & Dinh Cau Temple',
+    category: 'temple',
+    categoryLabel: 'Danh thắng Biển đảo & Tâm linh',
+    region: 'south',
+    province: 'Kiên Giang',
+    period: 'Khởi dựng thế kỷ 17',
+    history: 'Dinh Cậu được dựng từ thế kỷ 17 trên ghềnh đá nhô ra biển để cầu mong sóng yên biển lặng cho ngư dân bám biển khơi xa. Phú Quốc là đảo lớn nhất Việt Nam.',
+    culturalSignificance: 'Biểu tượng tín ngưỡng dân gian và tâm linh thiêng liêng của ngư dân đảo Ngọc Phú Quốc - thiên đường du lịch biển đảo hàng đầu châu Á.',
+    interestingFacts: [
+      'Dinh Cậu tọa lạc trên gành đá tự nhiên có hình thụ kỳ thú vươn ra biển tây đón hoàng hôn tuyệt đẹp.',
+      'Nơi khởi nguồn nước mắm Phú Quốc truyền thống ủ chượp gỗ bời lời nổi tiếng toàn cầu.',
+      'Vườn quốc gia Phú Quốc sở hữu hệ sinh thái rừng nguyên sinh và rạn san hô vô giá.'
+    ],
+    conservationStatus: 'Di tích danh thắng tâm linh của thành phố đảo Phú Quốc.',
+    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Dinh Cậu Phú Quốc hiên ngang trên ghềnh đá đón sóng biển',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Di tích Danh thắng Cấp Tỉnh / Thành Phố.',
+    lat: 10.2178,
+    lng: 103.9567,
+    address: 'Khu phố 2, Phường Dương Đông, Thành phố Phú Quốc, Tỉnh Kiên Giang',
+    visitingHours: 'Mở cửa tự do',
+    ticketPrice: 'Miễn phí',
+    googleMapsUri: 'https://maps.google.com/?q=Dinh+Cau+Phu+Quoc',
+    tags: ['Phú Quốc', 'Dinh Cậu', 'Đảo Ngọc', 'Hoàng hôn', 'Kiên Giang'],
+    suggestedQuestions: [
+      'Tín ngưỡng Dinh Cậu có ý nghĩa thế nào với ngư dân miền biển đảo Phú Quốc?',
+      'Thời điểm ngắm hoàng hôn tại Dinh Cậu đẹp nhất là vào mấy giờ?'
+    ]
+  }
 ];
 
 export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
@@ -316,7 +739,7 @@ export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
       openingHoursText: '08:00 - 22:00',
       websiteUri: 'https://bepkhoicodo.vn',
       nationalPhoneNumber: '0234 382 9988',
-      photoUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
+      photoUrl: 'https://images.unsplash.com/photo-1625398407796-82650a8c135f?auto=format&fit=crop&w=600&q=80',
       googleMapsUri: 'https://maps.google.com/?q=Nha+Hang+Bep+Khoi+Co+Do+Hue',
       isDemoData: true,
       attributionText: 'Dữ liệu demo tổng hợp từ vị trí thực tế quanh Đại Nội Huế',
@@ -352,7 +775,7 @@ export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
       priceText: '20.000 - 45.000 VNĐ',
       openNow: true,
       openingHoursText: '06:30 - 22:30',
-      photoUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80',
+      photoUrl: 'https://images.unsplash.com/photo-1553909489-cd47e0907980?auto=format&fit=crop&w=600&q=80',
       googleMapsUri: 'https://maps.google.com/?q=Ca+Phe+Muoi+Nguyen+Hue+Hue',
       isDemoData: true,
       attributionText: 'Dữ liệu demo đại diện nét ẩm thực đường phố Huế',
@@ -387,7 +810,7 @@ export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
       priceText: '100.000 - 180.000 VNĐ / vé thuyền rồng',
       openNow: true,
       openingHoursText: '19:00 - 21:30',
-      photoUrl: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80',
+      photoUrl: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=600&q=80',
       googleMapsUri: 'https://maps.google.com/?q=Ben+Thuyen+Toa+Kham+Ca+Hue',
       isDemoData: true,
       attributionText: 'Dữ liệu demo trải nghiệm di sản phi vật thể Huế',
@@ -492,7 +915,7 @@ export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
       priceText: '30.000 - 45.000 VNĐ',
       openNow: true,
       openingHoursText: '06:30 - 21:30',
-      photoUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
+      photoUrl: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?auto=format&fit=crop&w=600&q=80',
       googleMapsUri: 'https://maps.google.com/?q=Banh+Mi+Phuong+Hoi+An',
       isDemoData: true,
       attributionText: 'Dữ liệu địa điểm ẩm thực Hội An',
@@ -522,7 +945,7 @@ export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
       priceText: '120.000 - 250.000 VNĐ',
       openNow: true,
       openingHoursText: '08:30 - 21:00',
-      photoUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=600&q=80',
+      photoUrl: 'https://images.unsplash.com/photo-1623653387945-2fd25214f8fc?auto=format&fit=crop&w=600&q=80',
       googleMapsUri: 'https://maps.google.com/?q=Be+Thui+Cau+Mong+Muoi+Hien',
       isDemoData: true,
       attributionText: 'Đặc sản trứ danh xứ Quảng Nam',
@@ -550,7 +973,7 @@ export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
       priceText: '30.000 - 45.000 VNĐ',
       openNow: true,
       openingHoursText: '06:00 - 18:30',
-      photoUrl: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80',
+      photoUrl: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&w=600&q=80',
       googleMapsUri: 'https://maps.google.com/?q=Mi+Quang+Nam+Phuoc+Duy+Xuyen',
       isDemoData: true,
       attributionText: 'Ẩm thực truyền thống Duy Xuyên',
@@ -671,7 +1094,7 @@ export const TRADITIONAL_CRAFTS: TraditionalCraftVillage[] = [
       'Tráng men phủ độc quyền bí truyền',
       'Nung trong lò củi/lò gas ở nhiệt độ 1.200°C - 1.300°C'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: 'gom-bat-trang-ai-image',
     googleMapsUri: 'https://maps.google.com/?q=Bat+Trang+Pottery+Village',
     visitingLocation: 'Bảo tàng Gốm Bát Tràng (Trung tâm Tinh hoa Làng nghề Việt)',
     verifiedStatus: 'verified'
@@ -690,7 +1113,7 @@ export const TRADITIONAL_CRAFTS: TraditionalCraftVillage[] = [
       'Chế tạo màu tự nhiên: đen từ than lá tre, đỏ từ sỏi son, vàng từ hoa hòe, xanh từ lá chàm',
       'In lần lượt từng bản màu lên giấy điệp và phơi gió tự nhiên'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: 'tranh-dong-ho-ai-image',
     googleMapsUri: 'https://maps.google.com/?q=Dong+Ho+Painting+Village',
     visitingLocation: 'Trung tâm Bảo tồn Tranh Dân gian Đông Hồ, Thuận Thành, Bắc Ninh',
     verifiedStatus: 'verified'
@@ -710,7 +1133,7 @@ export const TRADITIONAL_CRAFTS: TraditionalCraftVillage[] = [
       'Chằm từng đường kim cước tinh xảo đều tăm tắp',
       'Quét lớp dầu bóng chống thấm nước mưa'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: 'non-la-tay-ho-ai-image',
     googleMapsUri: 'https://maps.google.com/?q=Tay+Ho+Conical+Hat+Village+Hue',
     visitingLocation: 'Làng Tây Hồ, Xã Phú Hồ, Huyện Phú Vang, Thừa Thiên Huế',
     verifiedStatus: 'verified'
@@ -730,7 +1153,7 @@ export const TRADITIONAL_CRAFTS: TraditionalCraftVillage[] = [
       'Nấu tẩy và nhuộm màu bằng thảo mộc tự nhiên',
       'Phơi lụa trong nắng nhẹ'
     ],
-    imageUrl: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=1000&q=80',
+    imageUrl: 'lua-van-phuc-ai-image',
     googleMapsUri: 'https://maps.google.com/?q=Van+Phuc+Silk+Village',
     visitingLocation: 'Phố lụa Vạn Phúc, Quận Hà Đông, Hà Nội',
     verifiedStatus: 'verified'
@@ -754,7 +1177,7 @@ export const TRADITIONAL_ARTS: TraditionalArtItem[] = [
     recognizedByUnesco: true,
     unescoYear: '2003',
     sampleAudioOrVideoDescription: 'Khúc nhạc "Mười bản ngự" và "Đăng đàn cung"',
-    imageUrl: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1000&q=80'
+    imageUrl: 'nha-nhac-cung-dinh-ai-image'
   },
   {
     id: 'quan-ho-bac-ninh',
@@ -772,7 +1195,7 @@ export const TRADITIONAL_ARTS: TraditionalArtItem[] = [
     recognizedByUnesco: true,
     unescoYear: '2009',
     sampleAudioOrVideoDescription: 'Điệu hát "Người ở đừng về", "Cây trúc xinh", "Khách đến chơi nhà"',
-    imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80'
+    imageUrl: 'quan-ho-bac-ninh-ai-image'
   },
   {
     id: 'don-ca-tai-tu',
@@ -790,7 +1213,7 @@ export const TRADITIONAL_ARTS: TraditionalArtItem[] = [
     recognizedByUnesco: true,
     unescoYear: '2013',
     sampleAudioOrVideoDescription: 'Bản Dạ Cổ Hoài Lang (Cao Văn Lầu) & Bản Nam Xuân',
-    imageUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1000&q=80'
+    imageUrl: 'don-ca-tai-tu-ai-image'
   }
 ];
 

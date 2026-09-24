@@ -38,7 +38,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
-import { CommunityContribution, UserProfile, UserActivityLog, HeritageItem, PlaceItem, CityLandmarkBackground, RecognitionSectionConfig } from '../types';
+import { CommunityContribution, UserProfile, UserActivityLog, HeritageItem, PlaceItem, CityLandmarkBackground, RecognitionSectionConfig, TraditionalCraftVillage, TraditionalArtItem } from '../types';
 import { HeritageEditModal } from './HeritageEditModal';
 import { PlaceEditModal } from './PlaceEditModal';
 import { LandmarkEditModal } from './LandmarkEditModal';
@@ -61,6 +61,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [contributions, setContributions] = useState<CommunityContribution[]>([]);
   const [heritages, setHeritages] = useState<HeritageItem[]>(storageService.getHeritages());
   const [placesMap, setPlacesMap] = useState<Record<string, PlaceItem[]>>(storageService.getPlaces());
+  const [crafts, setCrafts] = useState<TraditionalCraftVillage[]>(storageService.getCrafts());
+  const [arts, setArts] = useState<TraditionalArtItem[]>(storageService.getArts());
   const [landmarks, setLandmarks] = useState<CityLandmarkBackground[]>(storageService.getLandmarkBackgrounds());
   const [recognitionConfig, setRecognitionConfig] = useState<RecognitionSectionConfig>(() => storageService.getRecognitionSectionConfig());
   const [accounts, setAccounts] = useState<UserProfile[]>([]);
@@ -138,6 +140,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setAuditLogs(storageService.getActivities());
     setHeritages(storageService.getHeritages());
     setPlacesMap(storageService.getPlaces());
+    setCrafts(storageService.getCrafts());
+    setArts(storageService.getArts());
     setLandmarks(storageService.getLandmarkBackgrounds());
     setRecognitionConfig(storageService.getRecognitionSectionConfig());
 
@@ -271,8 +275,91 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     refreshData();
   };
 
-  const pendingCount = contributions.filter(c => c.status === 'pending_review').length;
+  // Pending items computation
+  const pendingHeritages = heritages.filter(h => h.approvalStatus === 'pending');
+
+  const pendingPlaces: { place: PlaceItem; heritageId: string }[] = [];
+  Object.entries(placesMap).forEach(([hId, pList]) => {
+    if (Array.isArray(pList)) {
+      pList.forEach(p => {
+        if (p.approvalStatus === 'pending') {
+          pendingPlaces.push({ place: p, heritageId: hId });
+        }
+      });
+    }
+  });
+
+  const pendingCrafts = crafts.filter(c => c.approvalStatus === 'pending');
+  const pendingArts = arts.filter(a => a.approvalStatus === 'pending');
+  const pendingContributions = contributions.filter(c => c.status === 'pending_review');
+
+  const pendingCount = pendingHeritages.length + pendingPlaces.length + pendingCrafts.length + pendingArts.length + pendingContributions.length;
   const isAdmin = user.isLoggedIn && user.role === 'admin';
+
+  // Specific Approval Handlers
+  const handleApproveHeritage = (item: HeritageItem) => {
+    storageService.updateHeritage({ ...item, approvalStatus: 'approved' });
+    refreshData();
+    setFeedbackMessage(`Đã duyệt & xuất bản di sản "${item.name}" thành công!`);
+    setTimeout(() => setFeedbackMessage(null), 3000);
+  };
+
+  const handleRejectHeritage = (id: string, name: string) => {
+    if (confirm(`Bạn có chắc muốn từ chối đề xuất di sản "${name}"?`)) {
+      storageService.deleteHeritage(id);
+      refreshData();
+      setFeedbackMessage(`Đã từ chối đề xuất di sản "${name}".`);
+      setTimeout(() => setFeedbackMessage(null), 3000);
+    }
+  };
+
+  const handleApprovePlace = (heritageId: string, place: PlaceItem) => {
+    storageService.updatePlace(heritageId, { ...place, approvalStatus: 'approved' });
+    refreshData();
+    setFeedbackMessage(`Đã duyệt & xuất bản địa điểm "${place.name}" thành công!`);
+    setTimeout(() => setFeedbackMessage(null), 3000);
+  };
+
+  const handleRejectPlace = (heritageId: string, placeId: string, placeName: string) => {
+    if (confirm(`Bạn có chắc muốn từ chối đề xuất địa điểm "${placeName}"?`)) {
+      storageService.deletePlace(heritageId, placeId);
+      refreshData();
+      setFeedbackMessage(`Đã từ chối đề xuất địa điểm "${placeName}".`);
+      setTimeout(() => setFeedbackMessage(null), 3000);
+    }
+  };
+
+  const handleApproveCraft = (craft: TraditionalCraftVillage) => {
+    storageService.updateCraftItem({ ...craft, approvalStatus: 'approved' });
+    refreshData();
+    setFeedbackMessage(`Đã duyệt & xuất bản làng nghề "${craft.name}" thành công!`);
+    setTimeout(() => setFeedbackMessage(null), 3000);
+  };
+
+  const handleRejectCraft = (id: string, name: string) => {
+    if (confirm(`Bạn có chắc muốn từ chối đề xuất làng nghề "${name}"?`)) {
+      storageService.deleteCraftItem(id);
+      refreshData();
+      setFeedbackMessage(`Đã từ chối đề xuất làng nghề "${name}".`);
+      setTimeout(() => setFeedbackMessage(null), 3000);
+    }
+  };
+
+  const handleApproveArt = (art: TraditionalArtItem) => {
+    storageService.updateArtItem({ ...art, approvalStatus: 'approved' });
+    refreshData();
+    setFeedbackMessage(`Đã duyệt & xuất bản nghệ thuật "${art.name}" thành công!`);
+    setTimeout(() => setFeedbackMessage(null), 3000);
+  };
+
+  const handleRejectArt = (id: string, name: string) => {
+    if (confirm(`Bạn có chắc muốn từ chối đề xuất nghệ thuật "${name}"?`)) {
+      storageService.deleteArtItem(id);
+      refreshData();
+      setFeedbackMessage(`Đã từ chối đề xuất nghệ thuật "${name}".`);
+      setTimeout(() => setFeedbackMessage(null), 3000);
+    }
+  };
 
   // Filtered Audit Logs
   const filteredLogs = auditLogs.filter(log => {
@@ -945,68 +1032,308 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* ==========================================
-          TAB 3: PENDING COMMUNITY CONTRIBUTIONS
+          TAB 3: PENDING APPROVAL QUEUE (HERITAGES, PLACES, CRAFTS, ARTS, COMMUNITY)
           ========================================== */}
       {activeTab === 'pending' && (
-        <div className="space-y-4 animate-fadeIn">
-          {contributions.map((item) => (
-            <div
-              key={item.id}
-              className="bg-stone-900 border border-stone-800 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-            >
-              <div className="space-y-1.5 max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">
-                    {item.location}
-                  </span>
-                  <span className="text-xs text-stone-400">
-                    Bởi: <strong>{item.contributorName || item.authorName}</strong> ({new Date(item.createdAt || item.submittedAt || Date.now()).toLocaleDateString('vi-VN')})
-                  </span>
-                </div>
-                <h4 className="font-serif font-bold text-stone-100 text-base">{item.title}</h4>
-                <p className="text-xs text-stone-300 leading-relaxed font-serif line-clamp-2">{item.content}</p>
-                {item.sourceReference && (
-                  <p className="text-[11px] text-stone-500 italic">Nguồn: {item.sourceReference}</p>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                {item.status === 'pending_review' ? (
-                  <>
-                    <button
-                      onClick={() => handleApprove(item.id)}
-                      className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Duyệt & Đăng</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleReject(item.id)}
-                      className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-amber-950 hover:text-amber-400 text-stone-400 text-xs font-medium border border-stone-700"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Từ chối</span>
-                    </button>
-                  </>
-                ) : (
-                  <span className="text-xs px-3 py-1 rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    Đã duyệt xuất bản
-                  </span>
-                )}
-
-                <button
-                  onClick={() => handleDeletePost(item.id, item.title)}
-                  className="px-3 py-2 rounded-xl bg-red-950/80 hover:bg-red-600 text-red-200 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1 shadow transition-all"
-                  title="Xóa bài đăng vĩnh viễn"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Xóa bài</span>
-                </button>
-              </div>
+        <div className="space-y-6 animate-fadeIn">
+          
+          {pendingCount === 0 ? (
+            <div className="bg-stone-900 border border-stone-800 rounded-3xl p-12 text-center shadow-xl">
+              <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3 opacity-80" />
+              <h3 className="font-serif font-bold text-lg text-stone-100">Hàng Đợi Kiểm Duyệt Trống</h3>
+              <p className="text-xs text-stone-400 mt-1 max-w-md mx-auto">
+                Hiện không có đề xuất địa điểm, làng nghề, nghệ thuật hoặc bài viết nào đang chờ duyệt. Tất cả dữ liệu công khai trên website đều đạt chuẩn.
+              </p>
             </div>
-          ))}
+          ) : (
+            <div className="space-y-4">
+
+              {/* 1. Pending Heritages */}
+              {pendingHeritages.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
+                    <span>🏛 Di Sản Mới Đề Xuất ({pendingHeritages.length})</span>
+                  </h4>
+                  {pendingHeritages.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-stone-900 border border-amber-500/30 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3 max-w-2xl">
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.name} 
+                          className="w-16 h-16 rounded-xl object-cover shrink-0 border border-stone-700" 
+                        />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">
+                              {item.province}
+                            </span>
+                            <span className="text-xs text-stone-400">{item.categoryLabel}</span>
+                          </div>
+                          <h5 className="font-serif font-bold text-stone-100 text-base">{item.name}</h5>
+                          <p className="text-xs text-stone-300 line-clamp-2">{item.history || item.overview}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => {
+                            setEditingHeritage(item);
+                            setIsHeritageModalOpen(true);
+                          }}
+                          className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow"
+                          title="Sửa thông tin di sản đề xuất"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Sửa</span>
+                        </button>
+                        <button
+                          onClick={() => handleApproveHeritage(item)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Duyệt & Đăng</span>
+                        </button>
+                        <button
+                          onClick={() => handleRejectHeritage(item.id, item.name)}
+                          className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-red-950 hover:text-red-400 text-stone-400 text-xs font-medium border border-stone-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Từ chối</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 2. Pending Places */}
+              {pendingPlaces.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
+                    <span>🍜 Địa Điểm Ăn Uống, Nghỉ Ngơi & Giải Trí Đề Xuất ({pendingPlaces.length})</span>
+                  </h4>
+                  {pendingPlaces.map(({ place, heritageId }) => (
+                    <div
+                      key={place.id}
+                      className="bg-stone-900 border border-amber-500/30 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3 max-w-2xl">
+                        <img 
+                          src={place.photoUrl} 
+                          alt={place.name} 
+                          className="w-16 h-16 rounded-xl object-cover shrink-0 border border-stone-700" 
+                        />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">
+                              {place.categoryLabel}
+                            </span>
+                            <span className="text-xs text-stone-400">{place.address}</span>
+                          </div>
+                          <h5 className="font-serif font-bold text-stone-100 text-base">{place.name}</h5>
+                          {place.specialties && place.specialties.length > 0 && (
+                            <p className="text-xs text-stone-300">Đặc sản: {place.specialties.join(', ')}</p>
+                          )}
+                        </div>
+                      </div>
+
+                       <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => {
+                            setEditingPlace(place);
+                            setSelectedHeritageForPlaces(heritageId);
+                            setIsPlaceModalOpen(true);
+                          }}
+                          className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow"
+                          title="Sửa thông tin địa điểm đề xuất"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Sửa</span>
+                        </button>
+                        <button
+                          onClick={() => handleApprovePlace(heritageId, place)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Duyệt & Đăng</span>
+                        </button>
+                        <button
+                          onClick={() => handleRejectPlace(heritageId, place.id, place.name)}
+                          className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-red-950 hover:text-red-400 text-stone-400 text-xs font-medium border border-stone-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Từ chối</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 3. Pending Crafts */}
+              {pendingCrafts.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
+                    <span>🏺 Làng Nghề Thủ Công Đề Xuất ({pendingCrafts.length})</span>
+                  </h4>
+                  {pendingCrafts.map((craft) => (
+                    <div
+                      key={craft.id}
+                      className="bg-stone-900 border border-amber-500/30 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3 max-w-2xl">
+                        <img 
+                          src={craft.imageUrl} 
+                          alt={craft.name} 
+                          className="w-16 h-16 rounded-xl object-cover shrink-0 border border-stone-700" 
+                        />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">
+                              {craft.province}
+                            </span>
+                            <span className="text-xs text-stone-400">{craft.craftType}</span>
+                          </div>
+                          <h5 className="font-serif font-bold text-stone-100 text-base">{craft.name}</h5>
+                          <p className="text-xs text-stone-300 line-clamp-2">{craft.history}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleApproveCraft(craft)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Duyệt & Đăng</span>
+                        </button>
+                        <button
+                          onClick={() => handleRejectCraft(craft.id, craft.name)}
+                          className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-red-950 hover:text-red-400 text-stone-400 text-xs font-medium border border-stone-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Từ chối</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 4. Pending Arts */}
+              {pendingArts.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
+                    <span>🎶 Nghệ Thuật Cổ Truyền Đề Xuất ({pendingArts.length})</span>
+                  </h4>
+                  {pendingArts.map((art) => (
+                    <div
+                      key={art.id}
+                      className="bg-stone-900 border border-amber-500/30 rounded-2xl p-4 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-start gap-3 max-w-2xl">
+                        <img 
+                          src={art.imageUrl} 
+                          alt={art.name} 
+                          className="w-16 h-16 rounded-xl object-cover shrink-0 border border-stone-700" 
+                        />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">
+                              {art.artTypeLabel}
+                            </span>
+                            <span className="text-xs text-stone-400">{art.originRegion}</span>
+                          </div>
+                          <h5 className="font-serif font-bold text-stone-100 text-base">{art.name}</h5>
+                          <p className="text-xs text-stone-300 line-clamp-2">{art.description}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleApproveArt(art)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Duyệt & Đăng</span>
+                        </button>
+                        <button
+                          onClick={() => handleRejectArt(art.id, art.name)}
+                          className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-red-950 hover:text-red-400 text-stone-400 text-xs font-medium border border-stone-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Từ chối</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 5. Pending Community Contributions */}
+              {pendingContributions.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5 px-1">
+                    <span>✍️ Bài Đóng Góp Cộng Đồng ({pendingContributions.length})</span>
+                  </h4>
+                  {pendingContributions.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-stone-900 border border-stone-800 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1.5 max-w-2xl">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">
+                            {item.location}
+                          </span>
+                          <span className="text-xs text-stone-400">
+                            Bởi: <strong>{item.contributorName || item.authorName}</strong> ({new Date(item.createdAt || item.submittedAt || Date.now()).toLocaleDateString('vi-VN')})
+                          </span>
+                        </div>
+                        <h5 className="font-serif font-bold text-stone-100 text-base">{item.title}</h5>
+                        <p className="text-xs text-stone-300 leading-relaxed font-serif line-clamp-2">{item.content}</p>
+                        {item.sourceReference && (
+                          <p className="text-[11px] text-stone-500 italic">Nguồn: {item.sourceReference}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleApprove(item.id)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Duyệt & Đăng</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleReject(item.id)}
+                          className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-red-950 hover:text-red-400 text-stone-400 text-xs font-medium border border-stone-700"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Từ chối</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeletePost(item.id, item.title)}
+                          className="px-3 py-2 rounded-xl bg-red-950/80 hover:bg-red-600 text-red-200 hover:text-white border border-red-500/40 text-xs font-bold flex items-center gap-1 shadow transition-all"
+                          title="Xóa bài đăng vĩnh viễn"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Xóa</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+            </div>
+          )}
+
         </div>
       )}
 

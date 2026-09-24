@@ -154,8 +154,8 @@ export const AdminStoryEditModal: React.FC<AdminStoryEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="bg-stone-900 border border-amber-500/30 rounded-3xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fadeIn">
+      <div className="bg-stone-900 border border-amber-500/30 rounded-3xl w-full max-w-3xl max-h-[96vh] flex flex-col overflow-hidden shadow-2xl">
         
         {/* Header */}
         <div className="p-5 bg-stone-950 border-b border-stone-800 flex items-center justify-between shrink-0">

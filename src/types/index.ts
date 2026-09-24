@@ -39,6 +39,7 @@ export interface HeritageItem {
   aiReconstructionNote?: string;
   verifiedStatus: VerificationStatus;
   verifiedNote?: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
   lat: number;
   lng: number;
   address: string;
@@ -129,6 +130,7 @@ export interface PlaceItem {
     text: string;
     relativePublishTimeDescription: string;
   }[];
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface MatchReasoningResult {
@@ -195,6 +197,7 @@ export interface TraditionalCraftVillage {
   googleMapsUri: string;
   visitingLocation?: string;
   verifiedStatus: VerificationStatus;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface TraditionalArtItem {
@@ -210,6 +213,7 @@ export interface TraditionalArtItem {
   unescoYear?: string;
   sampleAudioOrVideoDescription: string;
   imageUrl: string;
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface QuizQuestion {
@@ -350,7 +354,7 @@ export interface UserLocation {
   lng: number;
   accuracy?: number;
   cityName?: string;
-  source: 'gps' | 'preset' | 'cached';
+  source: 'gps' | 'preset' | 'cached' | 'ip';
   timestamp: number;
 }
 
@@ -380,6 +384,20 @@ export interface NearbyPlaceRecommendation extends PlaceItem {
   heritageSource?: string;
 }
 
+export interface PendingRegistration {
+  email: string;
+  displayName: string;
+  password?: string;
+  role?: 'user' | 'student' | 'researcher' | 'admin';
+  city?: string;
+  avatarUrl?: string;
+  interests?: string[];
+  code: string;
+  expiresAt: number;
+  attempts: number;
+  createdAt: string;
+}
+
 export interface UserProfile {
   id: string;
   displayName: string;
@@ -402,6 +420,7 @@ export interface UserProfile {
   createdAt: string;
   lastLoginAt?: string;
   isLoggedIn?: boolean;
+  emailVerified?: boolean;
 }
 
 export interface RecognitionSampleItem {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Utensils, 
   Coffee, 
@@ -21,12 +21,16 @@ import {
   RefreshCw,
   Scale,
   LocateFixed,
-  Navigation
+  Navigation,
+  Plus
 } from 'lucide-react';
 import { PLACES_NEAR_HERITAGE, HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 import { PlaceItem, PlaceCategory, PlaceReviewSummary, MatchReasoningResult } from '../types';
 import { aiService } from '../services/aiService';
 import { geolocationService } from '../services/geolocationService';
+import { storageService } from '../services/storageService';
+import { PlaceEditModal } from './PlaceEditModal';
+import { handleImageError } from '../utils/imageUtils';
 
 interface FoodAndEntertainmentModuleProps {
   initialHeritageId?: string;
@@ -60,6 +64,16 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
   // Compare Mode (Up to 3 places)
   const [selectedForCompare, setSelectedForCompare] = useState<PlaceItem[]>([]);
   const [showCompareModal, setShowCompareModal] = useState<boolean>(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [placesVersion, setPlacesVersion] = useState<number>(0);
+  const [updatingImageId, setUpdatingImageId] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleUpdate = () => setPlacesVersion(v => v + 1);
+    window.addEventListener('heritage-data-updated', handleUpdate);
+    return () => window.removeEventListener('heritage-data-updated', handleUpdate);
+  }, []);
 
   const categories = [
     { id: 'all', label: 'Tất cả' },
@@ -72,7 +86,12 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
     { id: 'shopping', label: '🛍 Mua sắm' },
   ];
 
-  const currentPlaces: PlaceItem[] = PLACES_NEAR_HERITAGE[selectedHeritageId] || PLACES_NEAR_HERITAGE['dai-noi-hue'] || [];
+  const allPlacesMap = storageService.getPlaces();
+  const rawPlaces: PlaceItem[] = allPlacesMap[selectedHeritageId] || PLACES_NEAR_HERITAGE[selectedHeritageId] || PLACES_NEAR_HERITAGE['dai-noi-hue'] || [];
+  
+  const currentUser = storageService.getCurrentUser();
+  const isAdmin = currentUser?.role === 'admin';
+  const currentPlaces = rawPlaces.filter(p => isAdmin || !p.approvalStatus || p.approvalStatus === 'approved');
 
   const handleSelectNearestByGPS = async () => {
     setIsLocating(true);
@@ -161,6 +180,32 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
     }
   };
 
+  const handleUpdateImageWithGemini = async (place: PlaceItem) => {
+    setUpdatingImageId(place.id);
+    try {
+      const res = await aiService.findPlaceImage({
+        placeName: place.name,
+        categoryLabel: place.categoryLabel || 'Ăn uống',
+        address: place.address || ''
+      });
+      if (res && res.photoUrl) {
+        await storageService.updatePlace(selectedHeritageId, {
+          ...place,
+          photoUrl: res.photoUrl
+        });
+        setSuccessToast(`Đã tìm thấy ảnh bằng Gemini cho "${place.name}"! (${res.reason})`);
+        setTimeout(() => setSuccessToast(null), 5000);
+      } else {
+        alert('Không tìm thấy ảnh phù hợp từ Gemini.');
+      }
+    } catch (err) {
+      console.error('Error updating place image with Gemini:', err);
+      alert('Có lỗi xảy ra khi tìm ảnh bằng Gemini.');
+    } finally {
+      setUpdatingImageId(null);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       
@@ -185,7 +230,7 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
             <Compass className="w-3.5 h-3.5" />
             <span>Khu vực Di sản đang khám phá:</span>
           </label>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleSelectNearestByGPS}
               disabled={isLocating}
@@ -193,6 +238,13 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
             >
               <LocateFixed className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
               <span>{isLocating ? 'Đang dò GPS...' : '📍 Chọn di sản gần GPS của tôi'}</span>
+            </button>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 shadow transition-all"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Đề Xuất Địa Điểm Mới</span>
             </button>
             <span className="text-[11px] text-stone-400 hidden sm:inline">
               Dữ liệu kết nối vị trí thực tế trên Google Maps
@@ -354,6 +406,13 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
       </div>
 
       {/* Places Grid */}
+      {successToast && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-semibold text-xs flex items-center gap-2 animate-fadeIn shadow-lg">
+          <Sparkles className="w-4 h-4 shrink-0 animate-pulse text-amber-400" />
+          <span>{successToast}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPlaces.map((place) => {
           const isComparing = selectedForCompare.some(p => p.id === place.id);
@@ -368,6 +427,9 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
                   <img
                     src={place.photoUrl}
                     alt={place.name}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => handleImageError(e)}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between">
@@ -392,6 +454,22 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
                       Cách di sản {place.distanceKm} km
                     </div>
                   )}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUpdateImageWithGemini(place);
+                    }}
+                    disabled={updatingImageId === place.id}
+                    className="absolute bottom-2.5 left-2.5 text-[10px] px-2.5 py-1 rounded-lg bg-stone-950/90 text-amber-300 border border-amber-500/30 font-semibold backdrop-blur hover:bg-amber-500 hover:text-stone-950 cursor-pointer transition-all flex items-center gap-1 shadow-md disabled:opacity-50"
+                  >
+                    {updatingImageId === place.id ? (
+                      <RefreshCw className="w-3 h-3 animate-spin text-amber-400" />
+                    ) : (
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                    )}
+                    <span>{updatingImageId === place.id ? 'Đang tìm...' : 'Gemini Tìm Ảnh'}</span>
+                  </button>
                 </div>
 
                 {/* Content */}
@@ -745,6 +823,14 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
           </div>
         </div>
       )}
+
+      {/* Place Edit / Add Modal */}
+      <PlaceEditModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        place={null}
+        heritageId={selectedHeritageId}
+      />
 
     </div>
   );

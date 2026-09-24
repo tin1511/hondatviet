@@ -22,16 +22,22 @@ import {
   X,
   Activity,
   Layers,
-  Database
+  Database,
+  Mail,
+  Inbox,
+  Clock
 } from 'lucide-react';
 import { getAIConfig, saveAIConfig, resetAIConfig, AIConfig, AIProvider } from '../config/aiConfig';
 import { AI_MODEL_PROFILES, AIModelProfile, getModelsForProvider } from '../config/aiModels';
 import { getTTSConfig, saveTTSConfig, resetTTSConfig, TTSConfig, TTSProviderType } from '../config/ttsConfig';
+import { getEmailJSConfig, saveEmailJSConfig, resetEmailJSConfig, EmailJSConfig } from '../config/emailJsConfig';
 import { 
   saveAIConfigToFirebase, 
   loadAIConfigFromFirebase, 
   saveTTSConfigToFirebase, 
-  loadTTSConfigFromFirebase 
+  loadTTSConfigFromFirebase,
+  saveEmailJSConfigToFirebase,
+  loadEmailJSConfigFromFirebase
 } from '../services/systemConfigService';
 import { storageService } from '../services/storageService';
 
@@ -53,18 +59,29 @@ export const AdminAIDashboard: React.FC = () => {
   const [isSavingTts, setIsSavingTts] = useState(false);
   const [ttsSaveError, setTtsSaveError] = useState<string | null>(null);
 
+  // EmailJS OTP Config
+  const [emailJsConfig, setEmailJsConfig] = useState<EmailJSConfig>(getEmailJSConfig());
+  const [showEmailJsPublicKey, setShowEmailJsPublicKey] = useState(false);
+  const [showEmailJsPrivateKey, setShowEmailJsPrivateKey] = useState(false);
+  const [emailJsSaved, setEmailJsSaved] = useState(false);
+  const [isSavingEmailJs, setIsSavingEmailJs] = useState(false);
+  const [emailJsSaveError, setEmailJsSaveError] = useState<string | null>(null);
+  const [testEmailAddress, setTestEmailAddress] = useState(currentUser?.email || 'admin@heritageai.vn');
+
   // Load configurations from Firebase on mount
   useEffect(() => {
     let isMounted = true;
     async function loadRemoteConfigs() {
       try {
-        const [remoteAi, remoteTts] = await Promise.all([
+        const [remoteAi, remoteTts, remoteEmailJs] = await Promise.all([
           loadAIConfigFromFirebase(),
-          loadTTSConfigFromFirebase()
+          loadTTSConfigFromFirebase(),
+          loadEmailJSConfigFromFirebase()
         ]);
         if (isMounted) {
           if (remoteAi) setAiConfig(remoteAi);
           if (remoteTts) setTtsConfig(remoteTts);
+          if (remoteEmailJs) setEmailJsConfig(remoteEmailJs);
         }
       } catch (err) {
         console.warn('Lỗi khi tải cấu hình từ Firebase:', err);
@@ -97,6 +114,15 @@ export const AdminAIDashboard: React.FC = () => {
     responseTimeMs?: number;
     errorCategory?: string;
     instructions?: string;
+    responseSnippet?: string;
+  } | null>(null);
+
+  const [testingEmailJs, setTestingEmailJs] = useState(false);
+  const [emailJsTestResult, setEmailJsTestResult] = useState<{
+    success: boolean;
+    message: string;
+    status?: number;
+    responseTimeMs?: number;
     responseSnippet?: string;
   } | null>(null);
 
@@ -148,15 +174,36 @@ export const AdminAIDashboard: React.FC = () => {
     }
   };
 
+  // Handle Save EmailJS Configuration to Firebase
+  const handleSaveEmailJs = async () => {
+    setEmailJsSaveError(null);
+    setIsSavingEmailJs(true);
+    try {
+      const res = await saveEmailJSConfigToFirebase(emailJsConfig, currentUser?.email || 'admin');
+      setIsSavingEmailJs(false);
+      setEmailJsSaved(true);
+      if (res.error) {
+        setEmailJsSaveError(res.error);
+      }
+      setTimeout(() => setEmailJsSaved(false), 3500);
+    } catch (e: any) {
+      setIsSavingEmailJs(false);
+      setEmailJsSaveError('⚠ Không thể lưu cấu hình EmailJS lên Firebase.');
+    }
+  };
+
   // Reset all settings
   const handleResetAll = () => {
-    if (window.confirm('Khôi phục toàn bộ cấu hình AI & TTS về mặc định ban đầu?')) {
+    if (window.confirm('Khôi phục toàn bộ cấu hình AI, TTS & EmailJS về mặc định ban đầu?')) {
       const defAi = resetAIConfig();
       const defTts = resetTTSConfig();
+      const defEmailJs = resetEmailJSConfig();
       setAiConfig(defAi);
       setTtsConfig(defTts);
+      setEmailJsConfig(defEmailJs);
       setAiTestResult(null);
       setTtsTestResult(null);
+      setEmailJsTestResult(null);
     }
   };
 
@@ -258,6 +305,52 @@ export const AdminAIDashboard: React.FC = () => {
       });
     } finally {
       setTestingTts(false);
+    }
+  };
+
+  // Run Test EmailJS API
+  const runTestEmailJs = async () => {
+    if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
+      setEmailJsTestResult({
+        success: false,
+        message: '🔴 Vui lòng điền đủ Service ID, Template ID và Public Key trước khi kiểm tra.'
+      });
+      return;
+    }
+
+    setTestingEmailJs(true);
+    setEmailJsTestResult(null);
+
+    try {
+      const res = await fetch('/api/emailjs/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serviceId: emailJsConfig.serviceId,
+          templateId: emailJsConfig.templateId,
+          publicKey: emailJsConfig.publicKey,
+          privateKey: emailJsConfig.privateKey,
+          testEmail: testEmailAddress || currentUser?.email || 'admin@heritageai.vn'
+        })
+      });
+
+      const data = await res.json();
+      setLastCheckTime(new Date().toLocaleTimeString('vi-VN'));
+
+      setEmailJsTestResult({
+        success: data.success,
+        message: data.message || (data.success ? '🟢 Kết nối EmailJS thành công! Đã gửi email test.' : '🔴 Kết nối EmailJS không thành công.'),
+        status: data.status,
+        responseTimeMs: data.responseTimeMs,
+        responseSnippet: data.responseSnippet
+      });
+    } catch (err: any) {
+      setEmailJsTestResult({
+        success: false,
+        message: '🔴 Lỗi mạng: Không thể kết nối tới server proxy /api/emailjs/test-connection.'
+      });
+    } finally {
+      setTestingEmailJs(false);
     }
   };
 
@@ -680,7 +773,195 @@ export const AdminAIDashboard: React.FC = () => {
           </div>
 
           {/* ---------------------------------------------------- */}
-          {/* SECTION 3: 🔄 FALLBACK CONFIGURATION                 */}
+          {/* SECTION 3: 📧 EMAILJS OTP CONFIGURATION             */}
+          {/* ---------------------------------------------------- */}
+          <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 space-y-4 shadow-md">
+            <div className="flex items-center justify-between border-b border-stone-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-amber-400" />
+                <h4 className="font-bold text-stone-100 text-sm">📧 EMAILJS OTP CONFIGURATION</h4>
+              </div>
+              <span className="text-[10px] text-amber-400 font-mono bg-amber-950/60 px-2 py-0.5 rounded border border-amber-800">
+                Gửi mã xác thực Email (OTP)
+              </span>
+            </div>
+
+            {emailJsSaveError && (
+              <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/40 text-red-300 text-xs flex items-center justify-between">
+                <span>{emailJsSaveError}</span>
+                <button onClick={() => setEmailJsSaveError(null)} className="text-red-400 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              {/* Service ID */}
+              <div>
+                <label className="block text-stone-300 font-semibold mb-1.5">
+                  EmailJS Service ID:
+                </label>
+                <input
+                  type="text"
+                  value={emailJsConfig.serviceId || ''}
+                  onChange={(e) => setEmailJsConfig({ ...emailJsConfig, serviceId: e.target.value.trim() })}
+                  placeholder="Ví dụ: service_x7a9bc2"
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 font-mono text-xs focus:outline-none focus:border-amber-500"
+                />
+                <span className="text-[10px] text-stone-500 mt-1 block">Tạo tại Email Services trong Dashboard EmailJS</span>
+              </div>
+
+              {/* Template ID */}
+              <div>
+                <label className="block text-stone-300 font-semibold mb-1.5">
+                  EmailJS Template ID:
+                </label>
+                <input
+                  type="text"
+                  value={emailJsConfig.templateId || ''}
+                  onChange={(e) => setEmailJsConfig({ ...emailJsConfig, templateId: e.target.value.trim() })}
+                  placeholder="Ví dụ: template_m4n8op9"
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 font-mono text-xs focus:outline-none focus:border-amber-500"
+                />
+                <span className="text-[10px] text-stone-500 mt-1 block">Tạo tại Email Templates (chứa mã OTP)</span>
+              </div>
+            </div>
+
+            {/* Public Key (API Key) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-stone-300 font-semibold text-xs flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Public Key (User ID / API Key):</span>
+                </label>
+                <span className="text-[10px] text-stone-400 font-mono">
+                  Account Settings &gt; API Keys
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type={showEmailJsPublicKey ? 'text' : 'password'}
+                  value={emailJsConfig.publicKey || ''}
+                  onChange={(e) => setEmailJsConfig({ ...emailJsConfig, publicKey: e.target.value.trim() })}
+                  placeholder="Ví dụ: user_xxxxxxxx hoặc pk_xxxxxxxx"
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-3 pr-10 py-2 text-stone-100 text-xs focus:outline-none focus:border-amber-500 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowEmailJsPublicKey(!showEmailJsPublicKey)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-300"
+                  title="Ẩn / Hiện key"
+                >
+                  {showEmailJsPublicKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Private Key (Optional Server Token) */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-stone-300 font-semibold text-xs flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-stone-400" />
+                  <span>Private Key / Access Token (Tùy chọn cho Server API bảo mật cao):</span>
+                </label>
+              </div>
+              <div className="relative">
+                <input
+                  type={showEmailJsPrivateKey ? 'text' : 'password'}
+                  value={emailJsConfig.privateKey || ''}
+                  onChange={(e) => setEmailJsConfig({ ...emailJsConfig, privateKey: e.target.value.trim() })}
+                  placeholder="Để trống nếu không bật Access Token Request Verification"
+                  className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-3 pr-10 py-2 text-stone-100 text-xs focus:outline-none focus:border-amber-500 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowEmailJsPrivateKey(!showEmailJsPrivateKey)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-300"
+                  title="Ẩn / Hiện key"
+                >
+                  {showEmailJsPrivateKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Template Variables Helper Note */}
+            <div className="p-3.5 rounded-xl bg-stone-950/80 border border-stone-800 text-stone-300 text-xs space-y-1.5">
+              <span className="font-semibold text-amber-300 flex items-center gap-1.5 text-[11px]">
+                <FileText className="w-3.5 h-3.5" />
+                Các biến cần có trong mẫu Email Template của EmailJS:
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
+                <span className="bg-stone-900 px-2 py-1 rounded text-amber-200 border border-stone-800 text-center">
+                  {'{{to_email}}'}
+                </span>
+                <span className="bg-stone-900 px-2 py-1 rounded text-amber-200 border border-stone-800 text-center">
+                  {'{{to_name}}'}
+                </span>
+                <span className="bg-stone-900 px-2 py-1 rounded text-emerald-300 border border-stone-800 text-center font-bold">
+                  {'{{otp_code}}'}
+                </span>
+                <span className="bg-stone-900 px-2 py-1 rounded text-amber-200 border border-stone-800 text-center">
+                  {'{{expire_time}}'}
+                </span>
+              </div>
+            </div>
+
+            {/* Test Email Input & Actions */}
+            <div className="pt-2 border-t border-stone-800/80 space-y-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-500 text-xs">
+                    Gửi thử tới:
+                  </span>
+                  <input
+                    type="email"
+                    value={testEmailAddress}
+                    onChange={(e) => setTestEmailAddress(e.target.value)}
+                    placeholder="email-nhan-test@gmail.com"
+                    className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-24 pr-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={runTestEmailJs}
+                    disabled={testingEmailJs}
+                    className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Send className={`w-3.5 h-3.5 ${testingEmailJs ? 'animate-spin' : ''}`} />
+                    <span>{testingEmailJs ? 'Đang gửi test...' : '✉️ Gửi Email Test'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveEmailJs}
+                    disabled={isSavingEmailJs}
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                    title="Lưu cấu hình EmailJS lên Firebase Firestore"
+                  >
+                    <CheckCircle2 className={`w-4 h-4 ${isSavingEmailJs ? 'animate-spin' : ''}`} />
+                    <span>{isSavingEmailJs ? 'Đang lưu...' : emailJsSaved ? '✓ Đã lưu Firebase' : '💾 Lưu cấu hình'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Test Result Message */}
+              {emailJsTestResult && (
+                <div className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-2 ${
+                  emailJsTestResult.success 
+                    ? 'bg-emerald-950/80 text-emerald-200 border-emerald-500/40' 
+                    : 'bg-rose-950/80 text-rose-200 border-rose-500/40'
+                }`}>
+                  <span className="font-medium">{emailJsTestResult.message}</span>
+                  {emailJsTestResult.responseTimeMs !== undefined && (
+                    <span className="font-mono text-[11px] opacity-80 shrink-0">({emailJsTestResult.responseTimeMs}ms)</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ---------------------------------------------------- */}
+          {/* SECTION 4: 🔄 FALLBACK CONFIGURATION                 */}
           {/* ---------------------------------------------------- */}
           <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 space-y-4 shadow-md">
             <div className="flex items-center justify-between border-b border-stone-800 pb-3">
@@ -750,6 +1031,37 @@ export const AdminAIDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-3">
+              {/* EmailJS API Status Badge */}
+              <div className="p-3.5 rounded-2xl bg-stone-950 border border-stone-800 flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-stone-400 block font-semibold">EmailJS OTP Service:</span>
+                  <span className="text-xs font-mono text-stone-200">
+                    {emailJsConfig.serviceId ? `${emailJsConfig.serviceId} / ${emailJsConfig.templateId || 'chưa-có-template'}` : 'Chưa cấu hình ID'}
+                  </span>
+                </div>
+                <div>
+                  {emailJsTestResult ? (
+                    emailJsTestResult.success ? (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                        🟢 Đang hoạt động
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-950 text-rose-300 border border-rose-500/40">
+                        🔴 Không khả dụng
+                      </span>
+                    )
+                  ) : emailJsConfig.serviceId && emailJsConfig.publicKey ? (
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+                      🟢 EmailJS sẵn sàng
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-950 text-amber-300 border border-amber-500/40">
+                      🟡 Chưa cấu hình
+                    </span>
+                  )}
+                </div>
+              </div>
+
               {/* VieNeu API Status Badge */}
               <div className="p-3.5 rounded-2xl bg-stone-950 border border-stone-800 flex items-center justify-between">
                 <div>
@@ -820,27 +1132,27 @@ export const AdminAIDashboard: React.FC = () => {
             <ul className="text-xs text-stone-300 space-y-2 leading-relaxed">
               <li className="flex items-start gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>API Key secret hoàn toàn nằm ở Backend API Proxy server.</span>
+                <span>API Keys và Secret Tokens được đồng bộ an toàn qua Firebase Firestore / Server Proxy.</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Không bao giờ hiển thị rõ chữ sau khi lưu (`••••••••••••••••`).</span>
+                <span>EmailJS gửi mã OTP trực tiếp từ máy chủ proxy giúp ngăn chặn lộ khóa bí mật.</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Không xuất hiện trong client bundle, console logs hoặc tài liệu Firestore công khai.</span>
+                <span>Mã OTP được mã hóa bằng SHA-256 kèm Salt trên máy chủ trước khi xác thực.</span>
               </li>
             </ul>
           </div>
 
-          {/* VieNeu Free Tier & Limits Documentation Note */}
+          {/* EmailJS & VieNeu Documentation Note */}
           <div className="bg-stone-900 border border-stone-800 rounded-2xl p-5 space-y-2 shadow-md">
             <div className="flex items-center gap-2 border-b border-stone-800 pb-2">
               <HelpCircle className="w-4 h-4 text-sky-400" />
-              <h4 className="font-bold text-stone-100 text-sm">📘 TÀI LIỆU VIENEU CLOUD API</h4>
+              <h4 className="font-bold text-stone-100 text-sm">📘 TÀI LIỆU EMAILJS OTP</h4>
             </div>
             <p className="text-xs text-stone-400 leading-relaxed">
-              <strong>Hạn mức & Free Tier:</strong> VieNeu Cloud cung cấp tài khoản dùng thử với hạn mức câu đọc cơ bản. Nếu vượt quá số ký tự quy định hoặc hết ngạch API, hệ thống sẽ tự động kích hoạt chế độ <strong>Fallback Web Speech API</strong> để đảm bảo trợ lý AI luôn hoạt động liên tục.
+              EmailJS cung cấp gói miễn phí <strong>200 emails/tháng</strong>. Bạn có thể kết nối bất kỳ hộp thư Gmail, Outlook hoặc SMTP nào để tự động gửi mã xác thực 6 chữ số đến người dùng mà không cần thiết lập máy chủ mail phức tạp.
             </p>
           </div>
 

@@ -53,6 +53,8 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { OfflineHeritageManagerModal } from './components/OfflineHeritageManagerModal';
 import { MobileAppDownloadBanner } from './components/MobileAppDownloadBanner';
 import { MobileAppDownloadModal } from './components/MobileAppDownloadModal';
+import { HeritageEditModal } from './components/HeritageEditModal';
+import { PlaceEditModal } from './components/PlaceEditModal';
 import { HeritageItem, UserProfile, CityLandmarkBackground } from './types';
 import { HERITAGE_DATABASE } from './data/vietnamHeritageData';
 import { storageService } from './services/storageService';
@@ -92,6 +94,8 @@ export default function App() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState<boolean>(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState<boolean>(false);
+  const [isGlobalHeritageModalOpen, setIsGlobalHeritageModalOpen] = useState<boolean>(false);
+  const [isGlobalPlaceModalOpen, setIsGlobalPlaceModalOpen] = useState<boolean>(false);
 
   // Auto-detect GPS and match city's iconic landmark on app load
   useEffect(() => {
@@ -251,11 +255,6 @@ export default function App() {
     setFavoritesCount(storageService.getFavorites().length);
   };
 
-  // If user is not logged in, enforce authentication before accessing the application
-  if (!userProfile.isLoggedIn) {
-    return <AuthGateway onLoginSuccess={handleUserChange} />;
-  }
-
   return (
     <div className="min-h-screen text-stone-100 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950 relative">
       
@@ -301,6 +300,7 @@ export default function App() {
           onOpenOfflineManager={() => setIsOfflineModalOpen(true)}
           onLogout={handleLogout}
           onPeekBackground={() => setIsPeekingBackground(true)}
+          onOpenAddHeritage={() => setIsGlobalHeritageModalOpen(true)}
         />
       </div>
 
@@ -330,6 +330,7 @@ export default function App() {
                   onDetectGps={handleDetectGps}
                   onOpenCityPicker={() => setShowCityPicker(true)}
                   onExploreLandmark={handleExploreCurrentLandmark}
+                  onOpenAddHeritage={() => setIsGlobalHeritageModalOpen(true)}
                 />
 
                 {/* Geolocation-Based Nearby Heritage & Places Recommender */}
@@ -579,12 +580,16 @@ export default function App() {
             {activeTab === 'itinerary' && (
               <ItineraryPlanner
                 onNavigateToFood={handleNavigateToFood}
+                currentUser={userProfile}
+                onRequireAuth={() => handleOpenAuthModal('login')}
               />
             )}
 
             {/* VIEW 9: CRAFTS & TRADITIONAL ARTS */}
             {activeTab === 'crafts' && (
-              <TraditionalCraftsAndArts />
+              <TraditionalCraftsAndArts
+                currentUser={userProfile}
+              />
             )}
 
             {/* VIEW 10: QUIZ & HISTORICAL TIMELINE */}
@@ -644,8 +649,20 @@ export default function App() {
           
           <div className="space-y-3 md:col-span-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center font-serif font-bold text-stone-950 text-xs">
-                H
+              <div className="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center font-serif font-bold text-stone-950 text-xs bg-stone-900 border border-amber-500/20">
+                <img 
+                  src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                  alt="H" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.className = "w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center font-serif font-bold text-stone-950 text-xs";
+                      parent.innerText = "H";
+                    }
+                  }}
+                />
               </div>
               <span className="font-serif font-bold text-stone-100 text-base tracking-wider">HỒN ĐẤT VIỆT</span>
             </div>
@@ -833,6 +850,16 @@ export default function App() {
         isOpen={isDownloadModalOpen}
         onClose={() => setIsDownloadModalOpen(false)}
       />
+
+      {/* Modal: Đề xuất Thêm Di sản Mới (Mở trực tiếp ở đầu trang) */}
+      {isGlobalHeritageModalOpen && (
+        <HeritageEditModal
+          heritage={null}
+          isOpen={isGlobalHeritageModalOpen}
+          onClose={() => setIsGlobalHeritageModalOpen(false)}
+          onSaveSuccess={() => setIsGlobalHeritageModalOpen(false)}
+        />
+      )}
 
     </div>
   );

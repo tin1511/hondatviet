@@ -97,8 +97,8 @@ export const OfflineHeritageManagerModal: React.FC<OfflineHeritageManagerModalPr
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-3xl bg-stone-900 border border-stone-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fade-in">
+      <div className="relative w-full max-w-3xl bg-stone-900 border border-stone-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-stone-800 bg-stone-950/60">

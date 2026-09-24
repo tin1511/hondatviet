@@ -109,8 +109,8 @@ export const VoiceSettingsModal: React.FC<VoiceSettingsModalProps> = ({ isOpen, 
   ).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="bg-stone-900 border border-amber-500/40 rounded-3xl w-full max-w-xl p-5 sm:p-6 shadow-2xl space-y-5 text-stone-100 relative max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fadeIn">
+      <div className="bg-stone-900 border border-amber-500/40 rounded-3xl w-full max-w-xl p-5 sm:p-6 shadow-2xl space-y-5 text-stone-100 relative max-h-[96vh] overflow-y-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-stone-800 pb-4">

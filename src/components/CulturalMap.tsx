@@ -23,6 +23,7 @@ import {
 import { HeritageItem, RegionType, UserLocation, UserProfile } from '../types';
 import { storageService } from '../services/storageService';
 import { HeritageEditModal } from './HeritageEditModal';
+import { handleImageError, getSafeHeritageImageUrl } from '../utils/imageUtils';
 import { 
   geolocationService, 
   calculateDistanceKm, 
@@ -107,11 +108,14 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
   const categories = [
     { id: 'all', label: 'Tất cả' },
+    { id: 'monument', label: '📜 Di tích Lịch sử & Danh thắng' },
     { id: 'palace', label: '🏛 Hoàng thành & Cung điện' },
-    { id: 'monument', label: '📜 Di tích Lịch sử' },
-    { id: 'temple', label: '⛩ Đền chùa & Tháp' },
-    { id: 'ancient_house', label: '🏘 Nhà cổ & Phố cổ' },
-    { id: 'architecture', label: '🏯 Kiến trúc' },
+    { id: 'temple', label: '⛩ Đền chùa & Tháp cổ' },
+    { id: 'citadel', label: '🏰 Thành lũy & Pháo đài' },
+    { id: 'ancient_house', label: '🏘 Đô thị Cổ & Nhà cổ' },
+    { id: 'architecture', label: '🏯 Kiến trúc Cổ & Danh thắng' },
+    { id: 'craft_village', label: '🏺 Làng nghề truyền thống' },
+    { id: 'folk_art', label: '🎭 Nghệ thuật Dân gian' }
   ];
 
   const regions = [
@@ -122,9 +126,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
   ];
 
   let filteredItems = heritages.filter((item) => {
+    const isApproved = isAdmin || !item.approvalStatus || item.approvalStatus === 'approved';
     const matchRegion = selectedRegion === 'all' || item.region === selectedRegion;
     const matchCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    return matchRegion && matchCategory;
+    return isApproved && matchRegion && matchCategory;
   });
 
   if (sortByDistance && userLocation) {
@@ -183,6 +188,17 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 {sortByDistance ? '✓ Đang xếp theo gần bạn nhất' : 'Xếp theo gần bạn nhất'}
               </button>
             )}
+
+            <button
+              onClick={() => {
+                setEditingHeritage(null);
+                setIsEditModalOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow transition-all active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Đề Xuất Di Sản / Danh Lam Mới</span>
+            </button>
 
             {userLocation && (
               <span className="text-[11px] text-stone-400 flex items-center gap-1 ml-1">
@@ -310,9 +326,12 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                   }`}
                 >
                   <img 
-                    src={item.imageUrl} 
+                    src={getSafeHeritageImageUrl(item.imageUrl, item.id)} 
                     alt={item.name} 
-                    className="w-14 h-14 rounded-xl object-cover border border-stone-800 shrink-0" 
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => handleImageError(e)}
+                    className="w-14 h-14 rounded-xl object-cover border border-stone-800 shrink-0 bg-stone-900" 
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1.5 mb-1">
@@ -366,8 +385,11 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
           
           <div className="relative h-44 rounded-2xl overflow-hidden border border-stone-800">
             <img 
-              src={activeHeritage.imageUrl} 
+              src={getSafeHeritageImageUrl(activeHeritage.imageUrl, activeHeritage.id)} 
               alt={activeHeritage.name} 
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={(e) => handleImageError(e)}
               className="w-full h-full object-cover" 
             />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent" />

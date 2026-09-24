@@ -229,8 +229,8 @@ export const LandmarkEditModal: React.FC<LandmarkEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="bg-stone-900 border border-stone-800 rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/85 backdrop-blur-md overflow-hidden animate-in fade-in duration-200">
+      <div className="bg-stone-900 border border-stone-800 rounded-3xl max-w-xl w-full max-h-[96vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Header */}
         <div className="p-5 border-b border-stone-800 flex items-center justify-between bg-stone-950/80">

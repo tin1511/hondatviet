@@ -24,7 +24,8 @@ import {
   ArrowLeft,
   Database,
   WifiOff,
-  Eye
+  Eye,
+  Plus
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -40,6 +41,7 @@ interface NavbarProps {
   onOpenOfflineManager?: () => void;
   onLogout?: () => void;
   onPeekBackground?: () => void;
+  onOpenAddHeritage?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -52,7 +54,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuthModal,
   onOpenOfflineManager,
   onLogout,
-  onPeekBackground
+  onPeekBackground,
+  onOpenAddHeritage
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -96,8 +99,24 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onSelectTab('home')}
               className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none shrink-0"
             >
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-red-600 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-900/40 border border-amber-400/40 group-hover:scale-105 transition-transform duration-200 shrink-0">
-                <span className="text-lg sm:text-xl font-serif font-bold text-amber-100">H</span>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg shadow-amber-900/40 border border-amber-400/30 group-hover:scale-105 transition-transform duration-200 shrink-0 bg-stone-900 flex items-center justify-center">
+                <img 
+                  src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                  alt="Hồn Đất Việt" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // In case of any path error or HMR glitch, gracefully fallback to stylish gradient H
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.className = "w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-red-600 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-900/40 border border-amber-400/40 group-hover:scale-105 transition-transform duration-200 shrink-0";
+                      const textSpan = document.createElement('span');
+                      textSpan.className = "text-lg sm:text-xl font-serif font-bold text-amber-100";
+                      textSpan.innerText = "H";
+                      parent.appendChild(textSpan);
+                    }
+                  }}
+                />
               </div>
               <div className="shrink-0 whitespace-nowrap">
                 <div className="flex items-center gap-1.5 whitespace-nowrap">
@@ -190,6 +209,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right actions: Language, Favorites, Activity History, Profile */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             
+            {/* ⭐ PROMINENT TOP "+ ĐỀ XUẤT" BUTTON IN NAVBAR */}
+            {onOpenAddHeritage && (
+              <button
+                id="btn-nav-add-heritage"
+                onClick={onOpenAddHeritage}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300"
+                title="Đề xuất thêm di sản hoặc địa điểm mới ngay lập tức"
+              >
+                <Plus className="w-3.5 h-3.5 text-stone-950 stroke-[3]" />
+                <span className="hidden sm:inline">+ Đề Xuất Mới</span>
+              </button>
+            )}
+
             {/* Quick Peek Background Icon (especially helpful on mobile) */}
             {onPeekBackground && (
               <button
@@ -301,14 +333,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </button>
             ) : (
-              <button
-                id="btn-login"
-                onClick={() => onOpenAuthModal('login')}
-                className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 text-xs font-bold shadow-md transition-all shrink-0"
-              >
-                <LogIn className="w-3.5 h-3.5 text-stone-950 shrink-0" />
-                <span className="hidden xs:inline">Đăng nhập</span>
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  id="btn-login"
+                  onClick={() => onOpenAuthModal('login')}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700/90 text-stone-200 text-xs font-semibold border border-stone-700/80 transition-all shrink-0"
+                  title="Đăng nhập tài khoản"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Đăng nhập</span>
+                </button>
+                <button
+                  id="btn-register"
+                  onClick={() => onOpenAuthModal('register')}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 text-xs font-bold shadow-md transition-all shrink-0"
+                  title="Tạo tài khoản mới"
+                >
+                  <User className="w-3.5 h-3.5 text-stone-950 shrink-0" />
+                  <span className="hidden xs:inline">Đăng ký</span>
+                </button>
+              </div>
             )}
 
             {/* Mobile Hamburger Toggle */}
@@ -350,15 +394,26 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <div className="flex items-center justify-between w-full gap-2">
                 <span className="text-xs text-stone-400">Tài khoản</span>
-                <button
-                  onClick={() => {
-                    onOpenAuthModal('login');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-amber-500 text-stone-950 text-xs font-bold min-h-[40px] flex items-center justify-center active:scale-95"
-                >
-                  Đăng nhập / Đăng ký
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => {
+                      onOpenAuthModal('login');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-stone-800 text-stone-200 text-xs font-semibold border border-stone-700 min-h-[38px] flex items-center justify-center active:scale-95"
+                  >
+                    Đăng nhập
+                  </button>
+                  <button
+                    onClick={() => {
+                      onOpenAuthModal('register');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500 text-stone-950 text-xs font-bold min-h-[38px] flex items-center justify-center active:scale-95"
+                  >
+                    Đăng ký
+                  </button>
+                </div>
               </div>
             )}
 

@@ -354,7 +354,40 @@ export const geolocationService = {
   },
 
   /**
-   * Yêu cầu quyền định vị GPS từ trình duyệt
+   * Định vị dựa trên IP công cộng khi thiết bị bị chặn GPS hoặc không hỗ trợ
+   */
+  async fetchIpLocation(): Promise<UserLocation | null> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch('https://freeipapi.com/api/json', { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+          const lat = data.latitude;
+          const lng = data.longitude;
+          const cityName = data.cityName ? `${data.cityName}` : this.detectNearestCity(lat, lng);
+          const location: UserLocation = {
+            lat,
+            lng,
+            accuracy: 5000,
+            cityName,
+            source: 'ip',
+            timestamp: Date.now()
+          };
+          this.saveLocation(location);
+          return location;
+        }
+      }
+    } catch (e) {
+      console.warn('IP location fetch failed', e);
+    }
+    return null;
+  },
+
+  /**
+   * Yêu cầu quyền định vị GPS từ trình duyệt với cơ chế tự động thử lại (Fallback) và Giải mã địa lý (Reverse Geocoding)
    */
   async requestCurrentPosition(): Promise<{
     success: boolean;
@@ -362,54 +395,108 @@ export const geolocationService = {
     error?: string;
   }> {
     if (!navigator.geolocation) {
+      const ipLoc = await this.fetchIpLocation();
+      if (ipLoc) return { success: true, location: ipLoc };
+      const defaultLoc = this.setPresetLocation('hanoi');
+      return { success: true, location: defaultLoc || undefined };
+    }
+
+    const queryLocation = (highAccuracy: boolean, timeoutMs: number): Promise<{
+      success: boolean;
+      lat?: number;
+      lng?: number;
+      accuracy?: number;
+      error?: string;
+      code?: number;
+    }> => {
+      return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              success: true,
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              accuracy: Math.round(position.coords.accuracy)
+            });
+          },
+          (error) => {
+            let errorMsg = 'Không thể lấy định vị.';
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                errorMsg = 'Quyền truy cập định vị đã bị từ chối hoặc bị hạn chế bởi trình duyệt / thiết bị.';
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMsg = 'Tín hiệu GPS/định vị tạm thời không khả dụng trên thiết bị này.';
+                break;
+              case error.TIMEOUT:
+                errorMsg = 'Yêu cầu định vị đã quá thời gian chờ (Timeout).';
+                break;
+            }
+            resolve({ success: false, error: errorMsg, code: error.code });
+          },
+          {
+            enableHighAccuracy: highAccuracy,
+            timeout: timeoutMs,
+            maximumAge: 120000
+          }
+        );
+      });
+    };
+
+    // Bước 1: Thử nghiệm lấy định vị bằng GPS chính xác cao
+    let gpsRes = await queryLocation(true, 4500);
+
+    // Bước 2: Nếu thất bại do timeout hoặc không khả dụng, thử lại bằng Wi-Fi/IP (độ chính xác thường) để tránh lỗi cứng
+    if (!gpsRes.success && gpsRes.code !== 1) { // 1 là PERMISSION_DENIED (Người dùng từ chối hẳn)
+      console.warn('GPS high accuracy timed out or unavailable. Retrying with standard accuracy...');
+      gpsRes = await queryLocation(false, 8000);
+    }
+
+    if (!gpsRes.success || gpsRes.lat === undefined || gpsRes.lng === undefined) {
+      // Tự động thử chuyển sang IP geolocation
+      const ipLoc = await this.fetchIpLocation();
+      if (ipLoc) {
+        return { success: true, location: ipLoc };
+      }
+
+      // Tự động nạp vị trí mẫu (Hà Nội) nếu cả GPS và IP đều bị hạn chế
+      const presetLoc = this.setPresetLocation('hanoi');
+      if (presetLoc) {
+        return { success: true, location: presetLoc };
+      }
+
       return {
         success: false,
-        error: 'Trình duyệt không hỗ trợ định vị địa lý (Geolocation).'
+        error: gpsRes.error || 'Không thể xác định vị trí hiện tại.'
       };
     }
 
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const accuracy = Math.round(position.coords.accuracy);
-          const cityName = this.detectNearestCity(lat, lng);
+    const lat = gpsRes.lat;
+    const lng = gpsRes.lng;
+    const accuracy = gpsRes.accuracy || 0;
 
-          const location: UserLocation = {
-            lat,
-            lng,
-            accuracy,
-            cityName,
-            source: 'gps',
-            timestamp: Date.now()
-          };
+    // Bước 3: Chạy giải mã địa lý ngược nâng cao qua API hoặc tìm thành phố gần nhất mặc định
+    let cityName = this.detectNearestCity(lat, lng);
+    try {
+      const realCity = await this.reverseGeocodeCity(lat, lng);
+      if (realCity && realCity.trim() !== '') {
+        cityName = realCity;
+      }
+    } catch (e) {
+      console.warn('Reverse geocoding fell back to local presets', e);
+    }
 
-          this.saveLocation(location);
-          resolve({ success: true, location });
-        },
-        (error) => {
-          let errorMsg = 'Không thể lấy định vị.';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMsg = 'Quyền truy cập định vị đã bị từ chối hoặc bị hạn chế bởi bảo mật.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMsg = 'Tín hiệu GPS/định vị tạm thời không khả dụng.';
-              break;
-            case error.TIMEOUT:
-              errorMsg = 'Yêu cầu định vị đã quá thời gian chờ (Timeout).';
-              break;
-          }
-          resolve({ success: false, error: errorMsg });
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        }
-      );
-    });
+    const location: UserLocation = {
+      lat,
+      lng,
+      accuracy,
+      cityName,
+      source: 'gps',
+      timestamp: Date.now()
+    };
+
+    this.saveLocation(location);
+    return { success: true, location };
   },
 
   /**

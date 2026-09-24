@@ -19,7 +19,8 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
-  Award
+  Award,
+  Plus
 } from 'lucide-react';
 import { HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 import { geolocationService, CITY_LANDMARK_PRESETS } from '../services/geolocationService';
@@ -37,6 +38,7 @@ interface HeroSectionProps {
   onDetectGps?: () => void;
   onOpenCityPicker?: () => void;
   onExploreLandmark?: () => void;
+  onOpenAddHeritage?: () => void;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -49,7 +51,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   gpsError: propGpsError,
   onDetectGps,
   onOpenCityPicker,
-  onExploreLandmark
+  onExploreLandmark,
+  onOpenAddHeritage
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<HeritageItem[]>([]);
@@ -248,6 +251,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Primary Main CTA Buttons */}
           <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             
+            {/* 🌟 NÚT NỔI BẬT: ĐỀ XUẤT DI SẢN / ĐỊA ĐIỂM MỚI NGAY TẠI ĐẦU TRANG */}
+            {onOpenAddHeritage && (
+              <button
+                id="hero-cta-add-heritage-top"
+                onClick={onOpenAddHeritage}
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs sm:text-sm transition-all shadow-xl shadow-amber-500/25 flex items-center gap-1.5 sm:gap-2 active:scale-95 border border-amber-300 ring-2 ring-amber-400/40 cursor-pointer"
+                title="Thêm di sản, danh lam thắng cảnh hoặc địa điểm ăn uống/giải trí mới"
+              >
+                <Plus className="w-4 h-4 text-stone-950 stroke-[3]" />
+                <span>+ Đề Xuất Di Sản / Địa Điểm Mới</span>
+              </button>
+            )}
+
             <button
               id="hero-cta-gps"
               onClick={() => {

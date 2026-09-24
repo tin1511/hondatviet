@@ -6,6 +6,7 @@ import {
 } from '../data/vietnamHeritageData';
 import { CITY_LANDMARK_PRESETS } from './geolocationService';
 import { storageService } from './storageService';
+import { VIETNAM_LANDMARK_PHOTOS } from '../data/landmarkImagesDatabase';
 
 const OFFLINE_HERITAGE_KEY = 'heritageai_offline_heritages_v1';
 const OFFLINE_STORIES_KEY = 'heritageai_offline_stories_v1';
@@ -93,12 +94,14 @@ class OfflineStorageService {
     const placesMap = storageService.getPlaces();
     const allPlaces = Object.values(placesMap).flat();
     const customStories = storageService.getCustomStories();
+    const crafts = storageService.getCrafts();
+    const arts = storageService.getArts();
 
     onProgress?.(30, 'Đang lưu trữ dữ liệu văn bản và thông tin lịch sử...');
 
     const totalHeritages = allHeritages.length;
     const totalPlaces = allPlaces.length;
-    const totalCraftArts = TRADITIONAL_ARTS.length;
+    const totalCraftArts = crafts.length + arts.length;
     const totalLandmarks = CITY_LANDMARK_PRESETS.length;
 
     // 2. Serialize and store text JSON
@@ -110,7 +113,7 @@ class OfflineStorageService {
       console.warn('[OfflineStorage] LocalStorage quota exceeded, storing key records:', err);
     }
 
-    onProgress?.(60, 'Đang lưu vào bộ nhớ đệm CacheStorage (Hình ảnh & Bản đồ)...');
+    onProgress?.(50, 'Đang phân tích và quét tất cả hình ảnh theo tên địa điểm...');
 
     // 3. Pre-cache images using Cache API if available
     let imagesCachedCount = 0;
@@ -119,34 +122,57 @@ class OfflineStorageService {
         const cache = await caches.open('heritage-offline-images-v1');
         const imageUrls = new Set<string>();
 
-        // Collect URLs
+        // Collect URLs from heritages (main images & historic previews)
         allHeritages.forEach((h: HeritageItem) => {
           if (h.imageUrl) imageUrls.add(h.imageUrl);
           if (h.historicImageUrl) imageUrls.add(h.historicImageUrl);
         });
+
+        // Collect URLs from local food & entertainment venues
         allPlaces.forEach((p: PlaceItem) => {
           if (p.photoUrl) imageUrls.add(p.photoUrl);
         });
+
+        // Collect URLs from scenic landmark presets
         CITY_LANDMARK_PRESETS.forEach((lm: CityLandmarkBackground) => {
           if (lm.imageUrl) imageUrls.add(lm.imageUrl);
         });
 
-        const urlsArray = Array.from(imageUrls);
+        // Collect URLs from crafts and arts
+        crafts.forEach((c) => {
+          if (c.imageUrl) imageUrls.add(c.imageUrl);
+        });
+        arts.forEach((a) => {
+          if (a.imageUrl) imageUrls.add(a.imageUrl);
+        });
+
+        // Match and collect images matching location names from the high-quality landmark database
+        VIETNAM_LANDMARK_PHOTOS.forEach((photo) => {
+          if (photo.imageUrl) imageUrls.add(photo.imageUrl);
+          if (photo.thumbUrl) imageUrls.add(photo.thumbUrl);
+        });
+
+        const urlsArray = Array.from(imageUrls).filter(Boolean);
         const totalUrls = urlsArray.length;
 
         for (let i = 0; i < totalUrls; i++) {
           const url = urlsArray[i];
           try {
-            const response = await fetch(url, { mode: 'cors' }).catch(() => null);
-            if (response && response.ok) {
+            // First attempt: with cors to get clean metadata if possible
+            let response = await fetch(url, { mode: 'cors' }).catch(() => null);
+            if (!response || !response.ok) {
+              // Second attempt: fallback to no-cors mode (opaque cache) to bypass CORS blocks on non-cors images
+              response = await fetch(url, { mode: 'no-cors' }).catch(() => null);
+            }
+            if (response) {
               await cache.put(url, response.clone());
               imagesCachedCount++;
             }
           } catch (e) {
-            // Ignore individual image fetch error
+            // Ignore single image caching failure
           }
-          const imageProgress = 60 + Math.floor(((i + 1) / totalUrls) * 35);
-          onProgress?.(imageProgress, `Đang tải bộ nhớ đệm hình ảnh (${i + 1}/${totalUrls})...`);
+          const imageProgress = 50 + Math.floor(((i + 1) / totalUrls) * 45);
+          onProgress?.(imageProgress, `Đang tải bộ nhớ đệm hình ảnh ngoại tuyến (${i + 1}/${totalUrls})...`);
         }
       } catch (e) {
         console.warn('[OfflineStorage] Cache API image caching error:', e);

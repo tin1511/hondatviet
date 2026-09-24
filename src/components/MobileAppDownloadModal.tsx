@@ -34,8 +34,8 @@ export const MobileAppDownloadModal: React.FC<MobileAppDownloadModalProps> = ({
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(appUrl)}&color=d97706&bgcolor=1c1917`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-2xl bg-stone-900 border border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-stone-100">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fade-in">
+      <div className="w-full max-w-2xl bg-stone-900 border border-amber-500/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh] text-stone-100">
         
         {/* Modal Header */}
         <div className="relative p-6 bg-gradient-to-r from-amber-950/60 via-stone-900 to-amber-900/40 border-b border-stone-800 flex items-center justify-between">

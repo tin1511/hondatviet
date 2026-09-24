@@ -91,8 +91,8 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-        <div className="bg-stone-900 border border-stone-800 rounded-3xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden animate-in fade-in duration-200">
+        <div className="bg-stone-900 border border-stone-800 rounded-3xl max-w-2xl w-full max-h-[96vh] flex flex-col shadow-2xl overflow-hidden">
           
           {/* Modal Header */}
           <div className="p-5 border-b border-stone-800 flex items-center justify-between bg-stone-950/70">

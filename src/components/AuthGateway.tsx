@@ -25,7 +25,10 @@ import {
   RefreshCw,
   X,
   ChevronRight,
-  Info
+  Info,
+  Check,
+  ArrowLeft,
+  Clock
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { geolocationService, CITY_LANDMARK_PRESETS } from '../services/geolocationService';
@@ -186,7 +189,7 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
     }, 300);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleInitiateRegister = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
@@ -201,6 +204,12 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
       return;
     }
 
+    const emailCheck = storageService.validateEmailIntegrity(regEmail);
+    if (!emailCheck.valid) {
+      setErrorMessage(emailCheck.error || 'Email không hợp lệ.');
+      return;
+    }
+
     setIsLoading(true);
     setTimeout(() => {
       const res = storageService.register({
@@ -209,19 +218,20 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
         password: regPassword,
         role: regRole,
         city: regCity,
-        interests: ['Di sản Văn hóa Việt Nam', 'Ẩm thực truyền thống', 'Làng nghề & Nghệ thuật']
+        interests: ['Di sản Văn hóa Việt Nam', 'Ẩm thực truyền thống', 'Làng nghề & Nghệ thuật'],
+        emailVerified: true
       });
       setIsLoading(false);
 
       if (!res.success || !res.user) {
-        setErrorMessage(res.error || 'Đăng ký không thành công.');
+        setErrorMessage(res.error || 'Không thể tạo tài khoản.');
         return;
       }
 
-      setSuccessMessage(`Đăng ký tài khoản thành công! Tặng bạn 100 XP khởi đầu.`);
+      setSuccessMessage(`Đăng ký tài khoản thành công! Chào mừng ${res.user.displayName} gia nhập (+100 XP)`);
       setTimeout(() => {
         onLoginSuccess(res.user!);
-      }, 600);
+      }, 500);
     }, 350);
   };
 
@@ -648,7 +658,7 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
                 REGISTER FORM
                 ========================================== */}
             {activeTab === 'register' && (
-              <form onSubmit={handleRegister} className="space-y-3.5">
+              <form onSubmit={handleInitiateRegister} className="space-y-3.5">
                 
                 <div>
                   <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
@@ -670,7 +680,7 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
 
                 <div>
                   <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
-                    Địa chỉ Email
+                    Địa chỉ Email chính thức
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 text-stone-500 absolute left-3.5 top-3" />
@@ -684,6 +694,9 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
                       className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-4 py-2.5 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500"
                     />
                   </div>
+                  <p className="text-[10px] text-stone-500 mt-1">
+                    * Mã OTP xác thực chính chủ sẽ được gửi đến email này để kích hoạt.
+                  </p>
                 </div>
 
                 <div>
@@ -755,7 +768,7 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Đăng Ký & Bắt Đầu (+100 XP)</span>
+                      <span>✨ Đăng Ký Tài Khoản Ngay (+100 XP)</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}

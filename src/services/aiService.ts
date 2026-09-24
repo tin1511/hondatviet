@@ -608,5 +608,33 @@ export const aiService = {
       searchSummary: `Đã tìm ảnh phong cảnh chính xác và chất lượng cao cho danh thắng "${params.landmarkName || bestPhoto.landmarkName}".`,
       candidateImages: candidates
     };
+  },
+
+  /**
+   * Gemini AI Image Finder for Food, Lodging, and Entertainment Places
+   */
+  async findPlaceImage(params: {
+    placeName: string;
+    categoryLabel: string;
+    address: string;
+  }): Promise<{ success: boolean; photoUrl: string; reason: string }> {
+    try {
+      const res = await fetch('/api/ai/find-place-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+      const data = await res.json();
+      if (res.ok && data && data.success) {
+        return data;
+      }
+    } catch (err) {
+      console.warn('Network or API error in findPlaceImage:', err);
+    }
+    return {
+      success: false,
+      photoUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
+      reason: 'Lỗi mạng, trả về ảnh ẩm thực ngẫu nhiên.'
+    };
   }
 };

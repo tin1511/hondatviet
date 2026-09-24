@@ -38,6 +38,7 @@ import { storageService } from '../services/storageService';
 import { HeritageEditModal } from './HeritageEditModal';
 import { PlaceEditModal } from './PlaceEditModal';
 import { HeritageDetailModal } from './HeritageDetailModal';
+import { getSafeHeritageImageUrl, handleImageError } from '../utils/imageUtils';
 
 interface NearbyRecommendationWidgetProps {
   currentUser?: UserProfile;
@@ -181,6 +182,16 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
                     GPS Thực
                   </span>
                 )}
+                {currentLocation.source === 'ip' && (
+                  <span className="px-1.5 py-0.5 rounded bg-blue-950 text-blue-400 text-[9px] font-bold border border-blue-500/30">
+                    Ước tính IP
+                  </span>
+                )}
+                {currentLocation.source === 'preset' && (
+                  <span className="px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 text-[9px] font-bold border border-amber-500/30">
+                    Mặc định
+                  </span>
+                )}
               </div>
             )}
 
@@ -197,15 +208,21 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
 
         {/* Location Error Notice if any */}
         {locationError && (
-          <div className="mb-6 p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200 flex items-start gap-2.5">
+          <div className="mb-6 p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200 flex items-start gap-2.5 relative">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-amber-300">Không thể lấy định vị từ thiết bị:</p>
+            <div className="flex-1 pr-6">
+              <p className="font-semibold text-amber-300">Thông báo định vị:</p>
               <p className="text-[11px] text-stone-300 mt-0.5">{locationError}</p>
               <p className="text-[11px] text-stone-400 mt-1">
-                Bạn có thể chọn nhanh các vị trí văn hóa tiêu biểu bên dưới để khám phá ngay lập tức.
+                Đã tự động chuyển sang vị trí mặc định. Bạn có thể chọn nhanh các tỉnh thành bên dưới để khám phá.
               </p>
             </div>
+            <button 
+              onClick={() => setLocationError('')}
+              className="absolute top-3 right-3 text-stone-400 hover:text-stone-200 text-sm font-bold px-1"
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -321,39 +338,38 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {activeTab === 'heritages' ? (
+              <button
+                onClick={() => {
+                  setEditingHeritage(null);
+                  setIsHeritageModalOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
+                title="Đề xuất một di sản / danh lam mới vào hệ thống"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Đề Xuất Di Sản Mới</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setEditingPlace(null);
+                  setIsPlaceModalOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
+                title="Đề xuất địa điểm ăn uống hoặc trải nghiệm mới"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Đề Xuất Địa Điểm Mới</span>
+              </button>
+            )}
+
             {isAdmin && (
-              <>
-                {activeTab === 'heritages' ? (
-                  <button
-                    onClick={() => {
-                      setEditingHeritage(null);
-                      setIsHeritageModalOpen(true);
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
-                    title="Thêm một di sản mới vào hệ thống"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm Di Sản</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setEditingPlace(null);
-                      setIsPlaceModalOpen(true);
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
-                    title="Thêm địa điểm ăn uống hoặc trải nghiệm mới"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm Địa Điểm</span>
-                  </button>
-                )}
-                <span className="text-[11px] px-2.5 py-1 rounded-lg bg-stone-900 border border-amber-500/20 text-amber-400 font-medium hidden md:inline-flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Chế độ Quản trị: Có thể sửa trực tiếp trên từng thẻ</span>
-                </span>
-              </>
+              <span className="text-[11px] px-2.5 py-1 rounded-lg bg-stone-900 border border-amber-500/20 text-amber-400 font-medium hidden md:inline-flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span>Chế độ Quản trị: Có thể sửa trực tiếp trên từng thẻ</span>
+              </span>
             )}
 
             <button
@@ -380,8 +396,11 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
                 >
                   <div className="relative h-44 w-full overflow-hidden bg-stone-900">
                     <img
-                      src={item.imageUrl}
+                      src={getSafeHeritageImageUrl(item.imageUrl, item.id)}
                       alt={item.name}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageError(e)}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     
@@ -488,6 +507,9 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
                     <img
                       src={place.photoUrl}
                       alt={place.name}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageError(e)}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
 

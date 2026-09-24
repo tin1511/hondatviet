@@ -12,9 +12,9 @@ import {
   Share2,
   Bookmark
 } from 'lucide-react';
-import { HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 import { storageService } from '../services/storageService';
 import { HeritageItem, ItineraryPlan, FamilyStoryMemory } from '../types';
+import { getSafeHeritageImageUrl, handleImageError } from '../utils/imageUtils';
 
 interface FavoritesViewProps {
   onNavigateToStory: (name: string, history?: string, period?: string) => void;
@@ -42,7 +42,8 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
     setSavedStories(storageService.getFamilyStories());
   }, []);
 
-  const favoriteHeritages = HERITAGE_DATABASE.filter(h => favoriteIds.includes(h.id));
+  const allHeritages = storageService.getHeritages();
+  const favoriteHeritages = allHeritages.filter(h => favoriteIds.includes(h.id));
 
   const handleRemoveFavorite = (id: string, name: string) => {
     storageService.toggleFavorite(id, name);
@@ -139,8 +140,11 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({
                     className="relative h-48 sm:h-52 overflow-hidden cursor-pointer"
                   >
                     <img
-                      src={heritage.imageUrl}
+                      src={getSafeHeritageImageUrl(heritage.imageUrl, heritage.id)}
                       alt={heritage.name}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageError(e)}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/20 to-transparent"></div>
