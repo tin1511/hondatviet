@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Save, 
@@ -45,6 +46,26 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
 }) => {
   const isNew = !heritage || !heritage.id;
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Body scroll lock to prevent background scroll on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Scroll form container to top when changing steps
+  useEffect(() => {
+    if (formRef.current) {
+      formRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [activeStep]);
 
   const [formData, setFormData] = useState<Partial<HeritageItem>>({
     id: '',
@@ -117,6 +138,11 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
     setActiveStep(1);
     setSuccessMessage(null);
     setErrorMessage(null);
+    setTimeout(() => {
+      if (formRef.current) {
+        formRef.current.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    }, 50);
   }, [heritage, isOpen]);
 
   if (!isOpen) return null;
@@ -220,7 +246,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
     }, 900);
   };
 
-  return (
+  return createPortal(
     <div 
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden"
       onClick={onClose}
@@ -330,7 +356,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-4 sm:p-5 flex-1 flex flex-col justify-between text-xs overflow-y-auto overscroll-contain">
+        <form ref={formRef} onSubmit={handleSave} className="p-4 sm:p-5 flex-1 flex flex-col justify-between text-xs overflow-y-auto overscroll-contain">
           <div className="space-y-3.5">
             {successMessage && (
               <div className="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 flex items-center gap-2 font-medium">
@@ -645,6 +671,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Save, 
@@ -49,6 +50,26 @@ export const PlaceEditModal: React.FC<PlaceEditModalProps> = ({
 }) => {
   const isNew = !place || !place.id;
   const [activeStep, setActiveStep] = useState<1 | 2>(1);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Body scroll lock to prevent background scroll on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Scroll form container to top when changing steps
+  useEffect(() => {
+    if (formRef.current) {
+      formRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [activeStep]);
   const availableHeritages = heritagesList && heritagesList.length > 0 
     ? heritagesList 
     : storageService.getHeritages();
@@ -140,6 +161,11 @@ export const PlaceEditModal: React.FC<PlaceEditModalProps> = ({
     setActiveStep(1);
     setSuccessMessage(null);
     setErrorMessage(null);
+    setTimeout(() => {
+      if (formRef.current) {
+        formRef.current.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    }, 50);
   }, [place, isOpen]);
 
   if (!isOpen) return null;
@@ -226,7 +252,7 @@ export const PlaceEditModal: React.FC<PlaceEditModalProps> = ({
     }, 1200);
   };
 
-  return (
+  return createPortal(
     <div 
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden"
       onClick={onClose}
@@ -322,7 +348,7 @@ export const PlaceEditModal: React.FC<PlaceEditModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-4 sm:p-5 flex-1 flex flex-col justify-between text-xs overflow-y-auto overscroll-contain">
+        <form ref={formRef} onSubmit={handleSave} className="p-4 sm:p-5 flex-1 flex flex-col justify-between text-xs overflow-y-auto overscroll-contain">
           <div className="space-y-3.5">
             {successMessage && (
               <div className="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 flex items-center gap-2 font-medium">
@@ -579,6 +605,7 @@ export const PlaceEditModal: React.FC<PlaceEditModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Sparkles, 
@@ -46,8 +47,28 @@ export const AdminRecognitionModal: React.FC<AdminRecognitionModalProps> = ({
   onClose,
   onSaved
 }) => {
+  const formRef = useRef<HTMLDivElement>(null);
   const [config, setConfig] = useState<RecognitionSectionConfig>(() => storageService.getRecognitionSectionConfig());
   const [activeSubTab, setActiveSubTab] = useState<'samples' | 'header' | 'preview'>('samples');
+
+  // Body scroll lock to prevent background scroll on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Scroll modal container to top on open or sub-tab switch
+  useEffect(() => {
+    if (isOpen && formRef.current) {
+      formRef.current.scrollTop = 0;
+    }
+  }, [isOpen, activeSubTab]);
   
   // Sample editing state
   const [editingSampleIndex, setEditingSampleIndex] = useState<number | null>(null);
@@ -242,9 +263,11 @@ export const AdminRecognitionModal: React.FC<AdminRecognitionModalProps> = ({
     showToast(`Đã chọn ảnh "${photo.landmarkName || photo.title}"`);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-sm overflow-hidden animate-fadeIn">
-      <div className="relative w-full max-w-5xl bg-stone-900 border border-stone-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-sm overflow-hidden animate-fadeIn">
+      <div ref={formRef} className="relative w-full max-w-5xl bg-stone-900 border border-stone-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[96vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-800 bg-stone-950/80 shrink-0">
@@ -814,6 +837,7 @@ export const AdminRecognitionModal: React.FC<AdminRecognitionModalProps> = ({
           onSelectPhoto={handleSelectFromPicker}
         />
       )}
-    </div>
+    </div>,
+    document.body
   );
 };

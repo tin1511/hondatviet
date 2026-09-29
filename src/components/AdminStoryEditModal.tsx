@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Save, 
@@ -32,6 +33,27 @@ export const AdminStoryEditModal: React.FC<AdminStoryEditModalProps> = ({
   currentStory,
   onSaved
 }) => {
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Body scroll lock to prevent background scroll on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Scroll form container to top when switching audience modes or open
+  useEffect(() => {
+    if (isOpen && formRef.current) {
+      formRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [isOpen, initialMode]);
+
   const [selectedMode, setSelectedMode] = useState<StoryMode>(initialMode);
   const [title, setTitle] = useState('');
   const [storyText, setStoryText] = useState('');
@@ -153,8 +175,10 @@ export const AdminStoryEditModal: React.FC<AdminStoryEditModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fadeIn">
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fadeIn">
       <div className="bg-stone-900 border border-amber-500/30 rounded-3xl w-full max-w-3xl max-h-[96vh] flex flex-col overflow-hidden shadow-2xl">
         
         {/* Header */}
@@ -185,7 +209,7 @@ export const AdminStoryEditModal: React.FC<AdminStoryEditModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-5 flex-1">
+        <form ref={formRef} onSubmit={handleSave} className="p-6 overflow-y-auto space-y-5 flex-1">
           
           {/* Audience Mode Switcher */}
           <div>
@@ -354,6 +378,7 @@ export const AdminStoryEditModal: React.FC<AdminStoryEditModalProps> = ({
         </form>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

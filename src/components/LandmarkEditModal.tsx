@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Save, 
@@ -51,6 +52,27 @@ export const LandmarkEditModal: React.FC<LandmarkEditModalProps> = ({
   onSave,
   onDelete
 }) => {
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Body scroll lock to prevent background scroll on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Scroll form container to top on open
+  useEffect(() => {
+    if (isOpen && formRef.current) {
+      formRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [isOpen]);
+
   const [formData, setFormData] = useState<Partial<CityLandmarkBackground>>({
     id: '',
     cityName: '',
@@ -228,8 +250,10 @@ export const LandmarkEditModal: React.FC<LandmarkEditModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/85 backdrop-blur-md overflow-hidden animate-in fade-in duration-200">
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/85 backdrop-blur-md overflow-hidden animate-in fade-in duration-200">
       <div className="bg-stone-900 border border-stone-800 rounded-3xl max-w-xl w-full max-h-[96vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Header */}
@@ -258,7 +282,7 @@ export const LandmarkEditModal: React.FC<LandmarkEditModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 max-h-[70vh]">
+        <form ref={formRef} onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 max-h-[70vh]">
           {errorMessage && (
             <div className="p-3.5 rounded-2xl bg-red-950/80 border border-red-500/40 text-red-300 text-xs font-medium">
               {errorMessage}
@@ -749,6 +773,7 @@ export const LandmarkEditModal: React.FC<LandmarkEditModalProps> = ({
           }));
         }}
       />
-    </div>
+    </div>,
+    document.body
   );
 };
