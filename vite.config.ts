@@ -11,7 +11,7 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+        includeAssets: ['apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png'],
         manifest: {
           id: '/',
           name: 'Hồn Đất Việt - Khám phá Di sản & Trải nghiệm Văn hóa Việt Nam',
@@ -24,19 +24,19 @@ export default defineConfig(() => {
           scope: '/',
           icons: [
             {
-              src: '/pwa-192x192.png',
+              src: '/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-512x512.png',
+              src: '/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-maskable-512x512.png',
+              src: '/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',

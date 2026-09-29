@@ -348,8 +348,12 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
                 className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
                 title="Đề xuất một di sản / danh lam mới vào hệ thống"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Đề Xuất Di Sản Mới</span>
+                <img 
+                  src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                  alt="Logo Hồn Đất Việt" 
+                  className="w-4 h-4 rounded-full object-cover border border-amber-950/40 shrink-0" 
+                />
+                <span>Đề Xuất Di Sản Mới</span>
               </button>
             ) : (
               <button
@@ -360,8 +364,12 @@ export const NearbyRecommendationWidget: React.FC<NearbyRecommendationWidgetProp
                 className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 transition-all shadow cursor-pointer active:scale-95"
                 title="Đề xuất địa điểm ăn uống hoặc trải nghiệm mới"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Đề Xuất Địa Điểm Mới</span>
+                <img 
+                  src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                  alt="Logo Hồn Đất Việt" 
+                  className="w-4 h-4 rounded-full object-cover border border-amber-950/40 shrink-0" 
+                />
+                <span>Đề Xuất Địa Điểm Mới</span>
               </button>
             )}
 

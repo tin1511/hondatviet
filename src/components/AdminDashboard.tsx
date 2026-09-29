@@ -37,7 +37,7 @@ import {
   Edit3,
   Image as ImageIcon
 } from 'lucide-react';
-import { storageService } from '../services/storageService';
+import { storageService, DEFAULT_SITE_LOGO } from '../services/storageService';
 import { CommunityContribution, UserProfile, UserActivityLog, HeritageItem, PlaceItem, CityLandmarkBackground, RecognitionSectionConfig, TraditionalCraftVillage, TraditionalArtItem } from '../types';
 import { HeritageEditModal } from './HeritageEditModal';
 import { PlaceEditModal } from './PlaceEditModal';
@@ -57,7 +57,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUserChange
 }) => {
   const [user, setUser] = useState<UserProfile>(propsUser || storageService.getCurrentUser());
-  const [activeTab, setActiveTab] = useState<'audit_logs' | 'users' | 'pending' | 'heritages' | 'places' | 'landmarks' | 'ai_status' | 'tour_guide' | 'recognition'>('audit_logs');
+  const [activeTab, setActiveTab] = useState<'audit_logs' | 'users' | 'pending' | 'heritages' | 'places' | 'landmarks' | 'ai_status' | 'tour_guide' | 'recognition' | 'branding'>('audit_logs');
   const [contributions, setContributions] = useState<CommunityContribution[]>([]);
   const [heritages, setHeritages] = useState<HeritageItem[]>(storageService.getHeritages());
   const [placesMap, setPlacesMap] = useState<Record<string, PlaceItem[]>>(storageService.getPlaces());
@@ -67,6 +67,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [recognitionConfig, setRecognitionConfig] = useState<RecognitionSectionConfig>(() => storageService.getRecognitionSectionConfig());
   const [accounts, setAccounts] = useState<UserProfile[]>([]);
   const [auditLogs, setAuditLogs] = useState<UserActivityLog[]>([]);
+
+  // Website Branding & Avatar Logo State
+  const [siteLogoUrl, setSiteLogoUrl] = useState<string>(() => storageService.getSiteLogo());
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      alert('Dung lượng tệp quá lớn (tối đa 8MB). Vui lòng chọn tệp nhỏ hơn.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const res = event.target?.result as string;
+      if (res) {
+        setSiteLogoUrl(res);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveSiteLogo = () => {
+    if (!siteLogoUrl || !siteLogoUrl.trim()) {
+      alert('Vui lòng chọn tệp ảnh hoặc nhập đường dẫn URL ảnh logo.');
+      return;
+    }
+    storageService.setSiteLogo(siteLogoUrl);
+    setFeedbackMessage('Đã cập nhật Logo / Avatar trang web thành công!');
+    setTimeout(() => setFeedbackMessage(null), 3000);
+  };
+
+  const handleResetSiteLogo = () => {
+    if (confirm('Khôi phục về Logo Hồn Đất Việt mặc định ban đầu?')) {
+      const def = storageService.resetSiteLogo();
+      setSiteLogoUrl(def);
+      setFeedbackMessage('Đã khôi phục Logo mặc định thành công.');
+      setTimeout(() => setFeedbackMessage(null), 3000);
+    }
+  };
 
   // Modals for editing
   const [isHeritageModalOpen, setIsHeritageModalOpen] = useState(false);
@@ -668,6 +710,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             >
               <ImageIcon className="w-3.5 h-3.5" />
               <span>Ảnh & Mẫu Nhận Diện AI ({recognitionConfig.samples.length})</span>
+            </button>
+
+            {/* TAB 10: WEBSITE BRANDING LOGO */}
+            <button
+              onClick={() => setActiveTab('branding')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer ${
+                activeTab === 'branding'
+                  ? 'bg-amber-500 text-stone-950 shadow-md ring-1 ring-amber-400'
+                  : 'bg-stone-900 text-stone-400 hover:text-stone-200 hover:bg-stone-800'
+              }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+              <span>Avatar & Logo Trang Web</span>
             </button>
           </div>
 
@@ -1977,6 +2032,245 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 10 CONTENT: WEBSITE BRANDING & AVATAR LOGO */}
+      {activeTab === 'branding' && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Banner Intro */}
+          <div className="bg-gradient-to-r from-amber-950/80 via-stone-900 to-amber-900/60 border border-amber-500/30 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Cấu Hình Nhận Diện Thương Hiệu</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-serif font-bold text-amber-100">
+                  Thay Đổi Biểu Tượng & Avatar Trang Web
+                </h3>
+                <p className="text-xs text-stone-300 max-w-2xl leading-relaxed">
+                  Tùy chỉnh Logo nhận diện hiển thị trên Header Navigation bar, các nút bấm Đề Xuất Di Sản, Favicon trình duyệt và Biểu tượng Ứng dụng PWA.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleResetSiteLogo}
+                className="px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shrink-0"
+                title="Khôi phục logo về thiết lập ban đầu"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                <span>Khôi Phục Mặc Định</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Live Preview & Upload Control Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* Column 1: Live Header & Icon Preview */}
+            <div className="lg:col-span-5 bg-stone-900 border border-stone-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-5 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-stone-800">
+                  <h4 className="font-serif font-bold text-amber-200 text-sm flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Xem Trước Hiển Thị Thực Tế</span>
+                  </h4>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium">
+                    Live Preview
+                  </span>
+                </div>
+
+                {/* Large Square Logo Card */}
+                <div className="flex flex-col items-center justify-center p-6 bg-stone-950/80 border border-amber-500/20 rounded-2xl text-center space-y-3">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-2 border-amber-400/50 shadow-2xl shadow-amber-950/60 bg-stone-900 flex items-center justify-center p-1 relative group">
+                    <img 
+                      src={siteLogoUrl || DEFAULT_SITE_LOGO} 
+                      alt="Website Logo Preview" 
+                      className="w-full h-full object-cover rounded-xl"
+                      onError={(e) => {
+                        e.currentTarget.src = DEFAULT_SITE_LOGO;
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-amber-100">Avatar Trang Web Hiện Tại</p>
+                    <p className="text-[11px] text-stone-400">Hiển thị ở kích thước độ phân giải cao</p>
+                  </div>
+                </div>
+
+                {/* Header Bar Mockup Preview */}
+                <div className="p-3 bg-stone-950 border border-stone-800 rounded-2xl space-y-2">
+                  <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider block">
+                    Hiển thị trên Header Thanh Điều Hướng:
+                  </span>
+                  <div className="p-2.5 bg-stone-900/90 rounded-xl border border-amber-900/40 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg overflow-hidden border border-amber-400/30 bg-stone-900 shrink-0">
+                        <img src={siteLogoUrl || DEFAULT_SITE_LOGO} alt="Nav Preview" className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <span className="font-serif font-bold text-xs text-amber-100 block">
+                          HỒN ĐẤT <span className="text-amber-400">VIỆT</span>
+                        </span>
+                        <span className="text-[9px] text-stone-400">Hiểu di sản. Khám phá Việt Nam.</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500 text-stone-950 font-bold text-[10px]">
+                      <img src={siteLogoUrl || DEFAULT_SITE_LOGO} alt="Button Icon" className="w-3 h-3 rounded-full object-cover" />
+                      <span>Đề Xuất</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-[11px] text-amber-200/90 leading-relaxed flex items-start gap-2">
+                <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <span>Biểu tượng này cũng sẽ tự động được sử dụng làm Favicon trình duyệt và Icon ứng dụng di động PWA khi người dùng cài đặt ứng dụng.</span>
+              </div>
+            </div>
+
+            {/* Column 2: Upload File & URL Controls */}
+            <div className="lg:col-span-7 bg-stone-900 border border-stone-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-6 flex flex-col justify-between">
+              <div className="space-y-5">
+                <div className="pb-3 border-b border-stone-800">
+                  <h4 className="font-serif font-bold text-stone-100 text-base">
+                    Cập Nhật Logo Mới Cho Website
+                  </h4>
+                  <p className="text-xs text-stone-400">
+                    Chọn một phương thức cập nhật bên dưới (Tải ảnh từ máy/điện thoại hoặc Nhập URL trực tiếp):
+                  </p>
+                </div>
+
+                {/* Option A: Upload File From Device */}
+                <div className="p-4 bg-stone-950/80 border border-stone-800 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-amber-300 flex items-center gap-2">
+                      <Download className="w-4 h-4 text-amber-400 rotate-180" />
+                      <span>Cách 1: Tải ảnh từ thiết bị (Máy tính / Điện thoại)</span>
+                    </label>
+                    <span className="text-[10px] text-stone-500">Tối đa 8MB (PNG, JPG, SVG, WEBP)</span>
+                  </div>
+
+                  <input 
+                    type="file" 
+                    ref={logoFileInputRef}
+                    accept="image/*"
+                    onChange={handleLogoFileUpload}
+                    className="hidden" 
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => logoFileInputRef.current?.click()}
+                    className="w-full py-3 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 border-2 border-dashed border-amber-500/40 hover:border-amber-400 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer group shadow-inner"
+                  >
+                    <ImageIcon className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                    <span>Chọn Tệp Ảnh Từ Máy Tính Hoặc Điện Thoại</span>
+                  </button>
+                </div>
+
+                {/* Option B: Direct Image URL */}
+                <div className="p-4 bg-stone-950/80 border border-stone-800 rounded-2xl space-y-3">
+                  <label className="text-xs font-bold text-amber-300 flex items-center gap-2">
+                    <ExternalLink className="w-4 h-4 text-amber-400" />
+                    <span>Cách 2: Hoặc nhập trực tiếp URL hình ảnh</span>
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={siteLogoUrl}
+                      onChange={(e) => setSiteLogoUrl(e.target.value)}
+                      placeholder="https://domain.com/path-to-your-logo.png"
+                      className="flex-1 bg-stone-900 border border-stone-800 rounded-xl px-3.5 py-2.5 text-stone-100 text-xs focus:outline-none focus:border-amber-500 font-mono"
+                    />
+                    {siteLogoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setSiteLogoUrl('')}
+                        className="p-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition-colors cursor-pointer"
+                        title="Xóa URL"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Preset Choice Cards */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-semibold text-stone-400 block">
+                    Gợi ý chọn mẫu nhanh:
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSiteLogoUrl('/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png')}
+                      className={`p-2.5 rounded-xl border text-left text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                        siteLogoUrl === '/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                          : 'bg-stone-950 border-stone-800 text-stone-300 hover:bg-stone-800'
+                      }`}
+                    >
+                      <img src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" alt="Official" className="w-6 h-6 rounded-md object-cover shrink-0" />
+                      <span className="truncate">Hồn Đất Việt Gốc</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSiteLogoUrl('https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80')}
+                      className={`p-2.5 rounded-xl border text-left text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                        siteLogoUrl === 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                          : 'bg-stone-950 border-stone-800 text-stone-300 hover:bg-stone-800'
+                      }`}
+                    >
+                      <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80" alt="Guide" className="w-6 h-6 rounded-md object-cover shrink-0" />
+                      <span className="truncate">HDV Bảo An</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSiteLogoUrl('https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80')}
+                      className={`p-2.5 rounded-xl border text-left text-xs transition-all flex items-center gap-2 cursor-pointer ${
+                        siteLogoUrl === 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold'
+                          : 'bg-stone-950 border-stone-800 text-stone-300 hover:bg-stone-800'
+                      }`}
+                    >
+                      <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80" alt="Scenic" className="w-6 h-6 rounded-md object-cover shrink-0" />
+                      <span className="truncate">Nghệ Thuật Di Sản</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Primary Save Action */}
+              <div className="pt-4 border-t border-stone-800 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleResetSiteLogo}
+                  className="px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Khôi Phục Mặc Định
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleSaveSiteLogo}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs shadow-lg shadow-amber-500/25 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                >
+                  <Check className="w-4 h-4 text-stone-950 stroke-[3]" />
+                  <span>Lưu & Áp Dụng Avatar Website</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}

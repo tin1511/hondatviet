@@ -221,76 +221,117 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/85 backdrop-blur-md overflow-hidden">
+    <div 
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md overflow-hidden"
+      onClick={onClose}
+    >
       <div 
-        className="bg-stone-900 border border-amber-500/30 rounded-3xl w-full max-w-2xl max-h-[96vh] flex flex-col shadow-2xl overflow-hidden animate-fadeIn text-stone-100"
+        className="bg-stone-900 border-t sm:border border-amber-500/30 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[94vh] sm:h-auto sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-slideUp sm:animate-fadeIn text-stone-100"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Pull Handle Indicator */}
+        <div className="w-12 h-1.5 bg-stone-700/80 rounded-full mx-auto my-2 sm:hidden shrink-0" />
+
         {/* Header */}
-        <div className="px-5 py-3 border-b border-stone-800 bg-stone-950/80 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm">
+        <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-stone-800 bg-stone-950/80 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm shrink-0">
               ✏️
             </div>
-            <div>
-              <h3 className="font-serif font-bold text-base sm:text-lg text-amber-100">
+            <div className="min-w-0">
+              <h3 className="font-serif font-bold text-sm sm:text-lg text-amber-100 truncate">
                 {isNew ? 'Thêm Điểm Di Sản Mới' : 'Chỉnh Sửa Thông Tin Di Sản'}
               </h3>
-              <p className="text-[11px] text-stone-400">
-                Thông tin gửi đi sẽ qua kiểm duyệt Admin trước khi đăng tải công khai
+              <p className="text-[10px] sm:text-[11px] text-stone-400 truncate">
+                Thông tin sẽ qua kiểm duyệt Admin trước khi đăng tải
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors"
+            className="p-2 rounded-xl text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition-colors shrink-0"
+            title="Đóng modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Step Indicator Bar */}
-        <div className="px-5 py-2 bg-stone-950/40 border-b border-stone-800 flex items-center justify-between text-xs shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveStep(1)}
-            className={`flex-1 py-1.5 px-2 text-center rounded-xl font-medium transition-all cursor-pointer ${
-              activeStep === 1 
-                ? 'bg-amber-500 text-stone-950 font-bold shadow' 
-                : 'text-stone-400 hover:bg-stone-800/60'
-            }`}
-          >
-            1. Thông tin chung
-          </button>
-          <div className="w-4 h-0.5 bg-stone-800 shrink-0 mx-1" />
-          <button
-            type="button"
-            onClick={() => setActiveStep(2)}
-            className={`flex-1 py-1.5 px-2 text-center rounded-xl font-medium transition-all cursor-pointer ${
-              activeStep === 2 
-                ? 'bg-amber-500 text-stone-950 font-bold shadow' 
-                : 'text-stone-400 hover:bg-stone-800/60'
-            }`}
-          >
-            2. Vị trí & Giờ mở
-          </button>
-          <div className="w-4 h-0.5 bg-stone-800 shrink-0 mx-1" />
-          <button
-            type="button"
-            onClick={() => setActiveStep(3)}
-            className={`flex-1 py-1.5 px-2 text-center rounded-xl font-medium transition-all cursor-pointer ${
-              activeStep === 3 
-                ? 'bg-amber-500 text-stone-950 font-bold shadow' 
-                : 'text-stone-400 hover:bg-stone-800/60'
-            }`}
-          >
-            3. Lịch sử & Nổi bật
-          </button>
+        {/* Step Indicator Bar - Responsive for Mobile */}
+        <div className="px-3 sm:px-5 py-2 bg-stone-950/60 border-b border-stone-800 flex items-center justify-between text-xs shrink-0 gap-1.5">
+          {/* Mobile view step summary bar */}
+          <div className="sm:hidden flex items-center justify-between w-full px-1">
+            <span className="text-xs font-bold text-amber-300 flex items-center gap-1">
+              <span className="w-5 h-5 rounded-full bg-amber-500 text-stone-950 text-[10px] flex items-center justify-center font-extrabold">
+                {activeStep}
+              </span>
+              <span>
+                {activeStep === 1 && '1. Thông tin chung'}
+                {activeStep === 2 && '2. Vị trí & Giờ mở'}
+                {activeStep === 3 && '3. Lịch sử & Nổi bật'}
+              </span>
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              {[1, 2, 3].map((step) => (
+                <button
+                  key={step}
+                  type="button"
+                  onClick={() => setActiveStep(step as 1 | 2 | 3)}
+                  className={`h-2 rounded-full transition-all ${
+                    activeStep === step 
+                      ? 'w-6 bg-amber-500' 
+                      : 'w-2 bg-stone-700 hover:bg-stone-600'
+                  }`}
+                  title={`Chuyển sang bước ${step}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop full view step buttons */}
+          <div className="hidden sm:flex items-center justify-between w-full gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveStep(1)}
+              className={`flex-1 py-1.5 px-2 text-center rounded-xl font-medium transition-all cursor-pointer ${
+                activeStep === 1 
+                  ? 'bg-amber-500 text-stone-950 font-bold shadow' 
+                  : 'text-stone-400 hover:bg-stone-800/60'
+              }`}
+            >
+              1. Thông tin chung
+            </button>
+            <div className="w-4 h-0.5 bg-stone-800 shrink-0" />
+            <button
+              type="button"
+              onClick={() => setActiveStep(2)}
+              className={`flex-1 py-1.5 px-2 text-center rounded-xl font-medium transition-all cursor-pointer ${
+                activeStep === 2 
+                  ? 'bg-amber-500 text-stone-950 font-bold shadow' 
+                  : 'text-stone-400 hover:bg-stone-800/60'
+              }`}
+            >
+              2. Vị trí & Giờ mở
+            </button>
+            <div className="w-4 h-0.5 bg-stone-800 shrink-0" />
+            <button
+              type="button"
+              onClick={() => setActiveStep(3)}
+              className={`flex-1 py-1.5 px-2 text-center rounded-xl font-medium transition-all cursor-pointer ${
+                activeStep === 3 
+                  ? 'bg-amber-500 text-stone-950 font-bold shadow' 
+                  : 'text-stone-400 hover:bg-stone-800/60'
+              }`}
+            >
+              3. Lịch sử & Nổi bật
+            </button>
+          </div>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSave} className="p-4 sm:p-5 flex-1 flex flex-col justify-between text-xs overflow-hidden">
-          <div className="space-y-3">
+        <form onSubmit={handleSave} className="p-4 sm:p-5 flex-1 flex flex-col justify-between text-xs overflow-y-auto overscroll-contain">
+          <div className="space-y-3.5">
             {successMessage && (
               <div className="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 flex items-center gap-2 font-medium">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -307,35 +348,35 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
 
             {/* STEP 1: Thông tin cơ bản */}
             {activeStep === 1 && (
-              <div className="space-y-3 animate-fadeIn">
+              <div className="space-y-3.5 animate-fadeIn">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300">Tên Di sản (*)</label>
+                    <label className="font-semibold text-stone-300 text-xs">Tên Di sản (*)</label>
                     <input
                       type="text"
                       value={formData.name || ''}
                       onChange={(e) => handleChange('name', e.target.value)}
                       placeholder="VD: Đô thị Cổ Hội An (Phố Cổ Hội An)"
                       required
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 font-medium"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 font-medium text-xs sm:text-xs"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300">Tỉnh / Thành phố (*)</label>
+                    <label className="font-semibold text-stone-300 text-xs">Tỉnh / Thành phố (*)</label>
                     <input
                       type="text"
                       value={formData.province || ''}
                       onChange={(e) => handleChange('province', e.target.value)}
                       placeholder="VD: Quảng Nam, Hà Nội, Thừa Thiên Huế..."
                       required
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-300 flex items-center gap-1.5">
+                  <label className="font-semibold text-stone-300 flex items-center gap-1.5 text-xs">
                     <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
                     <span>Ảnh đại diện Di sản (URL)</span>
                   </label>
@@ -345,10 +386,10 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                       value={formData.imageUrl || ''}
                       onChange={(e) => handleChange('imageUrl', e.target.value)}
                       placeholder="https://images.unsplash.com/..."
-                      className="flex-1 bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                      className="flex-1 bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     />
                     {formData.imageUrl && (
-                      <div className="w-10 h-9 rounded-xl overflow-hidden border border-stone-700 shrink-0 bg-stone-950">
+                      <div className="w-10 h-10 rounded-xl overflow-hidden border border-stone-700 shrink-0 bg-stone-950">
                         <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
                       </div>
                     )}
@@ -357,11 +398,11 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300">Phân loại Di sản</label>
+                    <label className="font-semibold text-stone-300 text-xs">Phân loại Di sản</label>
                     <select
                       value={formData.category || 'monument'}
                       onChange={handleCategoryChange}
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-200 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     >
                       {CATEGORY_OPTIONS.map(c => (
                         <option key={c.id} value={c.id}>{c.label}</option>
@@ -370,22 +411,22 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300">Nhãn hiển thị thẻ</label>
+                    <label className="font-semibold text-stone-300 text-xs">Nhãn hiển thị thẻ</label>
                     <input
                       type="text"
                       value={formData.categoryLabel || ''}
                       onChange={(e) => handleChange('categoryLabel', e.target.value)}
                       placeholder="VD: Di sản Đô thị Cổ"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300">Vùng miền</label>
+                    <label className="font-semibold text-stone-300 text-xs">Vùng miền</label>
                     <select
                       value={formData.region || 'central'}
                       onChange={(e) => handleChange('region', e.target.value as Region)}
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-200 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-200 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     >
                       <option value="north">Miền Bắc</option>
                       <option value="central">Miền Trung</option>
@@ -398,43 +439,43 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
 
             {/* STEP 2: Vị trí & Giờ tham quan */}
             {activeStep === 2 && (
-              <div className="space-y-3 animate-fadeIn">
+              <div className="space-y-3.5 animate-fadeIn">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300">Niên đại / Thời kỳ</label>
+                    <label className="font-semibold text-stone-300 text-xs">Niên đại / Thời kỳ</label>
                     <input
                       type="text"
                       value={formData.period || ''}
                       onChange={(e) => handleChange('period', e.target.value)}
                       placeholder="VD: Thế kỷ XVI - XIX"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300">Triều đại liên quan</label>
+                    <label className="font-semibold text-stone-300 text-xs">Triều đại liên quan</label>
                     <input
                       type="text"
                       value={formData.dynasty || ''}
                       onChange={(e) => handleChange('dynasty', e.target.value)}
                       placeholder="VD: Triều Nguyễn / Chúa Nguyễn"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300">Địa chỉ cụ thể</label>
+                    <label className="font-semibold text-stone-300 text-xs">Địa chỉ cụ thể</label>
                     <input
                       type="text"
                       value={formData.address || ''}
                       onChange={(e) => handleChange('address', e.target.value)}
                       placeholder="VD: Phường Minh An, TP. Hội An"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     />
                   </div>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-stone-950/70 border border-stone-800 space-y-1.5">
+                <div className="p-3 rounded-2xl bg-stone-950/70 border border-stone-800 space-y-2">
                   <span className="font-semibold text-stone-300 flex items-center gap-1.5 text-xs">
                     <Compass className="w-3.5 h-3.5 text-amber-400" />
                     <span>Tọa độ GPS (Vĩ độ & Kinh độ trên Bản Đồ)</span>
@@ -447,7 +488,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                         step="0.0001"
                         value={formData.lat ?? 16.0}
                         onChange={(e) => handleChange('lat', parseFloat(e.target.value))}
-                        className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-1.5 text-stone-100 focus:outline-none focus:border-amber-500 font-mono text-xs"
+                        className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 sm:py-1.5 text-stone-100 focus:outline-none focus:border-amber-500 font-mono text-xs"
                       />
                     </div>
                     <div className="space-y-0.5">
@@ -457,7 +498,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                         step="0.0001"
                         value={formData.lng ?? 108.0}
                         onChange={(e) => handleChange('lng', parseFloat(e.target.value))}
-                        className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-1.5 text-stone-100 focus:outline-none focus:border-amber-500 font-mono text-xs"
+                        className="w-full bg-stone-900 border border-stone-800 rounded-xl px-3 py-2 sm:py-1.5 text-stone-100 focus:outline-none focus:border-amber-500 font-mono text-xs"
                       />
                     </div>
                   </div>
@@ -465,7 +506,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300 flex items-center gap-1.5">
+                    <label className="font-semibold text-stone-300 flex items-center gap-1.5 text-xs">
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
                       <span>Giờ tham quan</span>
                     </label>
@@ -474,12 +515,12 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                       value={formData.visitingHours || ''}
                       onChange={(e) => handleChange('visitingHours', e.target.value)}
                       placeholder="VD: 07:30 - 17:30 hàng ngày"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-semibold text-stone-300 flex items-center gap-1.5">
+                    <label className="font-semibold text-stone-300 flex items-center gap-1.5 text-xs">
                       <Ticket className="w-3.5 h-3.5 text-amber-400" />
                       <span>Giá vé tham quan</span>
                     </label>
@@ -488,7 +529,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                       value={formData.ticketPrice || ''}
                       onChange={(e) => handleChange('ticketPrice', e.target.value)}
                       placeholder="VD: 120.000 VNĐ / vé"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-stone-950 border border-stone-800 rounded-xl px-3 py-2.5 sm:py-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 text-xs sm:text-xs"
                     />
                   </div>
                 </div>
@@ -497,32 +538,32 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
 
             {/* STEP 3: Lịch sử & Nổi bật */}
             {activeStep === 3 && (
-              <div className="space-y-3 animate-fadeIn">
+              <div className="space-y-3.5 animate-fadeIn">
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-300">Mô tả Lịch sử & Câu chuyện Di sản (*)</label>
+                  <label className="font-semibold text-stone-300 text-xs">Mô tả Lịch sử & Câu chuyện Di sản (*)</label>
                   <textarea
-                    rows={2.5}
+                    rows={3}
                     value={formData.history || ''}
                     onChange={(e) => handleChange('history', e.target.value)}
                     placeholder="Nhập nội dung lịch sử hình thành, giá trị kiến trúc..."
                     required
-                    className="w-full bg-stone-950 border border-stone-800 rounded-xl p-2.5 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 font-serif leading-relaxed"
+                    className="w-full bg-stone-950 border border-stone-800 rounded-xl p-2.5 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 font-serif leading-relaxed text-xs sm:text-xs"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-300">Ý nghĩa Văn hóa & Tầm vóc Di sản</label>
+                  <label className="font-semibold text-stone-300 text-xs">Ý nghĩa Văn hóa & Tầm vóc Di sản</label>
                   <textarea
-                    rows={1.5}
+                    rows={2}
                     value={formData.culturalSignificance || ''}
                     onChange={(e) => handleChange('culturalSignificance', e.target.value)}
                     placeholder="VD: Được UNESCO công nhận Di sản Văn hóa Thế giới năm 1999..."
-                    className="w-full bg-stone-950 border border-stone-800 rounded-xl p-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 font-serif"
+                    className="w-full bg-stone-950 border border-stone-800 rounded-xl p-2 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 font-serif text-xs sm:text-xs"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-300 flex items-center gap-1.5">
+                  <label className="font-semibold text-stone-300 flex items-center gap-1.5 text-xs">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     <span>Điểm nổi bật / Sự thật thú vị</span>
                   </label>
@@ -538,12 +579,12 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                         }
                       }}
                       placeholder="Thêm điểm nổi bật mới..."
-                      className="flex-1 bg-stone-950 border border-stone-800 rounded-xl px-3 py-1.5 text-stone-300 text-xs focus:outline-none focus:border-amber-500"
+                      className="flex-1 bg-stone-950 border border-stone-800 rounded-xl px-3 py-2 sm:py-1.5 text-stone-300 text-xs focus:outline-none focus:border-amber-500"
                     />
                     <button
                       type="button"
                       onClick={handleAddFact}
-                      className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs flex items-center gap-1 font-medium transition-colors"
+                      className="px-3.5 py-2 sm:py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs flex items-center gap-1 font-medium transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Thêm</span>
@@ -562,12 +603,12 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
             )}
           </div>
 
-          {/* Sticky Footer Actions - ALWAYS VISIBLE */}
-          <div className="pt-3 border-t border-stone-800 flex items-center justify-between gap-2 shrink-0 mt-3">
+          {/* Sticky Footer Actions - Mobile optimized */}
+          <div className="pt-3 border-t border-stone-800 flex items-center justify-between gap-2 shrink-0 mt-3 pb-safe sm:pb-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-medium transition-colors"
+              className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-semibold text-xs transition-colors cursor-pointer"
             >
               Hủy bỏ
             </button>
@@ -577,7 +618,7 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveStep((activeStep - 1) as 1 | 2)}
-                  className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium transition-colors"
+                  className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-semibold text-xs transition-colors cursor-pointer"
                 >
                   ← Quay lại
                 </button>
@@ -587,17 +628,17 @@ export const HeritageEditModal: React.FC<HeritageEditModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveStep((activeStep + 1) as 2 | 3)}
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold transition-all cursor-pointer"
+                  className="px-4 py-2.5 sm:py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs transition-all cursor-pointer shadow-md"
                 >
                   Tiếp theo →
                 </button>
               ) : (
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                  className="px-4 sm:px-5 py-2.5 sm:py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>Gửi Đề Xuất Di Sản</span>
+                  <Save className="w-4 h-4 shrink-0" />
+                  <span>Gửi Đề Xuất</span>
                 </button>
               )}
             </div>

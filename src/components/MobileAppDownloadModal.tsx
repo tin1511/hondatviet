@@ -15,6 +15,7 @@ import {
   Layers
 } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { storageService, DEFAULT_SITE_LOGO } from '../services/storageService';
 
 interface MobileAppDownloadModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ export const MobileAppDownloadModal: React.FC<MobileAppDownloadModalProps> = ({
 
   const appUrl = typeof window !== 'undefined' ? window.location.href : 'https://heritageai.vn';
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(appUrl)}&color=d97706&bgcolor=1c1917`;
+  const siteLogo = storageService.getSiteLogo();
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden animate-fade-in">
@@ -119,6 +121,31 @@ export const MobileAppDownloadModal: React.FC<MobileAppDownloadModalProps> = ({
 
         {/* Modal Main Content */}
         <div className="p-6 overflow-y-auto space-y-6">
+
+          {/* Biểu tượng App Icon Đồng Bộ Chính Thức */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-950/40 via-stone-950 to-amber-900/30 border border-amber-500/40 flex items-center gap-4 shadow-lg">
+            <div className="relative w-14 h-14 rounded-2xl bg-stone-900 border border-amber-500/60 overflow-hidden shrink-0 shadow-xl p-0.5">
+              <img 
+                src={siteLogo} 
+                alt="Biểu tượng App Hồn Đất Việt" 
+                className="w-full h-full object-cover rounded-xl"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = DEFAULT_SITE_LOGO;
+                }}
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-amber-300 font-serif">Biểu tượng App khi cài về máy</h4>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30">
+                  Đã đồng bộ Logo chính thức
+                </span>
+              </div>
+              <p className="text-xs text-stone-300 mt-1 leading-relaxed">
+                Khi bạn cài đặt ứng dụng (PWA) về điện thoại hoặc máy tính, màn hình chính (Home Screen) sẽ hiển thị chuẩn xác biểu tượng logo đã được thiết lập.
+              </p>
+            </div>
+          </div>
 
           {/* Key Advantages Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

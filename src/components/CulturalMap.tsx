@@ -196,8 +196,12 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
               }}
               className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow transition-all active:scale-95"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Đề Xuất Di Sản / Danh Lam Mới</span>
+              <img 
+                src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                alt="Logo Hồn Đất Việt" 
+                className="w-4 h-4 rounded-full object-cover border border-amber-950/40 shrink-0" 
+              />
+              <span>Đề Xuất Di Sản / Danh Lam Mới</span>
             </button>
 
             {userLocation && (
@@ -300,7 +304,11 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                   className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
                   title="Thêm di sản mới vào bản đồ"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <img 
+                    src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                    alt="Logo Hồn Đất Việt" 
+                    className="w-4 h-4 rounded-full object-cover border border-amber-500/40 shrink-0" 
+                  />
                   <span>Thêm Di Sản</span>
                 </button>
               </div>

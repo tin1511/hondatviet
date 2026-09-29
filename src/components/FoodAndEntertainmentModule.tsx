@@ -243,8 +243,12 @@ export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProp
               onClick={() => setIsAddModalOpen(true)}
               className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 shadow transition-all"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Đề Xuất Địa Điểm Mới</span>
+              <img 
+                src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                alt="Logo Hồn Đất Việt" 
+                className="w-4 h-4 rounded-full object-cover border border-amber-950/40 shrink-0" 
+              />
+              <span>Đề Xuất Địa Điểm Mới</span>
             </button>
             <span className="text-[11px] text-stone-400 hidden sm:inline">
               Dữ liệu kết nối vị trí thực tế trên Google Maps

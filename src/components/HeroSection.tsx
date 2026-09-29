@@ -259,8 +259,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs sm:text-sm transition-all shadow-xl shadow-amber-500/25 flex items-center gap-1.5 sm:gap-2 active:scale-95 border border-amber-300 ring-2 ring-amber-400/40 cursor-pointer"
                 title="Thêm di sản, danh lam thắng cảnh hoặc địa điểm ăn uống/giải trí mới"
               >
-                <Plus className="w-4 h-4 text-stone-950 stroke-[3]" />
-                <span>+ Đề Xuất Di Sản / Địa Điểm Mới</span>
+                <img 
+                  src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                  alt="Logo Hồn Đất Việt" 
+                  className="w-5 h-5 rounded-full object-cover border border-amber-950/40 shrink-0" 
+                />
+                <span>Đề Xuất Di Sản / Địa Điểm Mới</span>
               </button>
             )}
 

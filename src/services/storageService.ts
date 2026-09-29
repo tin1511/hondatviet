@@ -50,6 +50,90 @@ const RECOGNITION_CONFIG_KEY = 'heritageai_recognition_section_config';
 const CRAFTS_KEY = 'heritageai_custom_crafts';
 const ARTS_KEY = 'heritageai_custom_arts';
 const PENDING_REG_KEY = 'heritageai_pending_registration';
+const SITE_LOGO_KEY = 'heritageai_site_logo';
+export const DEFAULT_SITE_LOGO = '/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png';
+
+export function applySiteLogoToDom(logoUrl?: string): void {
+  if (typeof document === 'undefined') return;
+
+  let cleanUrl = logoUrl && logoUrl.trim().length > 0 ? logoUrl.trim() : '';
+  if (!cleanUrl && typeof localStorage !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(SITE_LOGO_KEY);
+      if (saved && saved.trim().length > 0) cleanUrl = saved.trim();
+    } catch {}
+  }
+  if (!cleanUrl) cleanUrl = DEFAULT_SITE_LOGO;
+
+  // 1. Update standard Favicon links
+  let favicons = document.querySelectorAll("link[rel*='icon']");
+  if (favicons.length === 0) {
+    const favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/png';
+    document.head.appendChild(favicon);
+    favicons = document.querySelectorAll("link[rel*='icon']");
+  }
+  favicons.forEach(el => {
+    (el as HTMLLinkElement).href = cleanUrl;
+  });
+
+  // 2. Update Apple Touch Icon for iOS home screen bookmarks
+  let appleIcon = document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement;
+  if (!appleIcon) {
+    appleIcon = document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    document.head.appendChild(appleIcon);
+  }
+  appleIcon.href = cleanUrl;
+
+  // 3. Dynamic PWA Web App Manifest Injection for Android/Chrome/Windows installation
+  try {
+    const manifestObj = {
+      id: '/',
+      name: 'Hồn Đất Việt - Khám phá Di sản & Trải nghiệm Văn hóa Việt Nam',
+      short_name: 'Hồn Đất Việt',
+      description: 'Nền tảng AI đồng hành khám phá di sản, nhận diện văn hóa, bản đồ di sản 3 miền, hỗ trợ chế độ ngoại tuyến tra cứu di sản vùng sâu vùng xa.',
+      theme_color: '#0c0a09',
+      background_color: '#0c0a09',
+      display: 'standalone',
+      start_url: '/',
+      scope: '/',
+      icons: [
+        {
+          src: cleanUrl,
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: cleanUrl,
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'any'
+        },
+        {
+          src: cleanUrl,
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable'
+        }
+      ]
+    };
+
+    const manifestDataUri = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifestObj));
+
+    let manifestLink = document.querySelector("link[rel='manifest']") as HTMLLinkElement;
+    if (!manifestLink) {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      document.head.appendChild(manifestLink);
+    }
+    manifestLink.href = manifestDataUri;
+  } catch (err) {
+    console.warn('Unable to apply dynamic PWA manifest:', err);
+  }
+}
 
 const DISPOSABLE_EMAIL_DOMAINS = new Set([
   'mailinator.com',
@@ -178,6 +262,51 @@ const GUEST_USER: UserProfile = {
 };
 
 export const storageService = {
+  // ==========================================
+  // WEBSITE BRANDING & AVATAR LOGO MANAGEMENT
+  // ==========================================
+  getSiteLogo(): string {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const saved = localStorage.getItem(SITE_LOGO_KEY);
+        if (saved && saved.trim().length > 0) {
+          return saved;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to read site logo:', err);
+    }
+    return DEFAULT_SITE_LOGO;
+  },
+
+  setSiteLogo(logoUrl: string): void {
+    try {
+      const cleanUrl = logoUrl && logoUrl.trim().length > 0 ? logoUrl.trim() : DEFAULT_SITE_LOGO;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(SITE_LOGO_KEY, cleanUrl);
+      }
+      
+      applySiteLogoToDom(cleanUrl);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('hdv_site_logo_changed', { detail: cleanUrl }));
+      }
+
+      this.logActivity({
+        actionType: 'admin_action',
+        title: 'Thay đổi Logo & Avatar Website',
+        description: 'Admin đã cập nhật biểu tượng đại diện (Logo / Avatar) chính thức của website và đồng bộ PWA App Icon',
+        pointsEarned: 50
+      });
+    } catch (err) {
+      console.error('Failed to save site logo:', err);
+    }
+  },
+
+  resetSiteLogo(): string {
+    this.setSiteLogo(DEFAULT_SITE_LOGO);
+    return DEFAULT_SITE_LOGO;
+  },
   // ==========================================
   // AUTHENTICATION & MULTI-USER MANAGEMENT
   // ==========================================

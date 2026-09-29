@@ -170,7 +170,11 @@ export const CommunityContributionModule: React.FC = () => {
           onClick={() => setShowForm(!showForm)}
           className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-xl flex items-center gap-2 transition-all cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
+          <img 
+            src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+            alt="Logo Hồn Đất Việt" 
+            className="w-5 h-5 rounded-full object-cover border border-amber-950/40 shrink-0" 
+          />
           <span>{showForm ? 'Đóng form đóng góp' : 'Gửi Đóng Góp Tư Liệu Mới'}</span>
         </button>
       </div>

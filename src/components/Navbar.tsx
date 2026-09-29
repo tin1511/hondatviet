@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
   MapPin, 
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
+import { storageService, DEFAULT_SITE_LOGO } from '../services/storageService';
 
 interface NavbarProps {
   currentTab: string;
@@ -58,6 +59,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAddHeritage
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [siteLogo, setSiteLogo] = useState<string>(() => storageService.getSiteLogo());
+
+  useEffect(() => {
+    const handleLogoChange = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setSiteLogo(customEvent.detail);
+      }
+    };
+    window.addEventListener('hdv_site_logo_changed', handleLogoChange);
+    return () => window.removeEventListener('hdv_site_logo_changed', handleLogoChange);
+  }, []);
 
   const navItems = [
     { id: 'home', label: 'Trang chủ', icon: Compass },
@@ -101,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg shadow-amber-900/40 border border-amber-400/30 group-hover:scale-105 transition-transform duration-200 shrink-0 bg-stone-900 flex items-center justify-center">
                 <img 
-                  src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                  src={siteLogo || DEFAULT_SITE_LOGO} 
                   alt="Hồn Đất Việt" 
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -209,16 +222,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right actions: Language, Favorites, Activity History, Profile */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             
-            {/* ⭐ PROMINENT TOP "+ ĐỀ XUẤT" BUTTON IN NAVBAR */}
+            {/* ⭐ PROMINENT TOP LOGO "ĐỀ XUẤT" BUTTON IN NAVBAR */}
             {onOpenAddHeritage && (
               <button
                 id="btn-nav-add-heritage"
                 onClick={onOpenAddHeritage}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300"
                 title="Đề xuất thêm di sản hoặc địa điểm mới ngay lập tức"
               >
-                <Plus className="w-3.5 h-3.5 text-stone-950 stroke-[3]" />
-                <span className="hidden sm:inline">+ Đề Xuất Mới</span>
+                <img 
+                  src={siteLogo || DEFAULT_SITE_LOGO} 
+                  alt="Logo Hồn Đất Việt" 
+                  className="w-4 h-4 rounded-full object-cover border border-amber-950/40 shrink-0" 
+                />
+                <span className="hidden sm:inline">Đề Xuất Mới</span>
               </button>
             )}
 

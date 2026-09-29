@@ -282,7 +282,11 @@ export const TraditionalCraftsAndArts: React.FC<TraditionalCraftsAndArtsProps> =
                   onClick={() => handleOpenCraftModal()}
                   className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-xl text-[11px] flex items-center gap-1.5 shadow"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <img 
+                    src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                    alt="Logo Hồn Đất Việt" 
+                    className="w-3.5 h-3.5 rounded-full object-cover border border-amber-950/40 shrink-0" 
+                  />
                   <span>Thêm Làng Nghề Mới</span>
                 </button>
               ) : (
@@ -290,7 +294,11 @@ export const TraditionalCraftsAndArts: React.FC<TraditionalCraftsAndArtsProps> =
                   onClick={() => handleOpenArtModal()}
                   className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-xl text-[11px] flex items-center gap-1.5 shadow"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <img 
+                    src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                    alt="Logo Hồn Đất Việt" 
+                    className="w-3.5 h-3.5 rounded-full object-cover border border-amber-950/40 shrink-0" 
+                  />
                   <span>Thêm Nghệ Thuật Mới</span>
                 </button>
               )}
@@ -322,16 +330,24 @@ export const TraditionalCraftsAndArts: React.FC<TraditionalCraftsAndArtsProps> =
                 onClick={() => handleOpenCraftModal()}
                 className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-xl text-[11px] flex items-center gap-1.5 shadow"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Đề Xuất Làng Nghề Mới</span>
+                <img 
+                  src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                  alt="Logo Hồn Đất Việt" 
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-amber-950/40 shrink-0" 
+                />
+                <span>Đề Xuất Làng Nghề Mới</span>
               </button>
             ) : (
               <button
                 onClick={() => handleOpenArtModal()}
                 className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold rounded-xl text-[11px] flex items-center gap-1.5 shadow"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Đề Xuất Nghệ Thuật Mới</span>
+                <img 
+                  src="/Messenger_creation_FDC0246A-CE89-435B-A246-2CBA64ADF7D0.png" 
+                  alt="Logo Hồn Đất Việt" 
+                  className="w-3.5 h-3.5 rounded-full object-cover border border-amber-950/40 shrink-0" 
+                />
+                <span>Đề Xuất Nghệ Thuật Mới</span>
               </button>
             )}
           </div>

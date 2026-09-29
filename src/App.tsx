@@ -57,7 +57,7 @@ import { HeritageEditModal } from './components/HeritageEditModal';
 import { PlaceEditModal } from './components/PlaceEditModal';
 import { HeritageItem, UserProfile, CityLandmarkBackground } from './types';
 import { HERITAGE_DATABASE } from './data/vietnamHeritageData';
-import { storageService } from './services/storageService';
+import { storageService, applySiteLogoToDom } from './services/storageService';
 import { geolocationService, CITY_LANDMARK_PRESETS } from './services/geolocationService';
 import { getHeritageForLandmark } from './services/landmarkHeritageService';
 import { loadAIConfigFromFirebase, loadTTSConfigFromFirebase } from './services/systemConfigService';
@@ -135,7 +135,21 @@ export default function App() {
     loadAIConfigFromFirebase().catch(() => {});
     loadTTSConfigFromFirebase().catch(() => {});
 
+    // Apply site logo & PWA app icon synchronization to DOM
+    applySiteLogoToDom(storageService.getSiteLogo());
+    const handleLogoChanged = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        applySiteLogoToDom(customEvent.detail);
+      }
+    };
+    window.addEventListener('hdv_site_logo_changed', handleLogoChanged);
+
     detectGps();
+
+    return () => {
+      window.removeEventListener('hdv_site_logo_changed', handleLogoChanged);
+    };
   }, []);
 
   // Scroll to top immediately whenever activeTab changes so user never has to scroll down
