@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -55,7 +56,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialTab = 'login',
   onNavigateTab
 }) => {
+  const bodyRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'profile' | 'activity' | 'security'>(initialTab);
+
+  // Body scroll lock to prevent underlying content scroll on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  // Scroll modal body container to top when open or changing tabs
+  useEffect(() => {
+    if (isOpen && bodyRef.current) {
+      bodyRef.current.scrollTop = 0;
+    }
+  }, [isOpen, activeTab]);
   const [currentUser, setCurrentUser] = useState<UserProfile>(storageService.getCurrentUser());
   const [activities, setActivities] = useState<UserActivityLog[]>([]);
   const [selectedActionFilter, setSelectedActionFilter] = useState<string>('all');
@@ -250,7 +271,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div 
@@ -258,7 +279,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden"
+          className="fixed inset-0 z-[100] flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-black/80 backdrop-blur-md overflow-hidden"
         >
           {/* Modal Container */}
           <motion.div 
@@ -270,7 +291,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           >
         
         {/* Header with Navigation Tabs */}
-        <div className="p-4 sm:p-5 border-b border-stone-800 bg-stone-950/60 flex flex-wrap items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 border-b border-stone-800 bg-stone-950/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-stone-950 font-bold font-serif text-sm shadow">
               H
@@ -301,7 +322,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Tab Navigation Switcher */}
-        <div className="flex border-b border-stone-800 bg-stone-950/40 px-3 sm:px-5 gap-1 overflow-x-auto no-scrollbar">
+        <div className="flex border-b border-stone-800 bg-stone-950/80 px-3 sm:px-5 gap-1 overflow-x-auto no-scrollbar shrink-0">
           {currentUser.isLoggedIn ? (
             <>
               <button
@@ -394,21 +415,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Notifications */}
         {errorMessage && (
-          <div className="mx-4 sm:mx-6 mt-4 p-3 bg-red-950/40 border border-red-500/30 rounded-xl text-red-300 text-xs flex items-center gap-2 animate-fadeIn">
+          <div className="shrink-0 mx-4 sm:mx-6 mt-4 p-3 bg-red-950/40 border border-red-500/30 rounded-xl text-red-300 text-xs flex items-center gap-2 animate-fadeIn">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="mx-4 sm:mx-6 mt-4 p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn">
+          <div className="shrink-0 mx-4 sm:mx-6 mt-4 p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{successMessage}</span>
           </div>
         )}
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-5 space-y-4">
+        <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto no-scrollbar p-4 sm:p-5 space-y-4">
 
           {/* ==========================================
               TAB 1: LOGIN VIEW
@@ -988,7 +1009,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-stone-800 bg-stone-950/60 flex items-center justify-between text-xs text-stone-400">
+        <div className="p-4 border-t border-stone-800 bg-stone-950/80 flex items-center justify-between text-xs text-stone-400 shrink-0">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>Dữ liệu lưu trữ an toàn trực tiếp trên trình duyệt thiết bị</span>
@@ -1004,6 +1025,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

@@ -247,7 +247,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [activeSubTab]);
+    if (document.body) document.body.scrollTop = 0;
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+  }, [activeSubTab, initialSubTab]);
   
   // Profile edit state
   const [displayName, setDisplayName] = useState(currentUser.displayName);

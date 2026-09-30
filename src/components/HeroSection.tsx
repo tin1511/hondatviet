@@ -25,7 +25,7 @@ import {
 import { HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 import { geolocationService, CITY_LANDMARK_PRESETS } from '../services/geolocationService';
 import { getHeritageForLandmark } from '../services/landmarkHeritageService';
-import { HeritageItem, CityLandmarkBackground } from '../types';
+import { UserProfile, HeritageItem, CityLandmarkBackground } from '../types';
 
 interface HeroSectionProps {
   onNavigate: (tab: string, heritageId?: string) => void;
@@ -39,6 +39,8 @@ interface HeroSectionProps {
   onOpenCityPicker?: () => void;
   onExploreLandmark?: () => void;
   onOpenAddHeritage?: () => void;
+  onOpenAuthModal?: (initialTab?: 'login' | 'register' | 'profile' | 'activity') => void;
+  userProfile?: UserProfile;
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -52,7 +54,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onDetectGps,
   onOpenCityPicker,
   onExploreLandmark,
-  onOpenAddHeritage
+  onOpenAddHeritage,
+  onOpenAuthModal,
+  userProfile
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<HeritageItem[]>([]);
@@ -247,6 +251,52 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
             )}
           </div>
+
+          {/* Guest Quick Register / Login Welcome Banner */}
+          {(!userProfile || !userProfile.isLoggedIn) && onOpenAuthModal && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.3 }}
+              className="mt-6 w-full max-w-xl mx-auto p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-stone-900/95 via-amber-950/40 to-stone-950/95 border border-amber-500/40 shadow-2xl backdrop-blur-md text-left flex flex-col sm:flex-row items-center justify-between gap-3.5"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center text-lg font-bold shrink-0 shadow-inner">
+                  👤
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-serif font-bold text-amber-200 flex items-center gap-1.5">
+                    <span>Đăng Nhập / Đăng Ký Tài Khoản</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold uppercase border border-amber-500/30">
+                      Tích XP
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-stone-300 mt-0.5">
+                    Đăng ký miễn phí để nhận điểm văn hóa, lưu hành trình & mở khóa danh hiệu di sản.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button
+                  type="button"
+                  id="hero-guest-btn-login"
+                  onClick={() => onOpenAuthModal('login')}
+                  className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-bold border border-amber-500/40 transition-all cursor-pointer text-center active:scale-95 shadow"
+                >
+                  Đăng Nhập
+                </button>
+                <button
+                  type="button"
+                  id="hero-guest-btn-register"
+                  onClick={() => onOpenAuthModal('register')}
+                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold shadow-md shadow-amber-950/50 transition-all cursor-pointer text-center active:scale-95 border border-amber-300"
+                >
+                  ✨ Đăng Ký
+                </button>
+              </div>
+            </motion.div>
+          )}
 
           {/* Primary Main CTA Buttons */}
           <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3">

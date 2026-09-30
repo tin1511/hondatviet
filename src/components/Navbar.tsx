@@ -219,10 +219,50 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </nav>
 
-          {/* Right actions: Language, Favorites, Activity History, Profile */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Right actions: Login/Register (Highest Priority), Add Heritage, Favorites, Utilities, Hamburger */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             
-            {/* ⭐ PROMINENT TOP LOGO "ĐỀ XUẤT" BUTTON IN NAVBAR */}
+            {/* 🌟 1. HIGHEST PRIORITY: Authentication / Profile Status Button */}
+            {userProfile.isLoggedIn ? (
+              <button
+                id="btn-profile"
+                onClick={() => onSelectTab('profile')}
+                className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-full bg-stone-800/90 hover:bg-stone-700/90 border border-amber-500/40 transition-all shrink-0 cursor-pointer"
+                title={`Tài khoản: ${userProfile.displayName}`}
+              >
+                <img 
+                  src={userProfile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'} 
+                  alt={userProfile.displayName} 
+                  className="w-6 h-6 rounded-full object-cover border border-amber-400"
+                />
+                <span className="text-xs font-semibold text-stone-200 hidden md:inline truncate max-w-[90px]">
+                  {userProfile.displayName}
+                </span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                <button
+                  id="btn-login"
+                  onClick={() => onOpenAuthModal('login')}
+                  className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition-all shrink-0 shadow-sm cursor-pointer whitespace-nowrap"
+                  title="Đăng nhập tài khoản"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Đăng nhập</span>
+                </button>
+                <button
+                  id="btn-register"
+                  onClick={() => onOpenAuthModal('register')}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300 whitespace-nowrap"
+                  title="Tạo tài khoản mới"
+                >
+                  <User className="w-3.5 h-3.5 text-stone-950 shrink-0" />
+                  <span>Đăng ký</span>
+                </button>
+              </div>
+            )}
+
+            {/* 🌟 2. SECOND PRIORITY: "ĐỀ XUẤT MỚI" BUTTON */}
             {onOpenAddHeritage && (
               <button
                 id="btn-nav-add-heritage"
@@ -235,42 +275,39 @@ export const Navbar: React.FC<NavbarProps> = ({
                   alt="Logo Hồn Đất Việt" 
                   className="w-4 h-4 rounded-full object-cover border border-amber-950/40 shrink-0" 
                 />
-                <span className="hidden sm:inline">Đề Xuất Mới</span>
+                <span className="hidden md:inline">Đề Xuất Mới</span>
               </button>
             )}
 
-            {/* Quick Peek Background Icon (especially helpful on mobile) */}
+            {/* 🌟 3. FAVORITES ICON */}
+            <button
+              id="btn-favorites"
+              onClick={() => onSelectTab('favorites')}
+              className="relative p-2 rounded-xl text-stone-300 hover:text-red-400 hover:bg-stone-800/80 transition-colors shrink-0"
+              title="Danh sách di sản đã lưu"
+            >
+              <Heart className="w-4 h-4 text-red-400 fill-red-500/30" />
+              {favoritesCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {favoritesCount}
+                </span>
+              )}
+            </button>
+
+            {/* Quick Peek Background Icon */}
             {onPeekBackground && (
               <button
                 id="btn-peek-background-nav"
                 onClick={onPeekBackground}
-                className="p-2 rounded-xl text-stone-300 hover:text-emerald-400 hover:bg-stone-800/80 transition-colors"
+                className="p-2 rounded-xl text-stone-300 hover:text-emerald-400 hover:bg-stone-800/80 transition-colors shrink-0 hidden sm:flex"
                 title="Ngắm trọn vẹn bức ảnh nền danh thắng"
               >
                 <Eye className="w-4 h-4 text-emerald-400" />
               </button>
             )}
 
-            {/* Offline Heritage Cache Manager Button */}
-            {onOpenOfflineManager && (
-              <button
-                id="btn-offline-mode"
-                onClick={onOpenOfflineManager}
-                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors"
-                title="Quản lý Chế độ Ngoại tuyến & Service Worker"
-              >
-                <Database className="w-3.5 h-3.5 text-amber-400" />
-                <span>Ngoại tuyến</span>
-              </button>
-            )}
-
-            {/* PWA In-App Install Button */}
-            <div className="hidden sm:block">
-              <PWAInstallButton variant="button" />
-            </div>
-
             {/* Language Selector */}
-            <div className="relative hidden sm:block">
+            <div className="relative hidden lg:block">
               <select
                 value={language}
                 onChange={(e) => onLanguageChange(e.target.value)}
@@ -284,98 +321,28 @@ export const Navbar: React.FC<NavbarProps> = ({
               </select>
             </div>
 
-            {/* Favorites Icon */}
-            <button
-              id="btn-favorites"
-              onClick={() => onSelectTab('favorites')}
-              className="relative p-2 rounded-xl text-stone-300 hover:text-red-400 hover:bg-stone-800/80 transition-colors"
-              title="Danh sách di sản đã lưu"
-            >
-              <Heart className="w-4 h-4 text-red-400 fill-red-500/30" />
-              {favoritesCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {favoritesCount}
-                </span>
-              )}
-            </button>
-
-            {/* Activity History Button */}
-            <button
-              id="btn-activity-history"
-              onClick={() => onOpenAuthModal('activity')}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700/90 text-stone-300 text-xs font-medium border border-stone-700/60 transition-colors"
-              title="Xem lịch sử thao tác của bạn"
-            >
-              <History className="w-3.5 h-3.5 text-amber-400" />
-              <span>Lịch sử</span>
-            </button>
-
-            {/* Direct Profile & Badges Tab Button */}
-            <button
-              id="btn-nav-profile-badges"
-              onClick={() => onSelectTab('profile')}
-              className={`hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                currentTab === 'profile'
-                  ? 'bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-950/40'
-                  : 'bg-stone-900/90 hover:bg-stone-800 text-amber-300 hover:text-amber-200 border border-amber-500/30'
-              }`}
-              title="Xem Hồ sơ & Bộ sưu tập danh hiệu di sản"
-            >
-              <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>Hồ sơ & Danh hiệu</span>
-              {userProfile.points !== undefined && userProfile.points > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                  currentTab === 'profile' ? 'bg-stone-950/20 text-stone-950' : 'bg-amber-500/20 text-amber-300'
-                }`}>
-                  {userProfile.points} XP
-                </span>
-              )}
-            </button>
-
-            {/* Authentication / Profile Status Button */}
-            {userProfile.isLoggedIn ? (
+            {/* Offline Heritage Cache Manager Button */}
+            {onOpenOfflineManager && (
               <button
-                id="btn-profile"
-                onClick={() => onSelectTab('profile')}
-                className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-full bg-stone-800/90 hover:bg-stone-700/90 border border-amber-500/40 transition-all shrink-0"
-                title={`Tài khoản: ${userProfile.displayName}`}
+                id="btn-offline-mode"
+                onClick={onOpenOfflineManager}
+                className="hidden 2xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-colors shrink-0"
+                title="Quản lý Chế độ Ngoại tuyến & Service Worker"
               >
-                <img 
-                  src={userProfile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'} 
-                  alt={userProfile.displayName} 
-                  className="w-6 h-6 rounded-full object-cover border border-amber-400"
-                />
-                <span className="text-xs font-semibold text-stone-200 hidden md:inline truncate max-w-[90px]">
-                  {userProfile.displayName}
-                </span>
+                <Database className="w-3.5 h-3.5 text-amber-400" />
+                <span>Ngoại tuyến</span>
               </button>
-            ) : (
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  id="btn-login"
-                  onClick={() => onOpenAuthModal('login')}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700/90 text-stone-200 text-xs font-semibold border border-stone-700/80 transition-all shrink-0"
-                  title="Đăng nhập tài khoản"
-                >
-                  <LogIn className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Đăng nhập</span>
-                </button>
-                <button
-                  id="btn-register"
-                  onClick={() => onOpenAuthModal('register')}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 text-xs font-bold shadow-md transition-all shrink-0"
-                  title="Tạo tài khoản mới"
-                >
-                  <User className="w-3.5 h-3.5 text-stone-950 shrink-0" />
-                  <span className="hidden xs:inline">Đăng ký</span>
-                </button>
-              </div>
             )}
+
+            {/* PWA In-App Install Button */}
+            <div className="hidden 2xl:block shrink-0">
+              <PWAInstallButton variant="button" />
+            </div>
 
             {/* Mobile Hamburger Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2 rounded-xl text-stone-300 hover:text-stone-100 hover:bg-stone-800 transition-colors"
+              className="xl:hidden p-2 rounded-xl text-stone-300 hover:text-stone-100 hover:bg-stone-800 transition-colors shrink-0"
               aria-label="Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5 text-amber-400" /> : <Menu className="w-5 h-5" />}
@@ -409,26 +376,34 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-between w-full gap-2">
-                <span className="text-xs text-stone-400">Tài khoản</span>
-                <div className="flex items-center gap-1.5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-2.5 p-1">
+                <div>
+                  <p className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-amber-400" />
+                    <span>Tài Khoản Thành Viên</span>
+                  </p>
+                  <p className="text-[10px] text-stone-400">Đăng nhập để tích điểm XP & nhận danh hiệu di sản</p>
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => {
                       onOpenAuthModal('login');
                       setMobileMenuOpen(false);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-stone-800 text-stone-200 text-xs font-semibold border border-stone-700 min-h-[38px] flex items-center justify-center active:scale-95"
+                    className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-bold border border-amber-500/40 flex items-center justify-center gap-1.5 active:scale-95 shadow cursor-pointer min-h-[38px]"
                   >
-                    Đăng nhập
+                    <LogIn className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Đăng Nhập</span>
                   </button>
                   <button
                     onClick={() => {
                       onOpenAuthModal('register');
                       setMobileMenuOpen(false);
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-amber-500 text-stone-950 text-xs font-bold min-h-[38px] flex items-center justify-center active:scale-95"
+                    className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold flex items-center justify-center gap-1.5 active:scale-95 shadow-md shadow-amber-950/40 cursor-pointer min-h-[38px]"
                   >
-                    Đăng ký
+                    <User className="w-3.5 h-3.5 text-stone-950" />
+                    <span>Đăng Ký</span>
                   </button>
                 </div>
               </div>

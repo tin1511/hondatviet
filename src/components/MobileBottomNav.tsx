@@ -115,7 +115,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const handleSelectTab = (tabId: string) => {
     onSelectTab(tabId);
     setIsMoreMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.body) document.body.scrollTop = 0;
+    if (document.documentElement) document.documentElement.scrollTop = 0;
   };
 
   return (

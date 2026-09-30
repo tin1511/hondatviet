@@ -155,6 +155,8 @@ export default function App() {
   // Scroll to top immediately whenever activeTab changes so user never has to scroll down
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.body) document.body.scrollTop = 0;
+    if (document.documentElement) document.documentElement.scrollTop = 0;
   }, [activeTab]);
 
   const handleDetectGps = async () => {
@@ -345,6 +347,8 @@ export default function App() {
                   onOpenCityPicker={() => setShowCityPicker(true)}
                   onExploreLandmark={handleExploreCurrentLandmark}
                   onOpenAddHeritage={() => setIsGlobalHeritageModalOpen(true)}
+                  onOpenAuthModal={handleOpenAuthModal}
+                  userProfile={userProfile}
                 />
 
                 {/* Geolocation-Based Nearby Heritage & Places Recommender */}
