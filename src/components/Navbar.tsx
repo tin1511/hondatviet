@@ -244,20 +244,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   id="btn-login"
                   onClick={() => onOpenAuthModal('login')}
-                  className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition-all shrink-0 shadow-sm cursor-pointer whitespace-nowrap"
+                  className="flex items-center gap-1 p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition-all shrink-0 shadow-sm cursor-pointer whitespace-nowrap"
                   title="Đăng nhập tài khoản"
                 >
-                  <LogIn className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Đăng nhập</span>
+                  <LogIn className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+                  <span className="hidden md:inline">Đăng nhập</span>
                 </button>
                 <button
                   id="btn-register"
                   onClick={() => onOpenAuthModal('register')}
-                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300 whitespace-nowrap"
+                  className="flex items-center gap-1 p-2 sm:px-3 sm:py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300 whitespace-nowrap"
                   title="Tạo tài khoản mới"
                 >
-                  <User className="w-3.5 h-3.5 text-stone-950 shrink-0" />
-                  <span>Đăng ký</span>
+                  <User className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-stone-950 shrink-0" />
+                  <span className="hidden md:inline">Đăng ký</span>
                 </button>
               </div>
             )}

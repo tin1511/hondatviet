@@ -328,7 +328,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   onNavigate('map');
                 }
               }}
-              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-950 font-bold text-xs sm:text-sm transition-all shadow-lg shadow-emerald-950/40 flex items-center gap-1.5 sm:gap-2 active:scale-95"
+              className="hidden sm:inline-flex px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-stone-950 font-bold text-xs sm:text-sm transition-all shadow-lg shadow-emerald-950/40 items-center gap-1.5 sm:gap-2 active:scale-95"
             >
               <LocateFixed className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-950" />
               <span>Gần Bạn Nhất (GPS)</span>
@@ -337,7 +337,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <button
               id="hero-cta-heritage"
               onClick={() => onNavigate('heritage')}
-              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-amber-900/40 flex items-center gap-1.5 sm:gap-2 border border-amber-400/40 active:scale-95"
+              className="hidden sm:inline-flex px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-amber-900/40 items-center gap-1.5 sm:gap-2 border border-amber-400/40 active:scale-95"
             >
               <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-950" />
               <span>Khám phá Di sản</span>
@@ -346,16 +346,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <button
               id="hero-cta-recognizer"
               onClick={() => onNavigate('recognizer')}
-              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-xs sm:text-sm transition-all border border-amber-500/30 flex items-center gap-1.5 sm:gap-2 active:scale-95"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs sm:text-sm transition-all shadow-lg shadow-amber-950/30 flex items-center gap-1.5 sm:gap-2 active:scale-95"
             >
-              <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+              <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-stone-950" />
               <span>Nhận diện bằng AI</span>
             </button>
 
             <button
               id="hero-cta-chat"
               onClick={() => onNavigate('chat')}
-              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-xs sm:text-sm transition-all border border-stone-700 flex items-center gap-1.5 sm:gap-2 active:scale-95"
+              className="hidden sm:inline-flex px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-xs sm:text-sm transition-all border border-stone-700 items-center gap-1.5 sm:gap-2 active:scale-95"
             >
               <MessageSquareQuote className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
               <span>Hỏi Trợ lý AI</span>
@@ -364,7 +364,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <button
               id="hero-cta-food"
               onClick={() => onNavigate('food')}
-              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-xs sm:text-sm transition-all border border-stone-700 flex items-center gap-1.5 sm:gap-2 active:scale-95"
+              className="hidden sm:inline-flex px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-xs sm:text-sm transition-all border border-stone-700 items-center gap-1.5 sm:gap-2 active:scale-95"
             >
               <Utensils className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" />
               <span>Ăn uống & Vui chơi</span>
@@ -373,7 +373,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <button
               id="hero-cta-map"
               onClick={() => onNavigate('map')}
-              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-medium text-xs sm:text-sm transition-all border border-stone-700 flex items-center gap-1.5 sm:gap-2 active:scale-95"
+              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold text-xs sm:text-sm transition-all border border-stone-700 flex items-center gap-1.5 sm:gap-2 active:scale-95"
             >
               <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
               <span>Bản đồ Văn hóa</span>
@@ -382,7 +382,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             <button
               id="hero-cta-profile"
               onClick={() => onNavigate('profile')}
-              className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-xs sm:text-sm transition-all border border-amber-500/30 flex items-center gap-1.5 sm:gap-2 active:scale-95"
+              className="hidden sm:inline-flex px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-semibold text-xs sm:text-sm transition-all border border-amber-500/30 items-center gap-1.5 sm:gap-2 active:scale-95"
             >
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>Hồ sơ & Danh hiệu</span>

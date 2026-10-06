@@ -43,6 +43,7 @@ import { CommunityContributionModule } from './components/CommunityContribution'
 import { AdminDashboard } from './components/AdminDashboard';
 import { FavoritesView } from './components/FavoritesView';
 import { UserProfileView } from './components/UserProfileView';
+import { CulturalToolsDashboard } from './components/CulturalToolsDashboard';
 import { NearbyRecommendationWidget } from './components/NearbyRecommendationWidget';
 import { AuthModal } from './components/AuthModal';
 import { AuthGateway } from './components/AuthGateway';
@@ -348,6 +349,14 @@ export default function App() {
                   onExploreLandmark={handleExploreCurrentLandmark}
                   onOpenAddHeritage={() => setIsGlobalHeritageModalOpen(true)}
                   onOpenAuthModal={handleOpenAuthModal}
+                  userProfile={userProfile}
+                />
+
+                {/* Mobile-optimized Comprehensive Tools and App Portal */}
+                <CulturalToolsDashboard
+                  currentTab={activeTab}
+                  onNavigate={handleNavigate}
+                  favoritesCount={favoritesCount}
                   userProfile={userProfile}
                 />
 
