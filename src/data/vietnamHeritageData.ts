@@ -446,7 +446,7 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
     category: 'architecture',
     categoryLabel: 'Kiến trúc & Danh thắng Biểu tượng',
     region: 'central',
-    province: 'Đà Nẵng',
+    province: 'Quảng Nam',
     period: 'Được phát hiện năm 1901 & Phát triển hiện đại',
     history: 'Bà Nà được đại úy người Pháp Debay phát hiện năm 1901. Năm 2018, công trình Cầu Vàng (Golden Bridge) ra đời trên đỉnh Núi Chúa đã gây bão truyền thông toàn cầu.',
     culturalSignificance: 'Biểu tượng kiến trúc du lịch hiện đại của Việt Nam trên bản đồ thế giới, từng đứng đầu danh sách Những điểm đến tuyệt vời nhất thế giới do tạp chí TIME bình chọn.',
@@ -717,6 +717,76 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
     suggestedQuestions: [
       'Tín ngưỡng Dinh Cậu có ý nghĩa thế nào với ngư dân miền biển đảo Phú Quốc?',
       'Thời điểm ngắm hoàng hôn tại Dinh Cậu đẹp nhất là vào mấy giờ?'
+    ]
+  },
+  {
+    id: 'nha-tu-son-la',
+    name: 'Di tích Lịch sử Quốc gia Đặc biệt Nhà tù Sơn La',
+    vietnameseName: 'Nhà tù Sơn La & Cây đào Tô Hiệu',
+    englishName: 'Son La Prison Historical Relic',
+    category: 'monument',
+    categoryLabel: 'Di tích Lịch sử Cách mạng',
+    region: 'north',
+    province: 'Sơn La',
+    period: 'Thời kỳ kháng Pháp (Xây dựng năm 1908)',
+    history: 'Được thực dân Pháp xây dựng năm 1908 trên đỉnh đồi Khau Cả. Nơi giam giữ những chiến sĩ cách mạng kiên trung như Tô Hiệu, Lê Duẩn, Trường Chinh, Nguyễn Lương Bằng.',
+    culturalSignificance: 'Di tích Quốc gia Đặc biệt, biểu tượng trường tồn của ý chí kiên cường cách mạng Việt Nam. Cây đào Tô Hiệu bên xà lim ngục tối nở hoa mỗi độ xuân về trở thành biểu tượng tinh thần bất khuất.',
+    interestingFacts: [
+      'Cây đào mang tên đồng chí Tô Hiệu vẫn xanh tốt và trổ hoa hồng rực rỡ suốt hơn 80 năm qua.',
+      'Hệ thống xà lim ngầm và phòng giam chật hẹp minh chứng cho chế độ lao tù hà khắc thời thuộc địa.',
+      'Bảo tàng tỉnh Sơn La nằm ngay bên cạnh lưu giữ nhiều hiện vật văn hóa các dân tộc Thái, Mường, Mông.'
+    ],
+    conservationStatus: 'Di tích Quốc gia Đặc biệt được xếp hạng năm 2014, bảo tồn nguyên trạng các khu trại giam.',
+    imageUrl: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Cây đào Tô Hiệu tại Di tích Nhà tù Sơn La kiên trung',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Di tích Lịch sử Quốc gia Đặc biệt theo Quyết định Thủ tướng Chính phủ.',
+    lat: 21.3283,
+    lng: 103.9056,
+    address: 'Đồi Khau Cả, Tổ 9, Phường Tô Hiệu, Thành phố Sơn La, Tỉnh Sơn La',
+    visitingHours: '07:30 - 11:00 & 13:30 - 17:00 hàng ngày',
+    ticketPrice: '30.000 VNĐ / vé người lớn',
+    googleMapsUri: 'https://maps.google.com/?q=Son+La+Prison',
+    tags: ['Sơn La', 'Nhà tù Sơn La', 'Cây đào Tô Hiệu', 'Di tích Quốc gia Đặc biệt', 'Lịch sử'],
+    suggestedQuestions: [
+      'Ý nghĩa biểu tượng của Cây đào Tô Hiệu trong lịch sử cách mạng Sơn La là gì?',
+      'Nhà tù Sơn La được thực dân Pháp xây dựng trên ngọn đồi nào?'
+    ]
+  },
+  {
+    id: 'moc-chau-son-la',
+    name: 'Khu Du lịch Quốc gia Cao nguyên Mộc Châu & Đồi Chè Trái Tim',
+    vietnameseName: 'Cao nguyên Mộc Châu & Thác Dải Yếm',
+    englishName: 'Moc Chau Plateau & Heart-Shaped Tea Hills',
+    category: 'monument',
+    categoryLabel: 'Danh thắng Thiên nhiên & Văn hóa Dân tộc',
+    region: 'north',
+    province: 'Sơn La',
+    period: 'Thiên nhiên & Văn hóa ngàn năm Tây Bắc',
+    history: 'Cao nguyên xanh mát ở độ cao trên 1.050m so với mực nước biển, cái nôi văn hóa của các dân tộc Thái, H\'Mông, Dao, Mường với truyền thống trồng chè và chăn nuôi bò sữa nổi tiếng.',
+    culturalSignificance: 'Điểm đến thiên nhiên khu vực hàng đầu thế giới được giải thưởng World Travel Awards vinh danh. Nơi hội tụ cảnh sắc bốn mùa hoa mận, hoa đào cùng nét ẩm thực Pa Pỉnh Tộp đậm đà văn hóa Thái.',
+    interestingFacts: [
+      'Đồi chè Tân Lập được tạo hình Trái Tim là biểu tượng tình yêu và điểm check-in danh tiếng.',
+      'Thác Dải Yếm gắn liền với câu chuyện tình thủy chung sâu sắc của chàng trai và cô gái Thái.',
+      'Mùa xuân Mộc Châu bạt ngàn sắc trắng hoa mận nở rộ trên các thung lũng Nà Ka, Mu Náu.'
+    ],
+    conservationStatus: 'Khu du lịch Quốc gia được định hướng phát triển du lịch sinh thái bền vững.',
+    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    historicImageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    historicImageYear: 'Đồi chè ngát hương trên thảo nguyên xanh Mộc Châu',
+    verifiedStatus: 'verified',
+    verifiedNote: 'Khu Du lịch Quốc gia Mộc Châu được công nhận năm 2024.',
+    lat: 20.8436,
+    lng: 104.6468,
+    address: 'Thị trấn Mộc Châu & Nông trường Mộc Châu, Tỉnh Sơn La',
+    visitingHours: 'Mở cửa tham quan tự do quanh năm',
+    ticketPrice: 'Vào cửa đồi chè miễn phí; Thác Dải Yếm 50.000 VNĐ / vé',
+    googleMapsUri: 'https://maps.google.com/?q=Moc+Chau+Plateau+Son+La',
+    tags: ['Sơn La', 'Mộc Châu', 'Đồi chè trái tim', 'Thác Dải Yếm', 'Tây Bắc'],
+    suggestedQuestions: [
+      'Mùa hoa mận trắng Mộc Châu nở đẹp nhất vào tháng mấy?',
+      'Đặc sản ẩm thực độc đáo của đồng bào Thái tại Sơn La gồm những món gì?'
     ]
   }
 ];

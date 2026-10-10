@@ -360,6 +360,41 @@ export default function App() {
                   userProfile={userProfile}
                 />
 
+                {/* 🗺️ BẢN ĐỒ DU LỊCH TƯƠNG TÁC VIỆT NAM (HÌNH CHỮ S) TRỰC TIẾP TRÊN TRANG CHỦ */}
+                <section id="home-vietnam-map-section" className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+                  <div className="bg-gradient-to-b from-stone-900/95 via-stone-900/90 to-stone-950/95 border border-amber-500/30 rounded-3xl p-3 sm:p-6 shadow-2xl backdrop-blur">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-stone-800 pb-4">
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold mb-2">
+                          <Globe className="w-3.5 h-3.5" />
+                          <span>Bản Đồ Địa Lý & Du Lịch Tương Tác Trực Tiếp</span>
+                        </div>
+                        <h3 className="text-xl sm:text-3xl font-serif font-bold text-stone-100">
+                          Khám Phá Dải Đất Hình Chữ S Việt Nam
+                        </h3>
+                        <p className="text-xs sm:text-sm text-stone-400 mt-1">
+                          Chạm hoặc nhấn vào bất kỳ tỉnh thành nào trên bản đồ để phóng to và xem các di sản thực tế.
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => handleNavigate('map')}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-950/40 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <Globe className="w-4 h-4 text-stone-950" />
+                        <span>Mở Bản Đồ Toàn Màn Hình</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <CulturalMap
+                      currentUser={userProfile}
+                      onNavigateToStory={handleNavigateToStory}
+                      onNavigateToFood={handleNavigateToFood}
+                    />
+                  </div>
+                </section>
+
                 {/* Geolocation-Based Nearby Heritage & Places Recommender */}
                 <section id="gps-nearby-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <NearbyRecommendationWidget
@@ -588,6 +623,7 @@ export default function App() {
             {/* VIEW 5: CULTURAL MAP */}
             {activeTab === 'map' && (
               <CulturalMap
+                currentUser={userProfile}
                 onNavigateToStory={handleNavigateToStory}
                 onNavigateToFood={handleNavigateToFood}
               />

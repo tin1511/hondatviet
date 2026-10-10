@@ -74,11 +74,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems = [
     { id: 'home', label: 'Trang chủ', icon: Compass },
+    { id: 'map', label: 'Bản đồ Việt Nam', icon: Globe, badge: 'Chữ S 🇻🇳' },
     { id: 'heritage', label: 'Di sản', icon: MapPin },
     { id: 'recognizer', label: 'Nhận diện AI', icon: Camera, badge: 'Vision' },
     { id: 'storyteller', label: 'Kể chuyện AI', icon: Sparkles },
     { id: 'chat', label: 'Hướng Dẫn Viên AI', icon: Compass, badge: 'HDV 3D' },
-    { id: 'map', label: 'Bản đồ', icon: Globe },
     { id: 'food', label: 'Ăn uống & Vui chơi', icon: Utensils },
     { id: 'itinerary', label: 'Lịch trình', icon: CalendarDays },
     { id: 'crafts', label: 'Làng nghề & Nghệ thuật', icon: BookOpen },
@@ -149,7 +149,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Desktop Primary Nav (Key Items) */}
           <nav className="hidden xl:flex items-center gap-1 shrink-0">
-            {navItems.slice(0, 5).map((item) => {
+            {navItems.slice(0, 6).map((item) => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
               return (
@@ -183,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="text-[10px]">▼</span>
               </button>
               <div className="absolute right-0 top-full hidden group-hover:block w-56 bg-stone-900 border border-stone-800 rounded-xl shadow-2xl py-2 z-50 animate-fadeIn">
-                {navItems.slice(5).map((item) => {
+                {navItems.slice(6).map((item) => {
                   const Icon = item.icon;
                   return (
                     <button
@@ -453,6 +453,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Quay lại Trang chủ</span>
             </button>
           )}
+
+          {/* Prominent Direct Map Button on Mobile Menu */}
+          <button
+            onClick={() => {
+              onSelectTab('map');
+              setMobileMenuOpen(false);
+            }}
+            className="w-full py-3 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-stone-950 font-extrabold text-xs flex items-center justify-center gap-2 mb-2 active:scale-98 transition-all shadow-lg shadow-emerald-950/50 min-h-[44px] cursor-pointer"
+          >
+            <Globe className="w-4 h-4 text-stone-950" />
+            <span>🗺️ Mở Bản Đồ Việt Nam (Hình Chữ S)</span>
+          </button>
 
           {/* Navigation Links Grid for Mobile */}
           <div className="grid grid-cols-2 gap-1.5">

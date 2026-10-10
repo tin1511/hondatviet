@@ -8,7 +8,7 @@ import { HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 
 // Danh mục thông tin chi tiết cho các danh thắng đặc trưng của từng tỉnh thành
 const LANDMARK_HERITAGE_MAP: Record<string, Partial<HeritageItem>> = {
-  danang: {
+  quangnam: {
     id: 'cau-vang-ba-na-hills',
     name: 'Cầu Vàng Bà Nà Hills - Bàn Tay Khổng Lồ',
     vietnameseName: 'Cầu Vàng (Bàn Tay Phật)',
@@ -16,7 +16,7 @@ const LANDMARK_HERITAGE_MAP: Record<string, Partial<HeritageItem>> = {
     category: 'monument',
     categoryLabel: 'Kỳ quan Kiến trúc Hiện đại & Cảnh quan',
     region: 'central',
-    province: 'Đà Nẵng',
+    province: 'Quảng Nam',
     period: 'Khánh thành năm 2018',
     dynasty: 'Thời kỳ Đổi Mới & Hội nhập',
     history: 'Cầu Vàng nằm ở độ cao 1.414 mét so với mực nước biển trên đỉnh núi Chúa Bà Nà, do kiến trúc sư Vũ Việt Anh cùng cộng sự thiết kế và chính thức khánh thành vào tháng 6 năm 2018. Ngay khi ra mắt, công trình đã tạo nên tiếng vang quốc tế chấn động, xuất hiện trên trang nhất của các cơ quan thông tấn hàng đầu thế giới như CNN, BBC, Reuters, National Geographic và lọt vào Top 100 điểm đến tuyệt vời nhất thế giới của tạp chí TIME.',
@@ -31,15 +31,15 @@ const LANDMARK_HERITAGE_MAP: Record<string, Partial<HeritageItem>> = {
     verifiedNote: 'Công trình kiến trúc biểu tượng được Tạp chí TIME bình chọn Top 100 điểm đến tuyệt vời nhất thế giới.',
     lat: 15.9950,
     lng: 107.9967,
-    address: 'Khu du lịch Sun World Ba Na Hills, Thôn An Sơn, Xã Hòa Ninh, Huyện Hòa Vang, TP. Đà Nẵng',
+    address: 'Khu du lịch Sun World Ba Na Hills, Thôn An Sơn, Xã Hòa Ninh, Huyện Hòa Vàng, Tỉnh Quảng Nam',
     visitingHours: '07:30 - 21:00 hàng ngày (theo giờ vận hành cáp treo)',
-    ticketPrice: '900.000 VNĐ / vé người lớn ngoại tỉnh, 600.000 VNĐ / người dân Đà Nẵng (đã bao gồm cáp treo khứ hồi)',
-    googleMapsUri: 'https://maps.google.com/?q=Golden+Bridge+Ba+Na+Hills+Da+Nang',
-    tags: ['Đà Nẵng', 'Bà Nà Hills', 'Cầu Vàng', 'Bàn tay khổng lồ', 'Kỳ quan thế giới'],
+    ticketPrice: '900.000 VNĐ / vé người lớn, (đã bao gồm cáp treo khứ hồi)',
+    googleMapsUri: 'https://maps.google.com/?q=Golden+Bridge+Ba+Na+Hills+Quang+Nam',
+    tags: ['Quảng Nam', 'Bà Nà Hills', 'Cầu Vàng', 'Bàn tay khổng lồ', 'Kỳ quan thế giới'],
     suggestedQuestions: [
       'Ý nghĩa triết lý và kiến trúc đằng sau đôi bàn tay khổng lồ nâng Cầu Vàng là gì?',
       'Làm thế nào để di chuyển lên Cầu Vàng Bà Nà Hills và thời điểm nào ngắm mây đẹp nhất?',
-      'Những giải thưởng quốc tế mà Cầu Vàng Đà Nẵng đã đạt được?'
+      'Những giải thưởng quốc tế mà Cầu Vàng đã đạt được?'
     ]
   },
   dalat: {

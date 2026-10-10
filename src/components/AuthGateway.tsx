@@ -38,21 +38,13 @@ interface AuthGatewayProps {
   onLoginSuccess: (user: UserProfile) => void;
 }
 
+import { VIETNAM_PROVINCES as PROVINCE_LIST } from '../data/vietnamProvincesData';
+
 const VIETNAM_PROVINCES = [
-  'Hà Nội',
-  'Thành phố Huế',
-  'Đà Nẵng',
-  'Quảng Nam (Hội An)',
-  'Thành phố Hồ Chí Minh',
-  'Ninh Bình',
-  'Quảng Bình',
-  'Bắc Ninh',
-  'Phú Thọ',
-  'Hà Giang',
-  'Lâm Đồng (Đà Lạt)',
-  'Cần Thơ',
+  ...PROVINCE_LIST.map(p => p.name),
   'Tỉnh khác'
 ];
+
 
 export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');

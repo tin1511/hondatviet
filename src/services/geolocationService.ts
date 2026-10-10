@@ -52,14 +52,14 @@ export const CITY_LANDMARK_PRESETS: CityLandmarkBackground[] = [
     lng: 107.5909
   },
   {
-    id: 'danang',
-    cityName: 'Đà Nẵng',
-    province: 'Đà Nẵng',
-    landmarkName: 'Cầu Vàng Bà Nà & Cầu Rồng Sông Hàn',
-    tagline: 'Thành phố biển hiện đại kề bên danh thắng Ngũ Hành Sơn & bán đảo Sơn Trà',
+    id: 'quangnam',
+    cityName: 'Quảng Nam',
+    province: 'Quảng Nam',
+    landmarkName: 'Phố Cổ Hội An & Cầu Vàng Bà Nà',
+    tagline: 'Vùng đất di sản thế giới hội tụ phố cổ trầm mặc và kỳ quan kiến trúc hiện đại',
     imageUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=2000&q=85',
-    lat: 16.0544,
-    lng: 108.2022
+    lat: 15.8801,
+    lng: 108.3270
   },
   {
     id: 'myson',

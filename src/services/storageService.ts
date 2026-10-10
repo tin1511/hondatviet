@@ -1835,12 +1835,13 @@ export const storageService = {
                 landmarkName: 'Đại Nội Cung Đình Huế & Cổng Ngọ Môn'
               };
             }
-            if (item.id === 'danang' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
+            if ((item.id === 'danang' || item.id === 'quangnam') && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
               hasHealed = true;
               return {
                 ...item,
+                id: 'quangnam',
                 imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/84152-Da-Nang_%2848572442536%29.jpg/1280px-84152-Da-Nang_%2848572442536%29.jpg',
-                landmarkName: 'Cầu Vàng Bà Nà Hills - Bàn Tay Khổng Lồ'
+                landmarkName: 'Phố Cổ Hội An & Cầu Vàng Bà Nà Hills'
               };
             }
             if (item.id === 'myson' && (!item.imageUrl || item.imageUrl.includes('unsplash'))) {
@@ -2439,14 +2440,14 @@ export const DEFAULT_CITY_LANDMARKS: CityLandmarkBackground[] = [
     lng: 107.5796
   },
   {
-    id: 'danang',
-    cityName: 'Đà Nẵng',
-    province: 'Đà Nẵng',
-    landmarkName: 'Cầu Vàng Bà Nà Hills - Bàn Tay Khổng Lồ',
-    tagline: 'Cây cầu đi bộ ngoạn mục vươn giữa mây ngàn đỉnh Bà Nà',
+    id: 'quangnam',
+    cityName: 'Quảng Nam',
+    province: 'Quảng Nam',
+    landmarkName: 'Phố Cổ Hội An & Cầu Vàng Bà Nà Hills',
+    tagline: 'Vùng đất di sản thế giới hội tụ phố cổ trầm mặc, thánh địa và kỳ quan kiến trúc hiện đại',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/84152-Da-Nang_%2848572442536%29.jpg/1280px-84152-Da-Nang_%2848572442536%29.jpg',
-    lat: 16.0544,
-    lng: 108.2022
+    lat: 15.8801,
+    lng: 108.3270
   },
   {
     id: 'myson',
