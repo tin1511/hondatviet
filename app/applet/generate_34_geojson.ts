@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { VIETNAM_PROVINCES } from './src/data/vietnamProvincesData';
+import { VIETNAM_PROVINCES } from '../../src/data/vietnamProvincesData';
 
 const raw = fs.readFileSync('public/data/vietnam-provinces.geojson', 'utf8');
 const oldGeo = JSON.parse(raw);
@@ -43,7 +43,7 @@ const mapping: Record<string, string[]> = {
 
 const newFeatures: any[] = [];
 
-VIETNAM_PROVINCES.forEach(prov => {
+VIETNAM_PROVINCES.forEach((prov: any) => {
   const keywords = mapping[prov.id] || [prov.name];
   
   const matchedFeatures = oldGeo.features.filter((f: any) => {
