@@ -20,13 +20,16 @@ import {
   History,
   Lightbulb,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Camera,
+  ShieldCheck
 } from 'lucide-react';
 import { HeritageItem } from '../types';
 import { storageService } from '../services/storageService';
 import { ttsService, TTSStatus } from '../services/ttsService';
 import { geolocationService, calculateDistanceKm, formatTravelEstimate } from '../services/geolocationService';
 import { getSafeHeritageImageUrl, handleImageError } from '../utils/imageUtils';
+import { getVerifiedHeritageImageData } from '../services/imageVerificationService';
 
 interface HeritageDetailModalProps {
   heritage: HeritageItem | null;
@@ -135,6 +138,10 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
   };
 
   const mapsUrl = heritage.googleMapsUri || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(heritage.name + ' ' + heritage.address)}`;
+  const imageMeta = heritage ? getVerifiedHeritageImageData(heritage) : null;
+  const displayImageUrl = showHistoricImage && heritage.historicImageUrl
+    ? heritage.historicImageUrl
+    : (imageMeta ? imageMeta.imageUrl : getSafeHeritageImageUrl(heritage.imageUrl, heritage.id, heritage.name));
 
   return (
     <AnimatePresence>
@@ -158,7 +165,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
         {/* Top Header / Image Banner */}
         <div className="relative h-64 sm:h-80 w-full overflow-hidden bg-stone-950 shrink-0">
           <img
-            src={getSafeHeritageImageUrl(showHistoricImage && heritage.historicImageUrl ? heritage.historicImageUrl : heritage.imageUrl, heritage.id)}
+            src={displayImageUrl}
             alt={heritage.name}
             loading="lazy"
             referrerPolicy="no-referrer"
@@ -176,10 +183,10 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
               <span className="text-[11px] px-2.5 py-1 rounded-full bg-stone-950/80 text-amber-200 border border-amber-500/30 backdrop-blur">
                 {heritage.period || heritage.dynasty || 'Di tích lịch sử'}
               </span>
-              {heritage.verifiedStatus === 'verified' && (
-                <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 backdrop-blur font-semibold">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                  Di sản Quốc gia
+              {imageMeta?.verification?.isVerified && (
+                <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 backdrop-blur font-semibold shadow" title={imageMeta.verification.caption}>
+                  <Camera className="w-3 h-3 text-emerald-400" />
+                  Ảnh thật đã xác minh
                 </span>
               )}
             </div>

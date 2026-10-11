@@ -11,7 +11,15 @@ export type HeritageCategory =
   | 'instrument'
   | 'architecture'
   | 'folk_art'
-  | 'culinary';
+  | 'culinary'
+  | 'nature_scenic'
+  | 'traditional_market'
+  | 'museum'
+  | 'beach_island'
+  | 'mountain_cave'
+  | 'eco_tourism'
+  | 'amusement_park'
+  | 'walking_street';
 
 export type VerificationStatus = 'verified' | 'folk_legend' | 'unverified';
 
@@ -27,6 +35,7 @@ export interface HeritageItem {
   categoryLabel: string;
   region: Region;
   province: string;
+  subDistrict?: string;
   period: string;
   dynasty?: string;
   history: string;
@@ -50,6 +59,24 @@ export interface HeritageItem {
   tags: string[];
   suggestedQuestions: string[];
   overview?: string;
+  dataSource?: string;
+  lastVerifiedDate?: string;
+  operationalStatus?: 'open' | 'temporarily_closed' | 'restricted' | 'unknown';
+  rating?: number;
+  osmId?: string;
+  wikidataId?: string;
+  imageVerification?: ImageVerificationInfo;
+  galleryImages?: string[];
+}
+
+export interface ImageVerificationInfo {
+  isVerified: boolean;
+  source: string;
+  sourceUrl?: string;
+  license?: string;
+  verifiedDate: string;
+  photographerOrOrg?: string;
+  caption?: string;
 }
 
 export type StoryMode = 'children' | 'student' | 'university' | 'adult' | 'foreigner';

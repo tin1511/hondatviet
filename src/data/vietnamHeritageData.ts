@@ -8,8 +8,12 @@ import {
   PastAndPresentItem,
   FamilyStoryMemory
 } from '../types';
+import { EXPANDED_VIETNAM_LOCATIONS } from './vietnamExpandedLocations';
+import { VIETNAM_COMPREHENSIVE_TOURISM_PLACES } from './vietnamTourismPlaces';
+import { ADDITIONAL_NATIONWIDE_HERITAGES } from './vietnamNationwideHeritages';
+import { deduplicateTourismPlaces } from '../services/tourismDeduplicationService';
 
-export const HERITAGE_DATABASE: HeritageItem[] = [
+const BASE_HERITAGES: HeritageItem[] = [
   {
     id: 'dai-noi-hue',
     name: 'Đại Nội Huế (Hoàng Thành & Tử Cấm Thành)',
@@ -790,6 +794,15 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
     ]
   }
 ];
+
+const ALL_RAW_HERITAGES: HeritageItem[] = [
+  ...VIETNAM_COMPREHENSIVE_TOURISM_PLACES,
+  ...BASE_HERITAGES,
+  ...EXPANDED_VIETNAM_LOCATIONS,
+  ...ADDITIONAL_NATIONWIDE_HERITAGES
+];
+
+export const HERITAGE_DATABASE: HeritageItem[] = deduplicateTourismPlaces(ALL_RAW_HERITAGES).uniquePlaces;
 
 export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
   'dai-noi-hue': [
