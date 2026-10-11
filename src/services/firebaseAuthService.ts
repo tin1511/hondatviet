@@ -2,8 +2,7 @@ import {
   collection, 
   doc, 
   getDocs, 
-  getDoc, 
-  setDoc, 
+    setDoc, 
   deleteField
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
