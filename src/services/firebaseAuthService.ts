@@ -5,6 +5,7 @@ import {
   getDoc, 
   setDoc, 
   updateDoc, 
+  deleteField,
   query, 
   where 
 } from 'firebase/firestore';
@@ -80,8 +81,13 @@ export async function getAccountsFromFirestore(): Promise<UserProfile[]> {
 export async function saveUserToFirestore(user: UserProfile): Promise<boolean> {
   try {
     const userRef = doc(db, USERS_COLLECTION, user.id);
+    // Never persist authentication secrets in a profile document. The
+    // deleteField sentinel also removes any legacy plaintext password field
+    // when this profile is next saved.
+    const { password: _password, ...safeUser } = user;
     const payload = {
-      ...user,
+      ...safeUser,
+      password: deleteField(),
       updatedAt: new Date().toISOString()
     };
     await setDoc(userRef, payload, { merge: true });
@@ -143,18 +149,11 @@ export async function loginWithFirestore(
 /**
  * Cập nhật mật khẩu tài khoản trên Firebase Firestore
  */
-export async function updatePasswordInFirestore(userId: string, newPassword: string): Promise<boolean> {
-  try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
-    await updateDoc(userRef, {
-      password: newPassword.trim(),
-      updatedAt: new Date().toISOString()
-    });
-    return true;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `${USERS_COLLECTION}/${userId}`);
-    return false;
-  }
+export async function updatePasswordInFirestore(_userId: string, _newPassword: string): Promise<boolean> {
+  // Passwords must be managed by Firebase Authentication, never stored as
+  // plaintext (or a reversible value) in Firestore profile documents.
+  console.warn('Password update through Firestore is disabled. Use Firebase Authentication password APIs instead.');
+  return false;
 }
 
 /**
