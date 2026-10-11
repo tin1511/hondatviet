@@ -739,7 +739,7 @@ export const storageService = {
     return { success: true, user: newUser };
   },
 
-  login(identifier: string, password?: string): { success: boolean; user?: UserProfile; error?: string } {
+  async login(identifier: string, password?: string): Promise<{ success: boolean; user?: UserProfile; error?: string }> {
     const cleanId = identifier.trim().toLowerCase();
     const cleanPass = password?.trim() || '';
 
@@ -747,39 +747,41 @@ export const storageService = {
       return { success: false, error: 'Vui lòng nhập tên đăng nhập hoặc email.' };
     }
 
-    // 1. Check Admin Credentials: username 'admin' or email 'admin@heritageai.vn' with password 'AINHS2026'
+    // Admin credentials are verified only on the server. Never accept a
+    // hard-coded administrator password in browser code.
     if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
-      if (cleanPass === 'AINHS2026') {
-        const adminAccount: UserProfile = {
-          ...DEFAULT_ADMIN_ACCOUNT,
-          isLoggedIn: true,
-          lastLoginAt: new Date().toISOString()
-        };
-
-        const accounts = this.getAccounts();
-        const otherAccounts = accounts.filter(a => a.id !== 'user-admin' && a.email.toLowerCase() !== 'admin@heritageai.vn');
-        otherAccounts.push(adminAccount);
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(otherAccounts));
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(adminAccount));
-
-        // Sync admin login to Firestore and server
-        saveUserToFirestore(adminAccount).catch(err => console.warn('Firestore admin login save warning:', err));
-        fetch('/api/accounts/login', {
+      try {
+        const response = await fetch('/api/accounts/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier: cleanId, password: cleanPass })
-        }).catch(err => console.warn('Server admin login sync warning:', err));
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success || !data.user) {
+          return { success: false, error: data.error || 'Không thể xác thực quản trị viên. Hãy kiểm tra cấu hình máy chủ.' };
+        }
 
+        const adminAccount: UserProfile = {
+          ...DEFAULT_ADMIN_ACCOUNT,
+          ...data.user,
+          password: undefined,
+          role: 'admin',
+          isLoggedIn: true,
+          lastLoginAt: new Date().toISOString()
+        };
+        const accounts = this.getAccounts().filter(a => a.id !== 'user-admin' && a.email.toLowerCase() !== 'admin@heritageai.vn');
+        accounts.push(adminAccount);
+        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(adminAccount));
         this.logActivity({
           userId: adminAccount.id,
           actionType: 'auth',
           title: 'Đăng nhập Quản trị viên',
           description: 'Quản trị viên đã đăng nhập thành công vào Hệ thống Hồn Đất Việt'
         });
-
         return { success: true, user: adminAccount };
-      } else {
-        return { success: false, error: 'Mật khẩu quản trị viên không chính xác.' };
+      } catch {
+        return { success: false, error: 'Không thể kết nối máy chủ để xác thực quản trị viên.' };
       }
     }
 
