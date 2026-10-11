@@ -16,6 +16,7 @@ service cloud.firestore {
 
     function ownsUserProfile() {
       return isAuthenticated() &&
+        request.auth.token.email is string &&
         resource.data.email is string &&
         resource.data.email.lower() == request.auth.token.email.lower();
     }
