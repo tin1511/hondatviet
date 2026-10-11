@@ -88,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 bg-stone-950/90 backdrop-blur-md border-b border-amber-900/30 text-stone-100 shadow-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Row 1: Brand & Right Actions */}
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 overflow-x-auto scrollbar-none gap-2 shrink-0 pr-6 sm:pr-8">
           
           {/* Logo & Brand & Back Button */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -152,15 +152,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 id="btn-profile"
                 onClick={() => onSelectTab('profile')}
-                className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1 rounded-full bg-stone-800/90 hover:bg-stone-700/90 border border-amber-500/40 transition-all shrink-0 cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700/90 border border-amber-500/40 transition-all shrink-0 cursor-pointer"
                 title={`Tài khoản: ${userProfile.displayName}`}
               >
-                <img 
-                  src={userProfile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'} 
-                  alt={userProfile.displayName} 
-                  className="w-6 h-6 rounded-full object-cover border border-amber-400"
-                />
-                <span className="text-xs font-semibold text-stone-200 hidden md:inline truncate max-w-[140px] sm:max-w-[185px]">
+                <User className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="text-xs font-semibold text-stone-200 truncate max-w-[140px] sm:max-w-[185px]">
                   {userProfile.displayName}
                 </span>
               </button>

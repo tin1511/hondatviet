@@ -1215,14 +1215,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                             : 'bg-stone-950/70 hover:bg-stone-800/80 border-stone-800/80 hover:border-amber-500/40'
                         }`}
                       >
-                        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-stone-900 border border-stone-800">
-                          <img 
-                            src={getSafeHeritageImageUrl(item.imageUrl)} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                            onError={handleImageError}
-                          />
-                        </div>
+
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-semibold mb-0.5">
