@@ -860,14 +860,14 @@ export const storageService = {
     const account = accounts.find(a => a.id === current.id || a.email.toLowerCase() === current.email.toLowerCase());
 
     if (current.role === 'admin' || current.id === 'user-admin' || current.email.toLowerCase() === 'admin@heritageai.vn') {
-      const currentAdminPass = account?.password || 'AINHS2026';
-      if (cleanOld !== currentAdminPass && cleanOld !== 'AINHS2026') {
-        return { success: false, error: 'Mật khẩu cũ của quản trị viên không chính xác.' };
-      }
-    } else {
-      if (account?.password && account.password !== cleanOld) {
-        return { success: false, error: 'Mật khẩu hiện tại không chính xác. Vui lòng kiểm tra lại.' };
-      }
+      return {
+        success: false,
+        error: 'Mật khẩu quản trị viên được quản lý bằng biến môi trường ADMIN_PASSWORD trên máy chủ.'
+      };
+    }
+
+    if (account?.password && account.password !== cleanOld) {
+      return { success: false, error: 'Mật khẩu hiện tại không chính xác. Vui lòng kiểm tra lại.' };
     }
 
     const updatedUser: UserProfile = {
