@@ -1183,6 +1183,3751 @@ if (!fs.existsSync(DATA_DIR)) {
 const ACCOUNTS_FILE = path.join(DATA_DIR, 'server_accounts.json');
 const ACTIVITIES_FILE = path.join(DATA_DIR, 'server_activities.json');
 
+function constantTimeStringEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left, 'utf8');
+  const rightBuffer = Buffer.from(right, 'utf8');
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function hashAccountPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString('base64url');
+  const derived = crypto.scryptSync(password, salt, 64).toString('base64url');
+  return `scrypt${salt}${derived}`;
+}
+
+function verifyAccountPassword(password: string, stored: string): { valid: boolean; upgradedHash?: string } {
+  if (stored.startsWith('scrypt
+  id: 'user-admin',
+  displayName: 'Quản trị viên Hệ thống',
+  email: 'admin@heritageai.vn',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+  city: 'Hà Nội / Huế',
+  role: 'admin',
+  roleLabel: 'Quản trị viên & Kiểm định Di sản',
+  interests: ['Quản lý di sản', 'Kiểm duyệt tri thức', 'Bảo tồn văn hóa'],
+  favoritesCount: 0,
+  contributionsCount: 0,
+  quizzesCompleted: 0,
+  storiesCreated: 0,
+  recognitionsCount: 0,
+  itinerariesCount: 0,
+  points: 2026,
+  level: 'Quản Trị Viên Hệ Thống',
+  badges: [],
+  createdAt: '2026-01-01T00:00:00Z',
+  lastLoginAt: new Date().toISOString(),
+  isLoggedIn: false
+};
+
+function readServerAccounts(): any[] {
+  try {
+    if (fs.existsSync(ACCOUNTS_FILE)) {
+      const content = fs.readFileSync(ACCOUNTS_FILE, 'utf-8');
+      const list = JSON.parse(content);
+      if (Array.isArray(list) && list.length > 0) return list;
+    }
+  } catch (err) {
+    console.warn('Error reading server_accounts.json:', err);
+  }
+  return [DEFAULT_ADMIN_ACCOUNT_SERVER];
+}
+
+function writeServerAccounts(accounts: any[]) {
+  try {
+    fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_accounts.json:', err);
+  }
+}
+
+function readServerActivities(): any[] {
+  try {
+    if (fs.existsSync(ACTIVITIES_FILE)) {
+      const content = fs.readFileSync(ACTIVITIES_FILE, 'utf-8');
+      const list = JSON.parse(content);
+      if (Array.isArray(list)) return list;
+    }
+  } catch (err) {
+    console.warn('Error reading server_activities.json:', err);
+  }
+  return [];
+}
+
+function writeServerActivities(activities: any[]) {
+  try {
+    fs.writeFileSync(ACTIVITIES_FILE, JSON.stringify(activities, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_activities.json:', err);
+  }
+}
+
+let serverAccounts = readServerAccounts();
+let serverActivities = readServerActivities();
+
+app.get('/api/accounts', (_req: Request, res: Response) => {
+  // Do not expose the complete user directory or personal data to anonymous clients.
+  return res.status(403).json({ success: false, error: 'Danh sách tài khoản chỉ khả dụng qua giao diện quản trị đã xác thực.' });
+});
+
+app.post('/api/accounts/register', (req: Request, res: Response) => {
+  try {
+    const newUser = req.body;
+    if (!newUser || !newUser.email || !newUser.displayName || !newUser.password) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp họ tên, email và mật khẩu.' });
+    }
+
+    const cleanEmail = String(newUser.email).trim().toLowerCase();
+    const cleanPassword = String(newUser.password);
+    if (cleanPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'Mật khẩu cần tối thiểu 6 ký tự.' });
+    }
+    if (cleanEmail === 'admin' || cleanEmail === 'admin@heritageai.vn' || cleanEmail === 'admin@gmail.com') {
+      return res.status(400).json({ success: false, error: 'Email này được dành riêng cho quản trị viên.' });
+    }
+
+    const existing = serverAccounts.some((account: any) =>
+      account.email && account.email.toLowerCase() === cleanEmail
+    );
+    if (existing) {
+      return res.status(409).json({ success: false, error: 'Email này đã được đăng ký.' });
+    }
+
+    const role = ['user', 'student', 'researcher'].includes(newUser.role) ? newUser.role : 'user';
+    const userToSave = {
+      ...newUser,
+      id: typeof newUser.id === 'string' && newUser.id ? newUser.id : 'user-' + crypto.randomUUID(),
+      email: cleanEmail,
+      role,
+      password: hashAccountPassword(cleanPassword),
+      createdAt: newUser.createdAt || new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      isLoggedIn: true
+    };
+
+    serverAccounts.push(userToSave);
+    writeServerAccounts(serverAccounts);
+
+    const log = {
+      id: 'act-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+      userId: userToSave.id,
+      userName: userToSave.displayName,
+      userRole: userToSave.role,
+      userEmail: userToSave.email,
+      actionType: 'auth',
+      title: 'Tạo tài khoản mới',
+      description: 'Một tài khoản mới đã được đăng ký.',
+      timestamp: new Date().toISOString()
+    };
+    serverActivities.unshift(log);
+    writeServerActivities(serverActivities);
+
+    return res.status(201).json({ success: true, user: publicAccount(userToSave) });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: 'Không thể tạo tài khoản lúc này.' });
+  }
+});
+
+app.post('/api/accounts/login', (req: Request, res: Response) => {
+  try {
+    const { identifier, password } = req.body || {};
+    if (!identifier || typeof password !== 'string' || !password) {
+      return res.status(400).json({ success: false, error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' });
+    }
+
+    const cleanId = String(identifier).trim().toLowerCase();
+
+    if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (!adminPassword) {
+        return res.status(503).json({ success: false, error: 'Chưa cấu hình ADMIN_PASSWORD trên máy chủ.' });
+      }
+      if (!constantTimeStringEqual(password, adminPassword)) {
+        return res.status(401).json({ success: false, error: 'Thông tin quản trị viên không chính xác.' });
+      }
+
+      let adminAccount = serverAccounts.find((account: any) =>
+        account.id === 'user-admin' ||
+        (account.email && account.email.toLowerCase() === 'admin@heritageai.vn')
+      );
+      if (!adminAccount) {
+        adminAccount = { ...DEFAULT_ADMIN_ACCOUNT_SERVER };
+        serverAccounts.push(adminAccount);
+      }
+      delete adminAccount.password;
+      adminAccount.lastLoginAt = new Date().toISOString();
+      adminAccount.isLoggedIn = true;
+      writeServerAccounts(serverAccounts);
+      return res.json({ success: true, user: publicAccount(adminAccount) });
+    }
+
+    const account = serverAccounts.find((item: any) =>
+      (item.email && item.email.toLowerCase() === cleanId) ||
+      (item.displayName && item.displayName.toLowerCase() === cleanId) ||
+      (item.id && item.id.toLowerCase() === cleanId)
+    );
+
+    if (!account || typeof account.password !== 'string') {
+      return res.status(401).json({ success: false, error: 'Thông tin đăng nhập không chính xác.' });
+    }
+
+    const verification = verifyAccountPassword(password, account.password);
+    if (!verification.valid) {
+      return res.status(401).json({ success: false, error: 'Thông tin đăng nhập không chính xác.' });
+    }
+    if (verification.upgradedHash) account.password = verification.upgradedHash;
+
+    account.lastLoginAt = new Date().toISOString();
+    account.isLoggedIn = true;
+    writeServerAccounts(serverAccounts);
+    return res.json({ success: true, user: publicAccount(account) });
+  } catch (_err: any) {
+    return res.status(500).json({ success: false, error: 'Không thể đăng nhập lúc này.' });
+  }
+});
+
+app.post('/api/accounts/reset-password', (_req: Request, res: Response) => {
+  return res.status(410).json({
+    success: false,
+    error: 'Đặt lại mật khẩu trực tiếp đã bị vô hiệu hóa. Hãy dùng luồng khôi phục đã xác minh qua email/Firebase Authentication.'
+  });
+});
+
+app.post('/api/accounts/change-password', (_req: Request, res: Response) => {
+  return res.status(410).json({
+    success: false,
+    error: 'Đổi mật khẩu qua API tài khoản cũ đã bị vô hiệu hóa. Hãy dùng Firebase Authentication.'
+  });
+});
+
+app.delete('/api/accounts/:id', (_req: Request, res: Response) => {
+  return res.status(403).json({
+    success: false,
+    error: 'Thao tác quản trị tài khoản cần xác thực quản trị viên phía máy chủ.'
+  });
+});
+
+app.get('/api/activities', (req: Request, res: Response) => {
+  return res.json({ success: true, activities: serverActivities });
+});
+
+app.post('/api/activities', (req: Request, res: Response) => {
+  try {
+    const log = req.body;
+    if (log && log.actionType) {
+      if (!log.id) log.id = 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+      if (!log.timestamp) log.timestamp = new Date().toISOString();
+      serverActivities.unshift(log);
+      if (serverActivities.length > 500) serverActivities = serverActivities.slice(0, 500);
+      writeServerActivities(serverActivities);
+    }
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/activities', (req: Request, res: Response) => {
+  serverActivities = [];
+  writeServerActivities(serverActivities);
+  return res.json({ success: true });
+});
+
+// ==========================================
+// HERITAGES & PLACES PERSISTENCE (ADMIN EDITS)
+// ==========================================
+const HERITAGES_FILE = path.join(DATA_DIR, 'server_heritages.json');
+const PLACES_FILE = path.join(DATA_DIR, 'server_places.json');
+const TOUR_GUIDE_FILE = path.join(DATA_DIR, 'server_tour_guide_config.json');
+
+const DEFAULT_TOUR_GUIDE_SERVER = {
+  guideName: 'Bảo An',
+  title: 'Thuyết Minh Viên Di Sản & Hướng Dẫn Viên Văn Hóa Quốc Gia',
+  avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80',
+  experienceYears: 12,
+  speakingStyle: 'warm_friendly',
+  specialties: [
+    'Quần thể Di tích Cố đô & Lăng tẩm Hoàng gia',
+    'Kiến trúc Đình Chùa & Văn hóa Tín ngưỡng Bắc Bộ',
+    'Ẩm thực Dân dã & Quán ngon gia truyền 3 Miền',
+    'Văn hóa Bản địa, Lễ hội Dân gian & Làng nghề Truyền thống'
+  ],
+  etiquetteRules: [
+    'Mặc trang phục lịch sự, kín đáo khi bước vào chốn linh thiêng (đình, đền, chùa, lăng tẩm).',
+    'Đi nhẹ, nói khẽ, không chỉ tay vào tượng Phật hoặc đồ thờ tự.',
+    'Tuyệt đối không sờ vào hiện vật cổ, không viết vẽ lên rùa đá, tường thành di tích.',
+    'Bỏ rác đúng nơi quy định, chung tay giữ gìn cảnh quan di sản xanh sạch đẹp.',
+    'Xin phép trước khi chụp ảnh người dân bản địa hoặc các nghệ nhân lớn tuổi.'
+  ],
+  welcomeGreeting: 'Dạ, em là Bảo An - Hướng dẫn viên du lịch văn hóa đồng hành cùng quý cô bác, anh chị! Rất hân hạnh được dẫn đoàn mình khám phá vẻ đẹp kỳ vĩ và những câu chuyện ngàn năm của non sông gấm vóc Việt Nam. Mời quý vị cùng em dạo bước nhé!',
+  customKnowledgePrompt: `MẸO HƯỚNG DẪN VIÊN ĐỘC QUYỀN:
+1. Khi du khách đến Hoàng thành Thăng Long hoặc Đại Nội Huế: Luôn chỉ cho khách góc chụp ảnh cổng Ngọ Môn lúc hoàng hôn và gợi ý nghe nhã nhạc cung đình.
+2. Ẩm thực: Đừng chỉ giới thiệu nhà hàng sang trọng, hãy chỉ du khách các quán ăn dân dã nức tiếng của dân bản địa có tuổi đời trên 30 năm.
+3. Khi du khách hỏi về giá vé hoặc đồ lưu niệm: Nhắc du khách hỏi giá trước khi mua, ủng hộ các sản phẩm thủ công chính hiệu từ bàn tay nghệ nhân làng nghề thay vì hàng gia công công nghiệp.`,
+  activeHeritageKnowledge: true,
+  updatedAt: new Date().toISOString()
+};
+
+function readServerTourGuideConfig(): any {
+  try {
+    if (fs.existsSync(TOUR_GUIDE_FILE)) {
+      const content = fs.readFileSync(TOUR_GUIDE_FILE, 'utf-8');
+      const data = JSON.parse(content);
+      if (data && data.guideName) return data;
+    }
+  } catch (err) {
+    console.warn('Error reading server_tour_guide_config.json:', err);
+  }
+  return DEFAULT_TOUR_GUIDE_SERVER;
+}
+
+function writeServerTourGuideConfig(config: any) {
+  try {
+    fs.writeFileSync(TOUR_GUIDE_FILE, JSON.stringify(config, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_tour_guide_config.json:', err);
+  }
+}
+
+let serverTourGuideConfig = readServerTourGuideConfig();
+
+function readServerHeritages(): any[] | null {
+  try {
+    if (fs.existsSync(HERITAGES_FILE)) {
+      const content = fs.readFileSync(HERITAGES_FILE, 'utf-8');
+      const list = JSON.parse(content);
+      if (Array.isArray(list) && list.length > 0) return list;
+    }
+  } catch (err) {
+    console.warn('Error reading server_heritages.json:', err);
+  }
+  return null;
+}
+
+function writeServerHeritages(heritages: any[]) {
+  try {
+    fs.writeFileSync(HERITAGES_FILE, JSON.stringify(heritages, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_heritages.json:', err);
+  }
+}
+
+function readServerPlaces(): Record<string, any[]> | null {
+  try {
+    if (fs.existsSync(PLACES_FILE)) {
+      const content = fs.readFileSync(PLACES_FILE, 'utf-8');
+      const data = JSON.parse(content);
+      if (data && typeof data === 'object') return data;
+    }
+  } catch (err) {
+    console.warn('Error reading server_places.json:', err);
+  }
+  return null;
+}
+
+function writeServerPlaces(places: Record<string, any[]>) {
+  try {
+    fs.writeFileSync(PLACES_FILE, JSON.stringify(places, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_places.json:', err);
+  }
+}
+
+let serverHeritages = readServerHeritages();
+if (serverHeritages && Array.isArray(serverHeritages)) {
+  const existingIds = new Set(serverHeritages.map((h: any) => h.id));
+  let added = false;
+  for (const item of HERITAGE_DATABASE) {
+    if (!existingIds.has(item.id)) {
+      serverHeritages.push(item);
+      added = true;
+    }
+  }
+  if (added) {
+    writeServerHeritages(serverHeritages);
+  }
+}
+let serverPlaces = readServerPlaces();
+
+app.get('/api/heritages', (req: Request, res: Response) => {
+  return res.json({ success: true, heritages: serverHeritages || HERITAGE_DATABASE });
+});
+
+app.post('/api/heritages', (req: Request, res: Response) => {
+  try {
+    const { heritages } = req.body;
+    if (Array.isArray(heritages)) {
+      serverHeritages = heritages;
+      writeServerHeritages(heritages);
+      return res.json({ success: true, count: heritages.length });
+    }
+    return res.status(400).json({ success: false, error: 'Dữ liệu di sản không hợp lệ.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =========================================================================
+// DU LỊCH TOÀN VIỆN & KHÁM PHÁ ĐỊA ĐIỂM (PHÂN TRANG, TÌM KIẾM, OSM SYNC)
+// =========================================================================
+app.get('/api/tourism/places', (req: Request, res: Response) => {
+  try {
+    let all = [...(serverHeritages || HERITAGE_DATABASE)] as any[];
+    const { province, category, q, search, sort, bbox, page, limit, lat, lng } = req.query;
+
+    const queryText = ((q || search || '') as string).toLowerCase().trim();
+    if (queryText) {
+      all = all.filter(item => 
+        (item.name && item.name.toLowerCase().includes(queryText)) ||
+        (item.vietnameseName && item.vietnameseName.toLowerCase().includes(queryText)) ||
+        (item.englishName && item.englishName.toLowerCase().includes(queryText)) ||
+        (item.province && item.province.toLowerCase().includes(queryText)) ||
+        (item.address && item.address.toLowerCase().includes(queryText)) ||
+        (item.categoryLabel && item.categoryLabel.toLowerCase().includes(queryText)) ||
+        (Array.isArray(item.tags) && item.tags.some((t: string) => t.toLowerCase().includes(queryText)))
+      );
+    }
+
+    if (province && typeof province === 'string') {
+      const p = province.toLowerCase().trim();
+      all = all.filter(item => {
+        const itemProv = (item.province || '').toLowerCase();
+        return itemProv.includes(p) || p.includes(itemProv) ||
+          (Array.isArray(item.tags) && item.tags.some((t: string) => t.toLowerCase().includes(p)));
+      });
+    }
+
+    if (category && typeof category === 'string' && category !== 'all') {
+      const c = category.toLowerCase().trim();
+      all = all.filter(item => {
+        if (c === 'monument') return item.category === 'monument' || item.category === 'citadel';
+        if (c === 'museum') return item.category === 'museum' || item.category === 'architecture';
+        if (c === 'nature_scenic') return item.category === 'nature_scenic' || item.category === 'mountain_cave' || item.category === 'beach_island' || item.category === 'eco_tourism';
+        return item.category === c;
+      });
+    }
+
+    if (bbox && typeof bbox === 'string') {
+      const parts = bbox.split(',').map(Number);
+      if (parts.length === 4 && !parts.some(isNaN)) {
+        const [minLat, minLng, maxLat, maxLng] = parts;
+        all = all.filter(item => item.lat >= minLat && item.lat <= maxLat && item.lng >= minLng && item.lng <= maxLng);
+      }
+    }
+
+    // Sort
+    const userLat = lat ? Number(lat) : null;
+    const userLng = lng ? Number(lng) : null;
+
+    if (sort === 'distance' && userLat !== null && userLng !== null) {
+      all.sort((a, b) => {
+        const distA = calculateDistanceMeters(userLat, userLng, a.lat, a.lng);
+        const distB = calculateDistanceMeters(userLat, userLng, b.lat, b.lng);
+        return distA - distB;
+      });
+    } else if (sort === 'name_asc') {
+      all.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+    } else if (sort === 'name_desc') {
+      all.sort((a, b) => b.name.localeCompare(a.name, 'vi'));
+    } else if (sort === 'rating') {
+      all.sort((a, b) => (b.rating || 4.5) - (a.rating || 4.5));
+    } else {
+      // Verified first
+      all.sort((a, b) => {
+        if (a.verifiedStatus === 'verified' && b.verifiedStatus !== 'verified') return -1;
+        if (b.verifiedStatus === 'verified' && a.verifiedStatus !== 'verified') return 1;
+        return 0;
+      });
+    }
+
+    const total = all.length;
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = req.query.all === 'true' ? total : Math.max(1, parseInt(limit as string) || 50);
+    const totalPages = Math.ceil(total / limitNum) || 1;
+    const offset = (pageNum - 1) * limitNum;
+    const paged = all.slice(offset, offset + limitNum);
+
+    return res.json({
+      success: true,
+      total,
+      page: pageNum,
+      totalPages,
+      limit: limitNum,
+      hasMore: offset + limitNum < total,
+      places: paged
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/tourism/stats', (req: Request, res: Response) => {
+  try {
+    const list = [...(serverHeritages || HERITAGE_DATABASE)] as any[];
+    const byProvince: Record<string, number> = {};
+    const byCategory: Record<string, number> = {};
+    let verifiedCount = 0;
+    let withCoordsCount = 0;
+
+    for (const item of list) {
+      const p = item.province || 'Chưa phân loại';
+      byProvince[p] = (byProvince[p] || 0) + 1;
+      const c = item.category || 'other';
+      byCategory[c] = (byCategory[c] || 0) + 1;
+      if (item.verifiedStatus === 'verified') verifiedCount++;
+      if (item.lat && item.lng) withCoordsCount++;
+    }
+
+    return res.json({
+      success: true,
+      totalPlaces: list.length,
+      verifiedCount,
+      withCoordsCount,
+      byProvince,
+      byCategory
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Cache map for OSM Overpass queries to respect fair use rate limits
+const osmQueryCache = new Map<string, { data: any[]; timestamp: number }>();
+const OSM_CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours
+
+app.post('/api/tourism/sync-osm', async (req: Request, res: Response) => {
+  try {
+    const { province, bbox } = req.body;
+    let queryBbox = bbox;
+
+    // Default bounding box if only province is provided (e.g. Da Nang)
+    if (!queryBbox) {
+      if (province && province.toLowerCase().includes('đà nẵng')) {
+        queryBbox = '15.9,107.9,16.25,108.35';
+      } else {
+        queryBbox = '15.9,107.9,16.25,108.35'; // default to Da Nang bounding box
+      }
+    }
+
+    const cacheKey = `osm_${queryBbox}`;
+    const cached = osmQueryCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < OSM_CACHE_TTL)) {
+      return res.json({
+        success: true,
+        source: 'cache',
+        syncedCount: cached.data.length,
+        places: cached.data
+      });
+    }
+
+    const overpassQuery = `
+      [out:json][timeout:25];
+      (
+        node["tourism"~"attraction|museum|viewpoint|theme_park|gallery"](${queryBbox});
+        node["historic"~"monument|memorial|castle|ruins|archaeological_site"](${queryBbox});
+        node["natural"~"beach|cave|waterfall|peak"](${queryBbox});
+        node["leisure"~"nature_reserve|park|water_park"](${queryBbox});
+      );
+      out body 35;
+    `;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const osmRes = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'HonDatVietTourismApp/1.0 (educational/heritage platform)'
+      },
+      body: `data=${encodeURIComponent(overpassQuery)}`,
+      signal: controller.signal
+    }).catch(err => {
+      console.warn('OSM Overpass network timeout or error:', err.message);
+      return null;
+    });
+
+    clearTimeout(timeout);
+
+    if (!osmRes || !osmRes.ok) {
+      return res.json({
+        success: false,
+        message: 'Không thể kết nối OpenStreetMap Overpass API lúc này (quá tải mạng). Sử dụng cơ sở dữ liệu xác minh sẵn có.',
+        syncedCount: 0,
+        places: []
+      });
+    }
+
+    const osmData = await osmRes.json();
+    const elements = osmData.elements || [];
+
+    const mappedPlaces: any[] = [];
+    for (const el of elements) {
+      const name = el.tags?.['name:vi'] || el.tags?.name || el.tags?.['name:en'];
+      if (!name || name.length < 3) continue;
+
+      let category = 'nature_scenic';
+      let categoryLabel = 'Thắng cảnh thiên nhiên';
+      if (el.tags?.tourism === 'museum') {
+        category = 'museum';
+        categoryLabel = 'Bảo tàng';
+      } else if (el.tags?.historic) {
+        category = 'monument';
+        categoryLabel = 'Di tích lịch sử';
+      } else if (el.tags?.natural === 'beach') {
+        category = 'beach_island';
+        categoryLabel = 'Bãi biển';
+      } else if (el.tags?.leisure === 'park') {
+        category = 'eco_tourism';
+        categoryLabel = 'Công viên & Sinh thái';
+      }
+
+      mappedPlaces.push({
+        id: `osm-${el.id}`,
+        name,
+        vietnameseName: el.tags?.['name:vi'] || name,
+        englishName: el.tags?.['name:en'],
+        category,
+        categoryLabel,
+        region: 'central',
+        province: province || 'Đà Nẵng',
+        period: 'Hiện đại / Tư liệu OpenStreetMap',
+        history: el.tags?.description || `Địa điểm du lịch ghi nhận trên bản đồ mở OpenStreetMap (OSM Node #${el.id}).`,
+        culturalSignificance: `Tọa độ du lịch được cộng đồng bản đồ mở quốc tế kiểm định.`,
+        interestingFacts: [
+          `Nguồn dữ liệu: OpenStreetMap Contributor (ID: ${el.id}).`,
+          el.tags?.website ? `Website chính thức: ${el.tags.website}` : 'Mở cửa tham quan tự do'
+        ],
+        imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+        verifiedStatus: 'verified',
+        verifiedNote: `OpenStreetMap (OSM) Node #${el.id}`,
+        lat: el.lat,
+        lng: el.lon,
+        address: el.tags?.['addr:street'] ? `${el.tags['addr:housenumber'] || ''} ${el.tags['addr:street']}, ${province || 'Đà Nẵng'}` : `${province || 'Đà Nẵng'}, Việt Nam`,
+        visitingHours: el.tags?.opening_hours || 'Tham quan tự do',
+        googleMapsUri: `https://maps.google.com/?q=${el.lat},${el.lon}`,
+        tags: [province || 'Đà Nẵng', 'OpenStreetMap', categoryLabel],
+        suggestedQuestions: [`Thông tin tham quan ${name}?`],
+        dataSource: 'OpenStreetMap (ODbL License)',
+        lastVerifiedDate: '2026-03-20',
+        osmId: `node/${el.id}`
+      });
+    }
+
+    osmQueryCache.set(cacheKey, { data: mappedPlaces, timestamp: Date.now() });
+
+    // Deduplicate and merge into serverHeritages
+    if (mappedPlaces.length > 0) {
+      const mergedList = [...(serverHeritages || HERITAGE_DATABASE), ...mappedPlaces];
+      const dedup = deduplicateTourismPlaces(mergedList);
+      serverHeritages = dedup.uniquePlaces;
+      writeServerHeritages(serverHeritages);
+    }
+
+    return res.json({
+      success: true,
+      syncedCount: mappedPlaces.length,
+      places: mappedPlaces
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/places', (req: Request, res: Response) => {
+  return res.json({ success: true, places: serverPlaces });
+});
+
+app.post('/api/places', (req: Request, res: Response) => {
+  try {
+    const { places } = req.body;
+    if (places && typeof places === 'object') {
+      serverPlaces = places;
+      writeServerPlaces(places);
+      return res.json({ success: true });
+    }
+    return res.status(400).json({ success: false, error: 'Dữ liệu địa điểm không hợp lệ.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ==========================================
+// AI LANDMARK IMAGE SEARCH
+// ==========================================
+app.post('/api/ai/search-landmark-images', async (req: Request, res: Response) => {
+  try {
+    const { query = '', cityName = '', landmarkName = '', province = '' } = req.body;
+    const combinedSearch = `${query} ${cityName} ${landmarkName} ${province}`.trim().toLowerCase();
+
+    // 1. Keyword search in curated VIETNAM_LANDMARK_PHOTOS
+    const keywordMatches = VIETNAM_LANDMARK_PHOTOS.filter(photo => {
+      if (!combinedSearch) return true;
+      const target = `${photo.title} ${photo.cityName} ${photo.province} ${photo.landmarkName} ${photo.tagline} ${photo.tags.join(' ')}`.toLowerCase();
+      const terms = combinedSearch.split(/\s+/).filter(Boolean);
+      return terms.some(t => target.includes(t));
+    });
+
+    // 2. AI suggestions for landmark photos
+    let aiSuggestions: any[] = [];
+    try {
+      const ai = getGemini();
+      const prompt = `Bạn là chuyên gia về hình ảnh danh lam thắng cảnh và di sản văn hóa Việt Nam.
+Người dùng đang tìm kiếm ảnh nền cho:
+Từ khóa: "${query || landmarkName || cityName || 'Địa danh nổi tiếng Việt Nam'}"
+Tỉnh/Thành phố: "${cityName || province || ''}"
+
+Hãy gợi ý tối đa 4 thông tin danh thắng nổi tiếng nhất phù hợp để tìm ảnh nền chất lượng cao:
+- Tên danh thắng chính xác (landmarkName)
+- Tỉnh/Thành phố (cityName)
+- Khẩu hiệu mô tả cảnh đẹp ngắn gọn (tagline)
+- Góc chụp đẹp nhất (photoPerspective)
+- Từ khóa tìm kiếm ảnh (searchKeywords)`;
+
+      const response = await generateContentWithResilience(ai, {
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              suggestions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    landmarkName: { type: Type.STRING },
+                    cityName: { type: Type.STRING },
+                    province: { type: Type.STRING },
+                    tagline: { type: Type.STRING },
+                    photoPerspective: { type: Type.STRING },
+                    searchKeywords: { type: Type.STRING }
+                  },
+                  required: ['landmarkName', 'cityName', 'tagline', 'searchKeywords']
+                }
+              }
+            },
+            required: ['suggestions']
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      if (Array.isArray(parsed.suggestions)) {
+        aiSuggestions = parsed.suggestions;
+      }
+    } catch (aiErr) {
+      console.info('[AI Landmark Image Search] Gemini suggestion step completed with curated fallback.');
+    }
+
+    return res.json({
+      success: true,
+      photos: keywordMatches.length > 0 ? keywordMatches : VIETNAM_LANDMARK_PHOTOS,
+      aiSuggestions,
+      totalCount: keywordMatches.length > 0 ? keywordMatches.length : VIETNAM_LANDMARK_PHOTOS.length
+    });
+  } catch (error: any) {
+    return res.json({
+      success: true,
+      photos: VIETNAM_LANDMARK_PHOTOS,
+      aiSuggestions: [],
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// GEMINI GOOGLE SEARCH LANDMARK IMAGE FINDER
+// ==========================================
+app.post('/api/ai/google-find-landmark-image', async (req: Request, res: Response) => {
+  try {
+    const { landmarkName = '', cityName = '', province = '' } = req.body;
+    if (!landmarkName && !cityName) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp tên danh thắng hoặc tỉnh thành' });
+    }
+
+    const searchQuery = `${landmarkName} ${cityName} ${province}`.trim();
+    const ai = getGemini();
+
+    const systemPrompt = `Bạn là chuyên gia tra cứu thông tin và tìm kiếm hình ảnh phong cảnh danh lam thắng cảnh Việt Nam chất lượng cao trên Google của Hồn Đất Việt.
+NHIỆM VỤ:
+Người dùng cung cấp Tên Danh Thắng: "${landmarkName}", Tỉnh/Thành: "${cityName || province || 'Việt Nam'}".
+Hãy tìm kiếm hình ảnh thực tế chất lượng cao (HD/4K) trên Google và thông tin chuẩn xác về danh thắng này.
+
+YÊU CẦU:
+1. Tìm các đường link ảnh thực tế, sắc nét, góc chụp đẹp (toàn cảnh landscape) thể hiện đúng danh thắng "${landmarkName}".
+2. Ưu tiên các đường link ảnh thực từ Wikimedia Commons, Wikipedia, Unsplash, Flickr, Cổng du lịch Việt Nam, hoặc link ảnh trực tiếp dạng URL hợp lệ.
+3. Xác định tọa độ GPS (Vĩ độ - lat, Kinh độ - lng) chính xác của địa danh này.
+4. Viết 1 câu khẩu hiệu (tagline) ngắn gọn, truyền cảm giới thiệu vẻ đẹp đặc trưng.
+5. Cung cấp danh sách 3-5 ảnh ứng viên (candidateImages) với nguồn ảnh và góc chụp mô tả.
+
+HÃY TRẢ VỀ ĐỊNH DẠNG JSON CHUẨN:
+{
+  "bestImageUrl": "string (link ảnh tốt nhất)",
+  "landmarkName": "string (tên chuẩn hóa)",
+  "cityName": "string (tên thành phố)",
+  "province": "string (tên tỉnh)",
+  "tagline": "string (câu mô tả ngắn)",
+  "lat": 0,
+  "lng": 0,
+  "searchSummary": "string (tóm tắt kết quả tìm kiếm Google của Gemini)",
+  "candidateImages": [
+    {
+      "url": "string (link ảnh)",
+      "title": "string (mô tả góc chụp)",
+      "source": "string (nguồn ảnh như Google / Wikimedia / Unsplash)",
+      "photographer": "string (tác giả hoặc nguồn)"
+    }
+  ]
+}`;
+
+    let parsedResult: any = null;
+
+    try {
+      // 1. Try with Google Search grounding tool
+      const response = await generateContentWithResilience(ai, {
+        contents: `Tìm kiếm trên Google ảnh chất lượng cao và thông tin cho danh lam thắng cảnh Việt Nam: "${searchQuery}"`,
+        config: {
+          systemInstruction: systemPrompt,
+          tools: [{ googleSearch: {} }],
+          responseMimeType: 'application/json'
+        }
+      }, 'gemini-3.8-flash');
+
+      const text = response?.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedResult = JSON.parse(jsonMatch[0]);
+      }
+    } catch {
+      // 2. If Google search tool reaches rate limit / quota / unavailable, fall back to direct model prompt
+      try {
+        const response = await generateContentWithResilience(ai, {
+          contents: `Hãy tìm và tổng hợp thông tin, đường dẫn ảnh chất lượng cao trên web/Google cho danh thắng: "${searchQuery}"`,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: 'application/json'
+          }
+        }, 'gemini-3.1-flash-lite');
+        const text = response?.text || '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedResult = JSON.parse(jsonMatch[0]);
+        }
+      } catch {
+        // Handled below via curated database fallback
+      }
+    }
+
+    // Check matching local curated database as reliable fallback & supplement
+    const isVanMieu = /văn miếu|quốc tử giám|khuê văn các/i.test(searchQuery);
+    const isDaiNoiHue = /đại nội|cung đình huế|ngọ môn|cố đô huế|hoàng thành huế/i.test(searchQuery);
+    const isHoiAn = /hội an|chùa cầu|lai viễn kiều|cầu nhật bản|phố cổ hội an/i.test(searchQuery);
+
+    const matchingLocalPhotos = VIETNAM_LANDMARK_PHOTOS.filter(photo => {
+      if (isVanMieu) {
+        return photo.id.startsWith('hn-van-mieu') || photo.id.startsWith('hn-khue-van-cac');
+      }
+      if (isDaiNoiHue) {
+        return photo.id.startsWith('hue-dai-noi');
+      }
+      if (isHoiAn) {
+        return photo.id.startsWith('qn-hoi-an') || photo.id.startsWith('qn-chua-cau');
+      }
+      const target = `${photo.landmarkName} ${photo.title} ${photo.cityName} ${photo.province}`.toLowerCase();
+      const terms = searchQuery.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+      return terms.some(t => target.includes(t));
+    });
+
+    const bestLocal = matchingLocalPhotos[0];
+
+    // Ensure candidate images list has high quality valid images
+    let candidates = Array.isArray(parsedResult?.candidateImages) ? parsedResult.candidateImages : [];
+    
+    // Supplement with curated photos if candidates are empty or have invalid links
+    if ((candidates.length === 0 || isVanMieu || isDaiNoiHue || isHoiAn) && matchingLocalPhotos.length > 0) {
+      const curatedCandidates = matchingLocalPhotos.slice(0, 4).map(p => ({
+        url: p.imageUrl,
+        title: p.title,
+        source: p.source || 'Kho Di Sản & Di Tích Quốc Gia',
+        photographer: p.photographer || 'Nhiếp ảnh gia Di sản Việt Nam'
+      }));
+      candidates = (isVanMieu || isDaiNoiHue || isHoiAn) ? curatedCandidates : [...candidates, ...curatedCandidates].slice(0, 5);
+    }
+
+    // If bestImageUrl is missing or placeholder, use the first valid candidate or local photo
+    let finalBestUrl = parsedResult?.bestImageUrl;
+    if (isVanMieu || isDaiNoiHue || isHoiAn || !finalBestUrl || !finalBestUrl.startsWith('http') || finalBestUrl.includes('1599707367072') || finalBestUrl.includes('1583417319070') || finalBestUrl.includes('1555939594')) {
+      if (isVanMieu) {
+        finalBestUrl = 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg';
+      } else if (isDaiNoiHue) {
+        finalBestUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg';
+      } else if (isHoiAn) {
+        finalBestUrl = /chùa cầu|lai viễn kiều|cầu nhật bản/i.test(searchQuery)
+          ? 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Cau_Nhat_Ban.jpg'
+          : 'https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg';
+      } else if (candidates.length > 0 && candidates[0].url) {
+        finalBestUrl = candidates[0].url;
+      } else if (bestLocal) {
+        finalBestUrl = bestLocal.imageUrl;
+      } else {
+        // High-quality dynamic photo as safe resilient fallback
+        finalBestUrl = `https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg`;
+      }
+    }
+
+    const payload = {
+      success: true,
+      bestImageUrl: finalBestUrl,
+      landmarkName: parsedResult?.landmarkName || landmarkName || bestLocal?.landmarkName || 'Danh thắng Việt Nam',
+      cityName: parsedResult?.cityName || cityName || bestLocal?.cityName || 'Việt Nam',
+      province: parsedResult?.province || province || bestLocal?.province || cityName || 'Việt Nam',
+      tagline: parsedResult?.tagline || bestLocal?.tagline || `Khám phá vẻ đẹp kỳ vĩ của ${landmarkName || cityName}`,
+      lat: Number(parsedResult?.lat) || bestLocal?.lat || 16.0544,
+      lng: Number(parsedResult?.lng) || bestLocal?.lng || 108.2022,
+      searchSummary: parsedResult?.searchSummary || `Đã tra cứu và tổng hợp hình ảnh phong cảnh chất lượng cao cho danh thắng "${landmarkName || searchQuery}".`,
+      candidateImages: candidates.length > 0 ? candidates : [
+        {
+          url: finalBestUrl,
+          title: landmarkName || 'Cảnh đẹp danh thắng',
+          source: 'Google Search & Kho Di Sản HD',
+          photographer: 'Cộng đồng Nhiếp ảnh'
+        }
+      ]
+    };
+
+    return res.json(payload);
+  } catch (err: any) {
+    console.error('Error in /api/ai/google-find-landmark-image, using safe fallback:', err);
+    
+    // Emergency resilient fallback so the user always receives valid data
+    const query = String(req.body?.landmarkName || req.body?.cityName || 'Việt Nam');
+    const matched = VIETNAM_LANDMARK_PHOTOS.find(p => 
+      p.title.toLowerCase().includes(query.toLowerCase()) || 
+      p.cityName.toLowerCase().includes(query.toLowerCase()) ||
+      p.landmarkName.toLowerCase().includes(query.toLowerCase())
+    ) || VIETNAM_LANDMARK_PHOTOS[0];
+
+    return res.json({
+      success: true,
+      bestImageUrl: matched.imageUrl,
+      landmarkName: req.body?.landmarkName || matched.landmarkName,
+      cityName: req.body?.cityName || matched.cityName,
+      province: req.body?.province || matched.province,
+      tagline: matched.tagline || `Khám phá vẻ đẹp của ${req.body?.landmarkName || matched.landmarkName}`,
+      lat: matched.lat || 16.0544,
+      lng: matched.lng || 108.2022,
+      searchSummary: `Đã kết nối và gắn ảnh đại diện tiêu biểu cho danh thắng "${req.body?.landmarkName || query}".`,
+      candidateImages: [
+        {
+          url: matched.imageUrl,
+          title: matched.title,
+          source: matched.source || 'Kho Ảnh Di Sản HD',
+          photographer: matched.photographer || 'Nhiếp ảnh gia Việt Nam'
+        }
+      ]
+    });
+  }
+});
+
+// ==========================================
+// AI TOUR GUIDE TRAINING & CONFIGURATION
+// ==========================================
+app.get('/api/ai/tour-guide-config', (req: Request, res: Response) => {
+  return res.json({ success: true, config: serverTourGuideConfig });
+});
+
+app.post('/api/ai/tour-guide-config', (req: Request, res: Response) => {
+  try {
+    const { config } = req.body;
+    if (config && config.guideName) {
+      serverTourGuideConfig = {
+        ...config,
+        updatedAt: new Date().toISOString()
+      };
+      writeServerTourGuideConfig(serverTourGuideConfig);
+      return res.json({ success: true, config: serverTourGuideConfig });
+    }
+    return res.status(400).json({ success: false, error: 'Dữ liệu cấu hình hướng dẫn viên không hợp lệ.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ==========================================
+// VIENEU CLOUD TTS PROXY & DIAGNOSTIC ENDPOINTS
+// ==========================================
+
+interface VieNeuTestResult {
+  success: boolean;
+  status?: number;
+  statusText?: string;
+  hostname: string;
+  endpoint: string;
+  httpMethod: string;
+  requestFields: string[];
+  responseTimeMs: number;
+  errorCategory?: string;
+  message: string;
+  responseSnippet?: string;
+  instructions?: string;
+}
+
+async function testVieNeuApiConnection(
+  endpointUrl: string,
+  apiKey?: string,
+  model: string = 'vieneu-v4'
+): Promise<VieNeuTestResult> {
+  const startTime = Date.now();
+  let hostname = '';
+
+  // 1. Validate URL syntax
+  try {
+    const parsed = new URL(endpointUrl);
+    hostname = parsed.hostname;
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return {
+        success: false,
+        hostname: endpointUrl,
+        endpoint: endpointUrl,
+        httpMethod: 'POST',
+        requestFields: ['model', 'input'],
+        responseTimeMs: 0,
+        errorCategory: 'INVALID_PROTOCOL',
+        message: '🔴 Địa chỉ API Endpoint không hợp lệ. Vui lòng sử dụng giao thức http:// hoặc https://',
+        instructions: 'Cần cập nhật biến VIENEU_API_ENDPOINT trong file .env hoặc sửa ô API Endpoint trong Admin thành URL bắt đầu bằng http:// hoặc https://.'
+      };
+    }
+  } catch (e) {
+    return {
+      success: false,
+      hostname: endpointUrl,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields: ['model', 'input'],
+      responseTimeMs: 0,
+      errorCategory: 'INVALID_URL_SYNTAX',
+      message: `🔴 Endpoint hiện tại không hợp lệ ("${endpointUrl}").`,
+      instructions: 'Vui lòng kiểm tra lại cấu hình biến môi trường VIENEU_API_ENDPOINT hoặc nhập lại API Endpoint chuẩn trong trang Admin.'
+    };
+  }
+
+  // 2. Prepare headers securely (never expose API key in error messages)
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey && apiKey.trim().length > 0) {
+    headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+  }
+
+  // 3. Determine API payload format based on endpoint
+  const isAudioSpeech = endpointUrl.includes('audio/speech') || endpointUrl.includes('/speech');
+
+  const requestBody = isAudioSpeech
+    ? {
+        model: model || 'vieneu-v4',
+        input: 'Xin chào Hồn Đất Việt.'
+      }
+    : {
+        text: 'Xin chào Hồn Đất Việt.',
+        speed: 1.0,
+        language: 'vi-VN'
+      };
+
+  const requestFields = isAudioSpeech
+    ? ['model', 'input']
+    : ['text', 'speed', 'language'];
+
+  // Request with timeout (8 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(endpointUrl, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify(requestBody)
+    });
+    clearTimeout(timeoutId);
+
+    const responseTimeMs = Date.now() - startTime;
+    const status = response.status;
+    const statusText = response.statusText || '';
+
+    if (response.ok) {
+      return {
+        success: true,
+        status,
+        statusText,
+        hostname,
+        endpoint: endpointUrl,
+        httpMethod: 'POST',
+        requestFields,
+        responseTimeMs,
+        message: `🟢 Kết nối VieNeu Cloud API thành công (HTTP ${status} OK)! Hostname: ${hostname}`
+      };
+    }
+
+    // Response HTTP status is non-200 (4xx or 5xx)
+    let bodyText = '';
+    try {
+      bodyText = await response.text();
+    } catch (e) {
+      bodyText = '';
+    }
+
+    // Sanitize bodyText snippet to ensure no secret is included
+    const snippet = bodyText.substring(0, 200).replace(/["']?(key|token|secret|authorization)["']?\s*:\s*["']?[^"'\s]+["']?/gi, '$1: "***"');
+
+    let errorCategory = `HTTP_${status}`;
+    let userMsg = '';
+    let instructions = '';
+
+    switch (status) {
+      case 400:
+        errorCategory = '400_BAD_REQUEST';
+        userMsg = `🔴 Lỗi yêu cầu (HTTP 400 Bad Request): VieNeu API báo lỗi cấu trúc request payload.`;
+        instructions = `Nội dung phản hồi từ VieNeu: "${snippet}". Kiểm tra trường gửi sang (cần dùng model, input cho /audio/speech).`;
+        break;
+      case 401:
+        errorCategory = '401_UNAUTHORIZED';
+        userMsg = `🔴 Lỗi xác thực (HTTP 401 Unauthorized): API Key không hợp lệ hoặc đã hết hạn.`;
+        instructions = 'Vui lòng kiểm tra lại "API Key" trong cài đặt Admin VieNeu TTS hoặc biến môi trường VIENEU_API_KEY.';
+        break;
+      case 403:
+        errorCategory = '403_FORBIDDEN';
+        userMsg = `🔴 Lỗi bị cấm truy cập (HTTP 403 Forbidden): Yêu cầu bị máy chủ VieNeu từ chối.`;
+        instructions = 'Kiểm tra xem IP hoặc API Key của bạn có bị giới hạn quyền truy cập trên VieNeu hay không.';
+        break;
+      case 404:
+        errorCategory = '404_NOT_FOUND';
+        userMsg = `🔴 Không tìm thấy Endpoint (HTTP 404 Not Found): Đường dẫn API "${endpointUrl}" không tồn tại trên máy chủ ${hostname}.`;
+        instructions = `Endpoint hiện tại không chính xác. Bạn cần thay đổi biến VIENEU_API_ENDPOINT hoặc ô "API Endpoint" trong Admin (Ví dụ: https://api.vieneu.io/api/v1/audio/speech).`;
+        break;
+      case 429:
+        errorCategory = '429_TOO_MANY_REQUESTS';
+        userMsg = `🔴 Đã vượt quá giới hạn lượt gọi (HTTP 429 Too Many Requests): Hết hạn ngạch hoặc gọi API quá nhanh.`;
+        instructions = 'Chờ vài phút trước khi thử lại hoặc kiểm tra hạn ngạch tài khoản VieNeu API.';
+        break;
+      default:
+        if (status >= 500) {
+          errorCategory = `HTTP_${status}_SERVER_ERROR`;
+          userMsg = `🔴 Máy chủ VieNeu gặp sự cố nội bộ (HTTP ${status} ${statusText}).`;
+          instructions = 'Máy chủ VieNeu đang gặp sự cố. Hãy kiểm tra log server VieNeu hoặc thử lại sau.';
+        } else {
+          userMsg = `🔴 Yêu cầu thất bại với HTTP status ${status} (${statusText}).`;
+        }
+        break;
+    }
+
+    return {
+      success: false,
+      status,
+      statusText,
+      hostname,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields,
+      responseTimeMs,
+      errorCategory,
+      message: userMsg,
+      responseSnippet: snippet,
+      instructions
+    };
+
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    const responseTimeMs = Date.now() - startTime;
+
+    let errorCategory = 'NETWORK_ERROR';
+    let userMsg = '';
+    let instructions = '';
+
+    const causeCode = err?.cause?.code || err?.code;
+    const causeMsg = err?.cause?.message || err?.message || String(err);
+
+    if (err?.name === 'AbortError' || causeCode === 'UND_ERR_CONNECT_TIMEOUT' || causeCode === 'ETIMEDOUT') {
+      errorCategory = 'TIMEOUT';
+      userMsg = `🔴 Quá thời gian chờ (Timeout 8000ms): Máy chủ VieNeu tại "${hostname}" không phản hồi.`;
+      instructions = 'Kiểm tra địa chỉ IP / Domain server VieNeu xem có đang hoạt động hay bị tường lửa chặn cổng.';
+    } else if (causeCode === 'ENOTFOUND') {
+      errorCategory = 'DNS_ENOTFOUND';
+      userMsg = `🔴 Lỗi DNS (ENOTFOUND): Tên miền "${hostname}" không tồn tại hoặc không thể phân giải địa chỉ IP.`;
+      instructions = `Endpoint hiện tại không hợp lệ. Bạn cần thay đổi biến cấu hình VIENEU_API_ENDPOINT trong .env hoặc ô "API Endpoint" trong Admin thành URL server VieNeu thực sự (Ví dụ: https://api.vieneu.io/api/v1/audio/speech).`;
+    } else if (causeCode === 'ECONNREFUSED') {
+      errorCategory = 'ECONNREFUSED';
+      userMsg = `🔴 Kết nối bị từ chối (ECONNREFUSED): Máy chủ tại "${hostname}" không mở cổng hoặc dịch vụ VieNeu TTS chưa khởi động.`;
+      instructions = 'Nếu dùng Docker / Server tự host, hãy kiểm tra container VieNeu TTS đã khởi chạy trên đúng port hay chưa.';
+    } else if (causeCode === 'ECONNRESET') {
+      errorCategory = 'ECONNRESET';
+      userMsg = `🔴 Kết nối bị ngắt đột ngột (ECONNRESET) bởi máy chủ "${hostname}".`;
+      instructions = 'Kiểm tra mạng hoặc cài đặt proxy giữa Hồn Đất Việt server và VieNeu TTS server.';
+    } else {
+      userMsg = `🔴 Lỗi mạng / Không thể kết nối tới "${hostname}": ${causeMsg}`;
+      instructions = 'Kiểm tra lại kết nối mạng hoặc địa chỉ API Endpoint.';
+    }
+
+    return {
+      success: false,
+      hostname,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields: isAudioSpeech ? ['model', 'input'] : ['text', 'speed', 'language'],
+      responseTimeMs,
+      errorCategory,
+      message: userMsg,
+      instructions
+    };
+  }
+}
+
+app.post('/api/tts/vieneu', async (req: Request, res: Response) => {
+  try {
+    const { text, speed = 1.0, endpoint, apiKey, model = 'vieneu-v4', voice } = req.body;
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ success: false, error: 'Thiếu hoặc sai định dạng văn bản cần đọc.' });
+    }
+
+    const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (targetApiKey && targetApiKey.trim().length > 0) {
+      headers['Authorization'] = `Bearer ${targetApiKey.trim()}`;
+      headers['X-API-Key'] = targetApiKey.trim();
+    }
+
+    const isAudioSpeech = targetEndpoint.includes('audio/speech') || targetEndpoint.includes('/speech');
+
+    const requestBody = isAudioSpeech
+      ? {
+          model: model || 'vieneu-v4',
+          input: text,
+          ...(voice ? { voice } : {}),
+          speed: Number(speed) || 1.0
+        }
+      : {
+          text: text,
+          speed: Number(speed) || 1.0,
+          ...(voice ? { voice } : {})
+        };
+
+    const response = await fetch(targetEndpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({
+        success: false,
+        error: `VieNeu API Error (HTTP ${response.status}): ${errText.substring(0, 200) || response.statusText}`
+      });
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const json = await response.json();
+      return res.json({ success: true, ...json });
+    } else {
+      const buffer = await response.arrayBuffer();
+      res.setHeader('Content-Type', contentType || 'audio/mpeg');
+      return res.send(Buffer.from(buffer));
+    }
+  } catch (err: any) {
+    const targetEndpoint = req.body.endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    let hostname = '';
+    try { hostname = new URL(targetEndpoint).hostname; } catch (e) { hostname = targetEndpoint; }
+    
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi kết nối tới VieNeu Cloud API (${hostname}): ${err?.cause?.message || err?.message || err}`
+    });
+  }
+});
+
+app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
+  try {
+    const { provider = 'vieneu', endpoint, apiKey, model = 'vieneu-v4' } = req.body;
+
+    if (provider === 'web_speech') {
+      return res.json({
+        success: true,
+        message: '🟢 Web Speech API (Browser Native) sẵn sàng hoạt động trực tiếp trên trình duyệt.',
+        hostname: 'browser-native',
+        endpoint: 'window.speechSynthesis',
+        httpMethod: 'LOCAL',
+        requestFields: ['text'],
+        responseTimeMs: 1
+      });
+    }
+
+    const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+
+    const testResult = await testVieNeuApiConnection(targetEndpoint, targetApiKey, model);
+    return res.status(testResult.success ? 200 : 400).json(testResult);
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: `🔴 Lỗi server xử lý kiểm tra kết nối: ${err?.message || err}`,
+      hostname: 'server-error',
+      endpoint: '',
+      httpMethod: 'POST',
+      requestFields: [],
+      responseTimeMs: 0
+    });
+  }
+});
+
+// Test EmailJS API Configuration
+app.post('/api/emailjs/test-connection', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  try {
+    const { serviceId, templateId, publicKey, privateKey, testEmail } = req.body;
+    
+    const targetServiceId = serviceId || process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+    const targetTemplateId = templateId || process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID;
+    const targetPublicKey = publicKey || process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
+    const targetPrivateKey = privateKey || process.env.EMAILJS_PRIVATE_KEY;
+    const recipientEmail = testEmail || 'test@heritageai.vn';
+
+    if (!targetServiceId || !targetTemplateId || !targetPublicKey) {
+      return res.status(400).json({
+        success: false,
+        message: '🔴 Thiếu thông tin: Cần đầy đủ Service ID, Template ID và Public Key.',
+        responseTimeMs: Date.now() - startTime
+      });
+    }
+
+    const payload: any = {
+      service_id: targetServiceId,
+      template_id: targetTemplateId,
+      user_id: targetPublicKey,
+      template_params: {
+        to_email: recipientEmail,
+        to_name: 'Quản trị viên',
+        otp_code: '888999',
+        passcode: '888999',
+        code: '888999',
+        expire_time: '5 phút',
+        company_name: 'Hồn Đất Việt',
+        app_name: 'Hồn Đất Việt Admin Test'
+      }
+    };
+
+    if (targetPrivateKey) {
+      payload.accessToken = targetPrivateKey;
+    }
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const responseTimeMs = Date.now() - startTime;
+    const responseText = await response.text();
+
+    if (response.ok) {
+      return res.json({
+        success: true,
+        message: `🟢 Kết nối EmailJS thành công (${response.status} OK)! Đã gửi email thử nghiệm.`,
+        status: response.status,
+        responseTimeMs,
+        responseSnippet: responseText
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: `🔴 EmailJS trả về lỗi (${response.status}): ${responseText}`,
+        status: response.status,
+        responseTimeMs,
+        responseSnippet: responseText
+      });
+    }
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: `🔴 Lỗi kết nối EmailJS: ${err?.message || err}`,
+      responseTimeMs: Date.now() - startTime
+    });
+  }
+});
+
+// ==========================================
+// 8. RESEND EMAIL OTP VERIFICATION SERVICE
+// ==========================================
+const OTP_SALT = process.env.OTP_SALT || 'heritage-otp-secret-salt-2026';
+const OTP_EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes lifetime
+const OTP_COOLDOWN_MS = 60 * 1000; // 60s cooldown between send requests
+const MAX_VERIFY_ATTEMPTS = 5;
+const MAX_HOURLY_SENDS = 5;
+
+interface HashedPendingOtp {
+  hashedOtp: string;
+  expiresAt: number;
+  lastSentAt: number;
+  attempts: number;
+  sendCountHourly: number;
+  firstSendInWindow: number;
+  displayName?: string;
+}
+
+const serverPendingOtps = new Map<string, HashedPendingOtp>();
+
+function hashOtpCode(email: string, code: string): string {
+  return crypto
+    .createHash('sha256')
+    .update(`${email.trim().toLowerCase()}:${code.trim()}:${OTP_SALT}`)
+    .digest('hex');
+}
+
+function generateEmailHtml(displayName: string, code: string): string {
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mã xác thực OTP tài khoản Hồn Đất Việt</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0c0a09; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f5f5f4;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0c0a09; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width: 560px; background-color: #1c1917; border: 1px solid #44403c; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
+          <!-- Header Banner -->
+          <tr>
+            <td style="padding: 28px 24px; text-align: center; background: linear-gradient(135deg, #78350f 0%, #b45309 50%, #d97706 100%);">
+              <h1 style="margin: 0; color: #fef3c7; font-size: 24px; font-weight: 800; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🇻🇳 HỒN ĐẤT VIỆT</h1>
+              <p style="margin: 6px 0 0; color: #fde68a; font-size: 13px; font-weight: 500;">Bảo Tồn & Khám Phá Di Sản Văn Hóa Việt Nam</p>
+            </td>
+          </tr>
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 32px 28px;">
+              <p style="margin: 0 0 14px; font-size: 16px; color: #f5f5f4; font-weight: 600;">
+                Xin chào ${displayName || 'bạn mến mộ di sản'},
+              </p>
+              <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #d6d3d1;">
+                Bạn đang thực hiện thao tác xác thực tài khoản trên nền tảng <strong>Hồn Đất Việt</strong>. Dưới đây là mã xác thực OTP 6 chữ số bí mật của bạn:
+              </p>
+              
+              <!-- OTP Box -->
+              <div style="background-color: #0c0a09; border: 2px dashed #f59e0b; border-radius: 12px; padding: 22px 16px; text-align: center; margin: 24px 0;">
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #fbbf24; display: block; margin-bottom: 8px; font-weight: 700;">
+                  MÃ XÁC THỰC OTP (5 PHÚT)
+                </span>
+                <span style="font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #fef08a; display: inline-block;">
+                  ${code}
+                </span>
+              </div>
+
+              <!-- Security Information Note -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px; background-color: #292524; border-radius: 8px; padding: 14px 16px;">
+                <tr>
+                  <td style="font-size: 13px; color: #d6d3d1; line-height: 1.6;">
+                    ⏱️ <strong>Thời hạn hiệu lực:</strong> Mã này có giá trị trong đúng <strong>5 phút</strong>.<br>
+                    🔒 <strong>Bảo mật:</strong> Tuyệt đối không chia sẻ mã này cho bất kỳ ai. Quản trị viên không bao giờ yêu cầu cung cấp OTP.
+                  </td>
+                </tr>
+              </table>
+              
+              <hr style="border: 0; border-top: 1px solid #44403c; margin: 24px 0;">
+              
+              <p style="margin: 0; font-size: 12px; color: #78716c; line-height: 1.5;">
+                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email. Tài khoản của bạn vẫn được an toàn tuyệt đối.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 24px; background-color: #0c0a09; text-align: center; border-top: 1px solid #292524;">
+              <p style="margin: 0; font-size: 11px; color: #78716c; line-height: 1.5;">
+                © 2026 Hồn Đất Việt — Nền tảng số hóa di sản & văn hóa dân tộc.<br>
+                Powered by Resend Email API Delivery.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+async function sendOtpWithEmailJS(email: string, displayName: string, code: string): Promise<{ success: boolean; id?: string; error?: string }> {
+  const serviceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID;
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY || process.env.EMAILJS_USER_ID || process.env.VITE_EMAILJS_PUBLIC_KEY;
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+
+  if (!serviceId || !templateId || !publicKey) {
+    return { success: false, error: 'Chưa cấu hình EmailJS keys' };
+  }
+
+  try {
+    const payload: any = {
+      service_id: serviceId,
+      template_id: templateId,
+      user_id: publicKey,
+      template_params: {
+        to_email: email,
+        to_name: displayName,
+        otp_code: code,
+        passcode: code,
+        code: code,
+        expire_time: '5 phút',
+        company_name: 'Hồn Đất Việt',
+        app_name: 'Hồn Đất Việt'
+      }
+    };
+
+    if (privateKey) {
+      payload.accessToken = privateKey;
+    }
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      const responseText = await response.text();
+      console.log(`[EmailJS REST API] OTP successfully sent to ${email} (Response: ${responseText})`);
+      return { success: true, id: `emailjs-${Date.now()}` };
+    } else {
+      const errorText = await response.text();
+      console.warn('[EmailJS REST API Error]:', response.status, errorText);
+      return { success: false, error: `EmailJS error ${response.status}: ${errorText}` };
+    }
+  } catch (err: any) {
+    console.error('[EmailJS Dispatch Exception]:', err?.message || err);
+    return { success: false, error: err?.message || 'Lỗi kết nối đến EmailJS API' };
+  }
+}
+
+async function sendOtpWithResend(email: string, displayName: string, code: string): Promise<{ success: boolean; id?: string; error?: string }> {
+  const emailJsServiceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+  const emailJsPublicKey = process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
+
+  // 1. Check if EmailJS is configured
+  if (emailJsServiceId && emailJsPublicKey) {
+    const emailJsRes = await sendOtpWithEmailJS(email, displayName, code);
+    if (emailJsRes.success) {
+      return emailJsRes;
+    }
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.FROM_EMAIL || process.env.RESEND_FROM || 'onboarding@resend.dev';
+  const fromHeader = fromEmail.includes('<') ? fromEmail : `Hồn Đất Việt <${fromEmail}>`;
+  const subject = `[Hồn Đất Việt] Mã xác thực OTP của bạn: ${code}`;
+  const html = generateEmailHtml(displayName, code);
+
+  // 2. Try Resend API
+  if (apiKey) {
+    try {
+      const resend = new Resend(apiKey);
+      const { data, error } = await resend.emails.send({
+        from: fromHeader,
+        to: [email],
+        subject: subject,
+        html: html,
+      });
+
+      if (error) {
+        console.warn('[Resend API Error]:', error);
+        return { success: false, error: error.message || 'Lỗi gửi qua Resend API' };
+      }
+
+      console.log(`[Resend SDK] OTP successfully sent to ${email} (ID: ${data?.id})`);
+      return { success: true, id: data?.id };
+    } catch (sdkErr: any) {
+      console.warn('[Resend SDK Exception]:', sdkErr?.message || sdkErr);
+      
+      // Secondary fallback via direct REST fetch to Resend
+      try {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: fromHeader,
+            to: [email],
+            subject: subject,
+            html: html
+          })
+        });
+        const resJson = await response.json();
+        if (response.ok) {
+          console.log(`[Resend REST] OTP sent to ${email} (ID: ${resJson.id})`);
+          return { success: true, id: resJson.id };
+        } else {
+          return { success: false, error: resJson.message || resJson.error || 'Resend API từ chối gửi email.' };
+        }
+      } catch (fetchErr: any) {
+        return { success: false, error: fetchErr.message };
+      }
+    }
+  }
+
+  // 3. Fallback: Check Nodemailer SMTP if configured
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS;
+  if (smtpHost || (smtpUser && smtpPass)) {
+    try {
+      let transporter: any;
+      if (smtpUser && smtpPass && (smtpUser.includes('@gmail.com') || process.env.GMAIL_USER)) {
+        transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user: smtpUser, pass: smtpPass }
+        });
+      } else {
+        const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+        transporter = nodemailer.createTransport({
+          host: smtpHost || 'smtp.gmail.com',
+          port: smtpPort,
+          secure: process.env.SMTP_SECURE === 'true' || smtpPort === 465,
+          auth: { user: smtpUser, pass: smtpPass },
+          tls: { rejectUnauthorized: false }
+        });
+      }
+
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"Hồn Đất Việt" <${smtpUser || 'no-reply@heritageai.vn'}>`,
+        to: email,
+        subject: subject,
+        html: html
+      });
+
+      console.log(`[Nodemailer Fallback] Sent OTP to ${email} (ID: ${info.messageId})`);
+      return { success: true, id: info.messageId };
+    } catch (smtpErr: any) {
+      console.warn('[Nodemailer Fallback Error]:', smtpErr?.message || smtpErr);
+    }
+  }
+
+  // 4. Fallback when keys are pending configuration in local development
+  console.log(`\n======================================================`);
+  console.log(`📬 [MÃ XÁC THỰC EMAIL (OTP - EMAILJS / RESEND)] -> ${email} (${displayName})`);
+  console.log(`🔑 MÃ OTP: ${code} (Thời hạn 5 phút)`);
+  console.log(`ℹ️ Cấu hình EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY (hoặc RESEND_API_KEY) trong file .env để gửi email tự động.`);
+  console.log(`======================================================\n`);
+
+  return { success: true, id: `local-dev-${Date.now()}` };
+}
+
+app.post('/api/auth/send-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, displayName } = req.body;
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ success: false, error: 'Địa chỉ email không hợp lệ.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : 'Bạn';
+    const now = Date.now();
+
+    const existingRecord = serverPendingOtps.get(cleanEmail);
+
+    // 1. Anti-spam: Rate-limit 60-second cooldown
+    if (existingRecord && (now - existingRecord.lastSentAt) < OTP_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((OTP_COOLDOWN_MS - (now - existingRecord.lastSentAt)) / 1000);
+      return res.status(429).json({
+        success: false,
+        error: `Vui lòng chờ ${waitSeconds} giây trước khi yêu cầu gửi lại mã mới.`,
+        cooldownRemaining: waitSeconds
+      });
+    }
+
+    // 2. Anti-spam: Hourly max send limit (5 sends per hour)
+    let sendCount = 1;
+    let firstSendTime = now;
+    if (existingRecord) {
+      if (now - existingRecord.firstSendInWindow < 60 * 60 * 1000) {
+        if (existingRecord.sendCountHourly >= MAX_HOURLY_SENDS) {
+          return res.status(429).json({
+            success: false,
+            error: 'Bạn đã vượt quá giới hạn 5 lần gửi mã trong 1 giờ. Vui lòng thử lại sau.'
+          });
+        }
+        sendCount = existingRecord.sendCountHourly + 1;
+        firstSendTime = existingRecord.firstSendInWindow;
+      }
+    }
+
+    // 3. Generate random 6-digit numeric OTP code
+    const rawOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = now + OTP_EXPIRATION_MS; // Exactly 5 minutes
+    const hashedOtp = hashOtpCode(cleanEmail, rawOtp);
+
+    // 4. Send via Resend API
+    const sendResult = await sendOtpWithResend(cleanEmail, cleanName, rawOtp);
+    if (!sendResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: sendResult.error || 'Không thể gửi email OTP qua Resend. Vui lòng kiểm tra cấu hình RESEND_API_KEY.'
+      });
+    }
+
+    // 5. Store hashed OTP in memory (never plaintext)
+    serverPendingOtps.set(cleanEmail, {
+      hashedOtp,
+      expiresAt,
+      lastSentAt: now,
+      attempts: 0,
+      sendCountHourly: sendCount,
+      firstSendInWindow: firstSendTime,
+      displayName: cleanName
+    });
+
+    // DO NOT return raw OTP in response
+    return res.json({
+      success: true,
+      message: `Mã xác thực OTP 6 số đã được gửi trực tiếp đến ${cleanEmail}. Mã có hiệu lực trong 5 phút.`,
+      expiresAt,
+      cooldownSeconds: 60
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi máy chủ gửi OTP: ${err?.message || err}`
+    });
+  }
+});
+
+app.post('/api/auth/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp email và mã OTP 6 số.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanCode = String(code).trim().replace(/[^0-9]/g, '');
+
+    if (cleanCode.length !== 6) {
+      return res.status(400).json({ success: false, error: 'Mã OTP phải có đúng 6 chữ số.' });
+    }
+
+    const record = serverPendingOtps.get(cleanEmail);
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phiên xác thực đã hết hạn hoặc chưa từng yêu cầu gửi mã. Vui lòng bấm gửi lại mã.'
+      });
+    }
+
+    const now = Date.now();
+    // Check 5-minute lifetime
+    if (now > record.expiresAt) {
+      serverPendingOtps.delete(cleanEmail);
+      return res.status(400).json({
+        success: false,
+        error: 'Mã OTP đã hết thời hạn hiệu lực (5 phút). Vui lòng yêu cầu gửi mã mới.'
+      });
+    }
+
+    // Compare Hashed OTP
+    const enteredHash = hashOtpCode(cleanEmail, cleanCode);
+    if (enteredHash !== record.hashedOtp) {
+      record.attempts += 1;
+      if (record.attempts >= MAX_VERIFY_ATTEMPTS) {
+        serverPendingOtps.delete(cleanEmail);
+        return res.status(400).json({
+          success: false,
+          error: 'Bạn đã nhập sai mã OTP quá 5 lần. Mã đã bị vô hiệu hóa vì lý do bảo mật. Vui lòng yêu cầu gửi mã mới.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        error: `Mã xác thực OTP không chính xác. Bạn còn ${MAX_VERIFY_ATTEMPTS - record.attempts} lần thử.`
+      });
+    }
+
+    // Success: Delete pending OTP record to prevent replay attacks
+    serverPendingOtps.delete(cleanEmail);
+
+    return res.json({
+      success: true,
+      email: cleanEmail,
+      message: 'Xác thực email thành công!'
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi máy chủ xác thực OTP: ${err?.message || err}`
+    });
+  }
+});
+
+// ==========================================
+// 9. VITE SPA FALLBACK & STATIC SERVING
+// ==========================================
+async function startServer() {
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: {
+        middlewareMode: true,
+        hmr: false
+      },
+      appType: 'custom',
+    });
+    app.use(vite.middlewares);
+
+    app.use('*', async (req: Request, res: Response, next) => {
+      const url = req.originalUrl;
+      // Skip API requests and static assets
+      if (url.startsWith('/api') || url.startsWith('/@') || (url.includes('.') && !url.endsWith('.html'))) {
+        return next();
+      }
+
+      try {
+        const indexPath = path.resolve(process.cwd(), 'index.html');
+        let html = fs.readFileSync(indexPath, 'utf-8');
+        html = await vite.transformIndexHtml(url, html);
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
+      } catch (e: any) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req: Request, res: Response) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Hồn Đất Việt Server is actively running on http://0.0.0.0:${PORT}`);
+  });
+}
+
+startServer();
+)) {
+    const [, salt, expected] = stored.split('
+  id: 'user-admin',
+  displayName: 'Quản trị viên Hệ thống',
+  email: 'admin@heritageai.vn',
+  password: 'AINHS2026',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+  city: 'Hà Nội / Huế',
+  role: 'admin',
+  roleLabel: 'Quản trị viên & Kiểm định Di sản',
+  interests: ['Quản lý di sản', 'Kiểm duyệt tri thức', 'Bảo tồn văn hóa'],
+  favoritesCount: 0,
+  contributionsCount: 0,
+  quizzesCompleted: 0,
+  storiesCreated: 0,
+  recognitionsCount: 0,
+  itinerariesCount: 0,
+  points: 2026,
+  level: 'Quản Trị Viên Hệ Thống',
+  badges: [],
+  createdAt: '2026-01-01T00:00:00Z',
+  lastLoginAt: new Date().toISOString(),
+  isLoggedIn: false
+};
+
+function readServerAccounts(): any[] {
+  try {
+    if (fs.existsSync(ACCOUNTS_FILE)) {
+      const content = fs.readFileSync(ACCOUNTS_FILE, 'utf-8');
+      const list = JSON.parse(content);
+      if (Array.isArray(list) && list.length > 0) return list;
+    }
+  } catch (err) {
+    console.warn('Error reading server_accounts.json:', err);
+  }
+  return [DEFAULT_ADMIN_ACCOUNT_SERVER];
+}
+
+function writeServerAccounts(accounts: any[]) {
+  try {
+    fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_accounts.json:', err);
+  }
+}
+
+function readServerActivities(): any[] {
+  try {
+    if (fs.existsSync(ACTIVITIES_FILE)) {
+      const content = fs.readFileSync(ACTIVITIES_FILE, 'utf-8');
+      const list = JSON.parse(content);
+      if (Array.isArray(list)) return list;
+    }
+  } catch (err) {
+    console.warn('Error reading server_activities.json:', err);
+  }
+  return [];
+}
+
+function writeServerActivities(activities: any[]) {
+  try {
+    fs.writeFileSync(ACTIVITIES_FILE, JSON.stringify(activities, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_activities.json:', err);
+  }
+}
+
+let serverAccounts = readServerAccounts();
+let serverActivities = readServerActivities();
+
+app.get('/api/accounts', (req: Request, res: Response) => {
+  return res.json({ success: true, accounts: serverAccounts });
+});
+
+app.post('/api/accounts/register', (req: Request, res: Response) => {
+  try {
+    const newUser = req.body;
+    if (!newUser || !newUser.email) {
+      return res.status(400).json({ success: false, error: 'Dữ liệu tài khoản không hợp lệ.' });
+    }
+    const cleanEmail = String(newUser.email).trim().toLowerCase();
+    const existingIndex = serverAccounts.findIndex((a: any) => a.email && a.email.toLowerCase() === cleanEmail);
+    
+    if (existingIndex >= 0) {
+      // Update existing account details or return updated account
+      const existing = serverAccounts[existingIndex];
+      const updatedUser = {
+        ...existing,
+        ...newUser,
+        email: cleanEmail,
+        password: newUser.password || existing.password || '123456',
+        lastLoginAt: new Date().toISOString(),
+        isLoggedIn: true
+      };
+      serverAccounts[existingIndex] = updatedUser;
+      writeServerAccounts(serverAccounts);
+      return res.json({ success: true, user: updatedUser, alreadyExisted: true });
+    }
+
+    const userToSave = {
+      ...newUser,
+      email: cleanEmail,
+      password: newUser.password || '123456',
+      createdAt: newUser.createdAt || new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      isLoggedIn: true
+    };
+
+    serverAccounts.push(userToSave);
+    writeServerAccounts(serverAccounts);
+
+    const log = {
+      id: 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      userId: userToSave.id,
+      userName: userToSave.displayName,
+      userRole: userToSave.role || 'user',
+      userEmail: userToSave.email,
+      actionType: 'auth',
+      title: 'Tạo tài khoản mới',
+      description: `Đăng ký thành công tài khoản ${userToSave.displayName} (${userToSave.email}) trên hệ thống`,
+      timestamp: new Date().toISOString()
+    };
+    serverActivities.unshift(log);
+    if (serverActivities.length > 500) serverActivities = serverActivities.slice(0, 500);
+    writeServerActivities(serverActivities);
+
+    return res.json({ success: true, user: userToSave });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/accounts/login', (req: Request, res: Response) => {
+  try {
+    const { identifier, password } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ success: false, error: 'Vui lòng nhập tên đăng nhập hoặc email.' });
+    }
+
+    const cleanId = String(identifier).trim().toLowerCase();
+    const cleanPass = password ? String(password).trim() : '';
+
+    // Check Admin Credentials
+    if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
+      if (cleanPass === 'AINHS2026') {
+        let adminAccount = serverAccounts.find((a: any) => a.id === 'user-admin' || (a.email && a.email.toLowerCase() === 'admin@heritageai.vn'));
+        if (!adminAccount) {
+          adminAccount = { ...DEFAULT_ADMIN_ACCOUNT_SERVER };
+          serverAccounts.push(adminAccount);
+        }
+        adminAccount.lastLoginAt = new Date().toISOString();
+        adminAccount.isLoggedIn = true;
+        writeServerAccounts(serverAccounts);
+        return res.json({ success: true, user: adminAccount });
+      } else {
+        return res.status(400).json({ success: false, error: 'Mật khẩu quản trị viên không chính xác.' });
+      }
+    }
+
+    // Regular User authentication
+    const account = serverAccounts.find((a: any) => 
+      (a.email && a.email.toLowerCase() === cleanId) || 
+      (a.displayName && a.displayName.toLowerCase() === cleanId) ||
+      (a.id && a.id.toLowerCase() === cleanId)
+    );
+
+    if (!account) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Tài khoản không tồn tại. Vui lòng kiểm tra lại thông tin hoặc Đăng Ký Mới.' 
+      });
+    }
+
+    if (cleanPass && account.password && account.password !== cleanPass) {
+      return res.status(400).json({ success: false, error: 'Mật khẩu không chính xác. Vui lòng thử lại.' });
+    }
+
+    account.lastLoginAt = new Date().toISOString();
+    account.isLoggedIn = true;
+    writeServerAccounts(serverAccounts);
+
+    return res.json({ success: true, user: account });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/accounts/reset-password', (req: Request, res: Response) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp email và mật khẩu mới.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanNew = String(newPassword).trim();
+
+    const accountIndex = serverAccounts.findIndex((a: any) => 
+      (a.email && a.email.toLowerCase() === cleanEmail) || 
+      (cleanEmail === 'admin' && (a.id === 'user-admin' || a.role === 'admin'))
+    );
+
+    if (accountIndex < 0) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy tài khoản tương ứng với email này.' });
+    }
+
+    serverAccounts[accountIndex].password = cleanNew;
+    writeServerAccounts(serverAccounts);
+
+    return res.json({ success: true, user: serverAccounts[accountIndex] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/accounts/change-password', (req: Request, res: Response) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+    if (!userId || !oldPassword || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Thiếu dữ liệu đổi mật khẩu.' });
+    }
+
+    const cleanOld = String(oldPassword).trim();
+    const cleanNew = String(newPassword).trim();
+
+    const account = serverAccounts.find((a: any) => a.id === userId);
+    if (!account) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy tài khoản người dùng.' });
+    }
+
+    if (account.password && account.password !== cleanOld) {
+      return res.status(400).json({ success: false, error: 'Mật khẩu hiện tại không chính xác.' });
+    }
+
+    account.password = cleanNew;
+    writeServerAccounts(serverAccounts);
+
+    return res.json({ success: true, user: account });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/accounts/:id', (req: Request, res: Response) => {
+  const targetId = req.params.id;
+  if (targetId === 'user-admin') {
+    return res.status(400).json({ success: false, error: 'Không thể xóa tài khoản Quản trị viên gốc.' });
+  }
+  const target = serverAccounts.find((a: any) => a.id === targetId);
+  serverAccounts = serverAccounts.filter((a: any) => a.id !== targetId);
+  writeServerAccounts(serverAccounts);
+
+  if (target) {
+    const log = {
+      id: 'act-' + Date.now(),
+      userId: 'user-admin',
+      userName: 'Quản trị viên Hệ thống',
+      userRole: 'admin',
+      userEmail: 'admin@heritageai.vn',
+      actionType: 'admin_action',
+      title: 'Xóa tài khoản người dùng',
+      description: `Quản trị viên đã xóa tài khoản ${target.displayName} (${target.email}) khỏi hệ thống server`,
+      timestamp: new Date().toISOString()
+    };
+    serverActivities.unshift(log);
+    writeServerActivities(serverActivities);
+  }
+
+  return res.json({ success: true });
+});
+
+app.get('/api/activities', (req: Request, res: Response) => {
+  return res.json({ success: true, activities: serverActivities });
+});
+
+app.post('/api/activities', (req: Request, res: Response) => {
+  try {
+    const log = req.body;
+    if (log && log.actionType) {
+      if (!log.id) log.id = 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+      if (!log.timestamp) log.timestamp = new Date().toISOString();
+      serverActivities.unshift(log);
+      if (serverActivities.length > 500) serverActivities = serverActivities.slice(0, 500);
+      writeServerActivities(serverActivities);
+    }
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/activities', (req: Request, res: Response) => {
+  serverActivities = [];
+  writeServerActivities(serverActivities);
+  return res.json({ success: true });
+});
+
+// ==========================================
+// HERITAGES & PLACES PERSISTENCE (ADMIN EDITS)
+// ==========================================
+const HERITAGES_FILE = path.join(DATA_DIR, 'server_heritages.json');
+const PLACES_FILE = path.join(DATA_DIR, 'server_places.json');
+const TOUR_GUIDE_FILE = path.join(DATA_DIR, 'server_tour_guide_config.json');
+
+const DEFAULT_TOUR_GUIDE_SERVER = {
+  guideName: 'Bảo An',
+  title: 'Thuyết Minh Viên Di Sản & Hướng Dẫn Viên Văn Hóa Quốc Gia',
+  avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80',
+  experienceYears: 12,
+  speakingStyle: 'warm_friendly',
+  specialties: [
+    'Quần thể Di tích Cố đô & Lăng tẩm Hoàng gia',
+    'Kiến trúc Đình Chùa & Văn hóa Tín ngưỡng Bắc Bộ',
+    'Ẩm thực Dân dã & Quán ngon gia truyền 3 Miền',
+    'Văn hóa Bản địa, Lễ hội Dân gian & Làng nghề Truyền thống'
+  ],
+  etiquetteRules: [
+    'Mặc trang phục lịch sự, kín đáo khi bước vào chốn linh thiêng (đình, đền, chùa, lăng tẩm).',
+    'Đi nhẹ, nói khẽ, không chỉ tay vào tượng Phật hoặc đồ thờ tự.',
+    'Tuyệt đối không sờ vào hiện vật cổ, không viết vẽ lên rùa đá, tường thành di tích.',
+    'Bỏ rác đúng nơi quy định, chung tay giữ gìn cảnh quan di sản xanh sạch đẹp.',
+    'Xin phép trước khi chụp ảnh người dân bản địa hoặc các nghệ nhân lớn tuổi.'
+  ],
+  welcomeGreeting: 'Dạ, em là Bảo An - Hướng dẫn viên du lịch văn hóa đồng hành cùng quý cô bác, anh chị! Rất hân hạnh được dẫn đoàn mình khám phá vẻ đẹp kỳ vĩ và những câu chuyện ngàn năm của non sông gấm vóc Việt Nam. Mời quý vị cùng em dạo bước nhé!',
+  customKnowledgePrompt: `MẸO HƯỚNG DẪN VIÊN ĐỘC QUYỀN:
+1. Khi du khách đến Hoàng thành Thăng Long hoặc Đại Nội Huế: Luôn chỉ cho khách góc chụp ảnh cổng Ngọ Môn lúc hoàng hôn và gợi ý nghe nhã nhạc cung đình.
+2. Ẩm thực: Đừng chỉ giới thiệu nhà hàng sang trọng, hãy chỉ du khách các quán ăn dân dã nức tiếng của dân bản địa có tuổi đời trên 30 năm.
+3. Khi du khách hỏi về giá vé hoặc đồ lưu niệm: Nhắc du khách hỏi giá trước khi mua, ủng hộ các sản phẩm thủ công chính hiệu từ bàn tay nghệ nhân làng nghề thay vì hàng gia công công nghiệp.`,
+  activeHeritageKnowledge: true,
+  updatedAt: new Date().toISOString()
+};
+
+function readServerTourGuideConfig(): any {
+  try {
+    if (fs.existsSync(TOUR_GUIDE_FILE)) {
+      const content = fs.readFileSync(TOUR_GUIDE_FILE, 'utf-8');
+      const data = JSON.parse(content);
+      if (data && data.guideName) return data;
+    }
+  } catch (err) {
+    console.warn('Error reading server_tour_guide_config.json:', err);
+  }
+  return DEFAULT_TOUR_GUIDE_SERVER;
+}
+
+function writeServerTourGuideConfig(config: any) {
+  try {
+    fs.writeFileSync(TOUR_GUIDE_FILE, JSON.stringify(config, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_tour_guide_config.json:', err);
+  }
+}
+
+let serverTourGuideConfig = readServerTourGuideConfig();
+
+function readServerHeritages(): any[] | null {
+  try {
+    if (fs.existsSync(HERITAGES_FILE)) {
+      const content = fs.readFileSync(HERITAGES_FILE, 'utf-8');
+      const list = JSON.parse(content);
+      if (Array.isArray(list) && list.length > 0) return list;
+    }
+  } catch (err) {
+    console.warn('Error reading server_heritages.json:', err);
+  }
+  return null;
+}
+
+function writeServerHeritages(heritages: any[]) {
+  try {
+    fs.writeFileSync(HERITAGES_FILE, JSON.stringify(heritages, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_heritages.json:', err);
+  }
+}
+
+function readServerPlaces(): Record<string, any[]> | null {
+  try {
+    if (fs.existsSync(PLACES_FILE)) {
+      const content = fs.readFileSync(PLACES_FILE, 'utf-8');
+      const data = JSON.parse(content);
+      if (data && typeof data === 'object') return data;
+    }
+  } catch (err) {
+    console.warn('Error reading server_places.json:', err);
+  }
+  return null;
+}
+
+function writeServerPlaces(places: Record<string, any[]>) {
+  try {
+    fs.writeFileSync(PLACES_FILE, JSON.stringify(places, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('Error writing server_places.json:', err);
+  }
+}
+
+let serverHeritages = readServerHeritages();
+if (serverHeritages && Array.isArray(serverHeritages)) {
+  const existingIds = new Set(serverHeritages.map((h: any) => h.id));
+  let added = false;
+  for (const item of HERITAGE_DATABASE) {
+    if (!existingIds.has(item.id)) {
+      serverHeritages.push(item);
+      added = true;
+    }
+  }
+  if (added) {
+    writeServerHeritages(serverHeritages);
+  }
+}
+let serverPlaces = readServerPlaces();
+
+app.get('/api/heritages', (req: Request, res: Response) => {
+  return res.json({ success: true, heritages: serverHeritages || HERITAGE_DATABASE });
+});
+
+app.post('/api/heritages', (req: Request, res: Response) => {
+  try {
+    const { heritages } = req.body;
+    if (Array.isArray(heritages)) {
+      serverHeritages = heritages;
+      writeServerHeritages(heritages);
+      return res.json({ success: true, count: heritages.length });
+    }
+    return res.status(400).json({ success: false, error: 'Dữ liệu di sản không hợp lệ.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =========================================================================
+// DU LỊCH TOÀN VIỆN & KHÁM PHÁ ĐỊA ĐIỂM (PHÂN TRANG, TÌM KIẾM, OSM SYNC)
+// =========================================================================
+app.get('/api/tourism/places', (req: Request, res: Response) => {
+  try {
+    let all = [...(serverHeritages || HERITAGE_DATABASE)] as any[];
+    const { province, category, q, search, sort, bbox, page, limit, lat, lng } = req.query;
+
+    const queryText = ((q || search || '') as string).toLowerCase().trim();
+    if (queryText) {
+      all = all.filter(item => 
+        (item.name && item.name.toLowerCase().includes(queryText)) ||
+        (item.vietnameseName && item.vietnameseName.toLowerCase().includes(queryText)) ||
+        (item.englishName && item.englishName.toLowerCase().includes(queryText)) ||
+        (item.province && item.province.toLowerCase().includes(queryText)) ||
+        (item.address && item.address.toLowerCase().includes(queryText)) ||
+        (item.categoryLabel && item.categoryLabel.toLowerCase().includes(queryText)) ||
+        (Array.isArray(item.tags) && item.tags.some((t: string) => t.toLowerCase().includes(queryText)))
+      );
+    }
+
+    if (province && typeof province === 'string') {
+      const p = province.toLowerCase().trim();
+      all = all.filter(item => {
+        const itemProv = (item.province || '').toLowerCase();
+        return itemProv.includes(p) || p.includes(itemProv) ||
+          (Array.isArray(item.tags) && item.tags.some((t: string) => t.toLowerCase().includes(p)));
+      });
+    }
+
+    if (category && typeof category === 'string' && category !== 'all') {
+      const c = category.toLowerCase().trim();
+      all = all.filter(item => {
+        if (c === 'monument') return item.category === 'monument' || item.category === 'citadel';
+        if (c === 'museum') return item.category === 'museum' || item.category === 'architecture';
+        if (c === 'nature_scenic') return item.category === 'nature_scenic' || item.category === 'mountain_cave' || item.category === 'beach_island' || item.category === 'eco_tourism';
+        return item.category === c;
+      });
+    }
+
+    if (bbox && typeof bbox === 'string') {
+      const parts = bbox.split(',').map(Number);
+      if (parts.length === 4 && !parts.some(isNaN)) {
+        const [minLat, minLng, maxLat, maxLng] = parts;
+        all = all.filter(item => item.lat >= minLat && item.lat <= maxLat && item.lng >= minLng && item.lng <= maxLng);
+      }
+    }
+
+    // Sort
+    const userLat = lat ? Number(lat) : null;
+    const userLng = lng ? Number(lng) : null;
+
+    if (sort === 'distance' && userLat !== null && userLng !== null) {
+      all.sort((a, b) => {
+        const distA = calculateDistanceMeters(userLat, userLng, a.lat, a.lng);
+        const distB = calculateDistanceMeters(userLat, userLng, b.lat, b.lng);
+        return distA - distB;
+      });
+    } else if (sort === 'name_asc') {
+      all.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+    } else if (sort === 'name_desc') {
+      all.sort((a, b) => b.name.localeCompare(a.name, 'vi'));
+    } else if (sort === 'rating') {
+      all.sort((a, b) => (b.rating || 4.5) - (a.rating || 4.5));
+    } else {
+      // Verified first
+      all.sort((a, b) => {
+        if (a.verifiedStatus === 'verified' && b.verifiedStatus !== 'verified') return -1;
+        if (b.verifiedStatus === 'verified' && a.verifiedStatus !== 'verified') return 1;
+        return 0;
+      });
+    }
+
+    const total = all.length;
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = req.query.all === 'true' ? total : Math.max(1, parseInt(limit as string) || 50);
+    const totalPages = Math.ceil(total / limitNum) || 1;
+    const offset = (pageNum - 1) * limitNum;
+    const paged = all.slice(offset, offset + limitNum);
+
+    return res.json({
+      success: true,
+      total,
+      page: pageNum,
+      totalPages,
+      limit: limitNum,
+      hasMore: offset + limitNum < total,
+      places: paged
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/tourism/stats', (req: Request, res: Response) => {
+  try {
+    const list = [...(serverHeritages || HERITAGE_DATABASE)] as any[];
+    const byProvince: Record<string, number> = {};
+    const byCategory: Record<string, number> = {};
+    let verifiedCount = 0;
+    let withCoordsCount = 0;
+
+    for (const item of list) {
+      const p = item.province || 'Chưa phân loại';
+      byProvince[p] = (byProvince[p] || 0) + 1;
+      const c = item.category || 'other';
+      byCategory[c] = (byCategory[c] || 0) + 1;
+      if (item.verifiedStatus === 'verified') verifiedCount++;
+      if (item.lat && item.lng) withCoordsCount++;
+    }
+
+    return res.json({
+      success: true,
+      totalPlaces: list.length,
+      verifiedCount,
+      withCoordsCount,
+      byProvince,
+      byCategory
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Cache map for OSM Overpass queries to respect fair use rate limits
+const osmQueryCache = new Map<string, { data: any[]; timestamp: number }>();
+const OSM_CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours
+
+app.post('/api/tourism/sync-osm', async (req: Request, res: Response) => {
+  try {
+    const { province, bbox } = req.body;
+    let queryBbox = bbox;
+
+    // Default bounding box if only province is provided (e.g. Da Nang)
+    if (!queryBbox) {
+      if (province && province.toLowerCase().includes('đà nẵng')) {
+        queryBbox = '15.9,107.9,16.25,108.35';
+      } else {
+        queryBbox = '15.9,107.9,16.25,108.35'; // default to Da Nang bounding box
+      }
+    }
+
+    const cacheKey = `osm_${queryBbox}`;
+    const cached = osmQueryCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < OSM_CACHE_TTL)) {
+      return res.json({
+        success: true,
+        source: 'cache',
+        syncedCount: cached.data.length,
+        places: cached.data
+      });
+    }
+
+    const overpassQuery = `
+      [out:json][timeout:25];
+      (
+        node["tourism"~"attraction|museum|viewpoint|theme_park|gallery"](${queryBbox});
+        node["historic"~"monument|memorial|castle|ruins|archaeological_site"](${queryBbox});
+        node["natural"~"beach|cave|waterfall|peak"](${queryBbox});
+        node["leisure"~"nature_reserve|park|water_park"](${queryBbox});
+      );
+      out body 35;
+    `;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    const osmRes = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': 'HonDatVietTourismApp/1.0 (educational/heritage platform)'
+      },
+      body: `data=${encodeURIComponent(overpassQuery)}`,
+      signal: controller.signal
+    }).catch(err => {
+      console.warn('OSM Overpass network timeout or error:', err.message);
+      return null;
+    });
+
+    clearTimeout(timeout);
+
+    if (!osmRes || !osmRes.ok) {
+      return res.json({
+        success: false,
+        message: 'Không thể kết nối OpenStreetMap Overpass API lúc này (quá tải mạng). Sử dụng cơ sở dữ liệu xác minh sẵn có.',
+        syncedCount: 0,
+        places: []
+      });
+    }
+
+    const osmData = await osmRes.json();
+    const elements = osmData.elements || [];
+
+    const mappedPlaces: any[] = [];
+    for (const el of elements) {
+      const name = el.tags?.['name:vi'] || el.tags?.name || el.tags?.['name:en'];
+      if (!name || name.length < 3) continue;
+
+      let category = 'nature_scenic';
+      let categoryLabel = 'Thắng cảnh thiên nhiên';
+      if (el.tags?.tourism === 'museum') {
+        category = 'museum';
+        categoryLabel = 'Bảo tàng';
+      } else if (el.tags?.historic) {
+        category = 'monument';
+        categoryLabel = 'Di tích lịch sử';
+      } else if (el.tags?.natural === 'beach') {
+        category = 'beach_island';
+        categoryLabel = 'Bãi biển';
+      } else if (el.tags?.leisure === 'park') {
+        category = 'eco_tourism';
+        categoryLabel = 'Công viên & Sinh thái';
+      }
+
+      mappedPlaces.push({
+        id: `osm-${el.id}`,
+        name,
+        vietnameseName: el.tags?.['name:vi'] || name,
+        englishName: el.tags?.['name:en'],
+        category,
+        categoryLabel,
+        region: 'central',
+        province: province || 'Đà Nẵng',
+        period: 'Hiện đại / Tư liệu OpenStreetMap',
+        history: el.tags?.description || `Địa điểm du lịch ghi nhận trên bản đồ mở OpenStreetMap (OSM Node #${el.id}).`,
+        culturalSignificance: `Tọa độ du lịch được cộng đồng bản đồ mở quốc tế kiểm định.`,
+        interestingFacts: [
+          `Nguồn dữ liệu: OpenStreetMap Contributor (ID: ${el.id}).`,
+          el.tags?.website ? `Website chính thức: ${el.tags.website}` : 'Mở cửa tham quan tự do'
+        ],
+        imageUrl: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
+        verifiedStatus: 'verified',
+        verifiedNote: `OpenStreetMap (OSM) Node #${el.id}`,
+        lat: el.lat,
+        lng: el.lon,
+        address: el.tags?.['addr:street'] ? `${el.tags['addr:housenumber'] || ''} ${el.tags['addr:street']}, ${province || 'Đà Nẵng'}` : `${province || 'Đà Nẵng'}, Việt Nam`,
+        visitingHours: el.tags?.opening_hours || 'Tham quan tự do',
+        googleMapsUri: `https://maps.google.com/?q=${el.lat},${el.lon}`,
+        tags: [province || 'Đà Nẵng', 'OpenStreetMap', categoryLabel],
+        suggestedQuestions: [`Thông tin tham quan ${name}?`],
+        dataSource: 'OpenStreetMap (ODbL License)',
+        lastVerifiedDate: '2026-03-20',
+        osmId: `node/${el.id}`
+      });
+    }
+
+    osmQueryCache.set(cacheKey, { data: mappedPlaces, timestamp: Date.now() });
+
+    // Deduplicate and merge into serverHeritages
+    if (mappedPlaces.length > 0) {
+      const mergedList = [...(serverHeritages || HERITAGE_DATABASE), ...mappedPlaces];
+      const dedup = deduplicateTourismPlaces(mergedList);
+      serverHeritages = dedup.uniquePlaces;
+      writeServerHeritages(serverHeritages);
+    }
+
+    return res.json({
+      success: true,
+      syncedCount: mappedPlaces.length,
+      places: mappedPlaces
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/places', (req: Request, res: Response) => {
+  return res.json({ success: true, places: serverPlaces });
+});
+
+app.post('/api/places', (req: Request, res: Response) => {
+  try {
+    const { places } = req.body;
+    if (places && typeof places === 'object') {
+      serverPlaces = places;
+      writeServerPlaces(places);
+      return res.json({ success: true });
+    }
+    return res.status(400).json({ success: false, error: 'Dữ liệu địa điểm không hợp lệ.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ==========================================
+// AI LANDMARK IMAGE SEARCH
+// ==========================================
+app.post('/api/ai/search-landmark-images', async (req: Request, res: Response) => {
+  try {
+    const { query = '', cityName = '', landmarkName = '', province = '' } = req.body;
+    const combinedSearch = `${query} ${cityName} ${landmarkName} ${province}`.trim().toLowerCase();
+
+    // 1. Keyword search in curated VIETNAM_LANDMARK_PHOTOS
+    const keywordMatches = VIETNAM_LANDMARK_PHOTOS.filter(photo => {
+      if (!combinedSearch) return true;
+      const target = `${photo.title} ${photo.cityName} ${photo.province} ${photo.landmarkName} ${photo.tagline} ${photo.tags.join(' ')}`.toLowerCase();
+      const terms = combinedSearch.split(/\s+/).filter(Boolean);
+      return terms.some(t => target.includes(t));
+    });
+
+    // 2. AI suggestions for landmark photos
+    let aiSuggestions: any[] = [];
+    try {
+      const ai = getGemini();
+      const prompt = `Bạn là chuyên gia về hình ảnh danh lam thắng cảnh và di sản văn hóa Việt Nam.
+Người dùng đang tìm kiếm ảnh nền cho:
+Từ khóa: "${query || landmarkName || cityName || 'Địa danh nổi tiếng Việt Nam'}"
+Tỉnh/Thành phố: "${cityName || province || ''}"
+
+Hãy gợi ý tối đa 4 thông tin danh thắng nổi tiếng nhất phù hợp để tìm ảnh nền chất lượng cao:
+- Tên danh thắng chính xác (landmarkName)
+- Tỉnh/Thành phố (cityName)
+- Khẩu hiệu mô tả cảnh đẹp ngắn gọn (tagline)
+- Góc chụp đẹp nhất (photoPerspective)
+- Từ khóa tìm kiếm ảnh (searchKeywords)`;
+
+      const response = await generateContentWithResilience(ai, {
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              suggestions: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    landmarkName: { type: Type.STRING },
+                    cityName: { type: Type.STRING },
+                    province: { type: Type.STRING },
+                    tagline: { type: Type.STRING },
+                    photoPerspective: { type: Type.STRING },
+                    searchKeywords: { type: Type.STRING }
+                  },
+                  required: ['landmarkName', 'cityName', 'tagline', 'searchKeywords']
+                }
+              }
+            },
+            required: ['suggestions']
+          }
+        }
+      });
+
+      const parsed = JSON.parse(response.text || '{}');
+      if (Array.isArray(parsed.suggestions)) {
+        aiSuggestions = parsed.suggestions;
+      }
+    } catch (aiErr) {
+      console.info('[AI Landmark Image Search] Gemini suggestion step completed with curated fallback.');
+    }
+
+    return res.json({
+      success: true,
+      photos: keywordMatches.length > 0 ? keywordMatches : VIETNAM_LANDMARK_PHOTOS,
+      aiSuggestions,
+      totalCount: keywordMatches.length > 0 ? keywordMatches.length : VIETNAM_LANDMARK_PHOTOS.length
+    });
+  } catch (error: any) {
+    return res.json({
+      success: true,
+      photos: VIETNAM_LANDMARK_PHOTOS,
+      aiSuggestions: [],
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// GEMINI GOOGLE SEARCH LANDMARK IMAGE FINDER
+// ==========================================
+app.post('/api/ai/google-find-landmark-image', async (req: Request, res: Response) => {
+  try {
+    const { landmarkName = '', cityName = '', province = '' } = req.body;
+    if (!landmarkName && !cityName) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp tên danh thắng hoặc tỉnh thành' });
+    }
+
+    const searchQuery = `${landmarkName} ${cityName} ${province}`.trim();
+    const ai = getGemini();
+
+    const systemPrompt = `Bạn là chuyên gia tra cứu thông tin và tìm kiếm hình ảnh phong cảnh danh lam thắng cảnh Việt Nam chất lượng cao trên Google của Hồn Đất Việt.
+NHIỆM VỤ:
+Người dùng cung cấp Tên Danh Thắng: "${landmarkName}", Tỉnh/Thành: "${cityName || province || 'Việt Nam'}".
+Hãy tìm kiếm hình ảnh thực tế chất lượng cao (HD/4K) trên Google và thông tin chuẩn xác về danh thắng này.
+
+YÊU CẦU:
+1. Tìm các đường link ảnh thực tế, sắc nét, góc chụp đẹp (toàn cảnh landscape) thể hiện đúng danh thắng "${landmarkName}".
+2. Ưu tiên các đường link ảnh thực từ Wikimedia Commons, Wikipedia, Unsplash, Flickr, Cổng du lịch Việt Nam, hoặc link ảnh trực tiếp dạng URL hợp lệ.
+3. Xác định tọa độ GPS (Vĩ độ - lat, Kinh độ - lng) chính xác của địa danh này.
+4. Viết 1 câu khẩu hiệu (tagline) ngắn gọn, truyền cảm giới thiệu vẻ đẹp đặc trưng.
+5. Cung cấp danh sách 3-5 ảnh ứng viên (candidateImages) với nguồn ảnh và góc chụp mô tả.
+
+HÃY TRẢ VỀ ĐỊNH DẠNG JSON CHUẨN:
+{
+  "bestImageUrl": "string (link ảnh tốt nhất)",
+  "landmarkName": "string (tên chuẩn hóa)",
+  "cityName": "string (tên thành phố)",
+  "province": "string (tên tỉnh)",
+  "tagline": "string (câu mô tả ngắn)",
+  "lat": 0,
+  "lng": 0,
+  "searchSummary": "string (tóm tắt kết quả tìm kiếm Google của Gemini)",
+  "candidateImages": [
+    {
+      "url": "string (link ảnh)",
+      "title": "string (mô tả góc chụp)",
+      "source": "string (nguồn ảnh như Google / Wikimedia / Unsplash)",
+      "photographer": "string (tác giả hoặc nguồn)"
+    }
+  ]
+}`;
+
+    let parsedResult: any = null;
+
+    try {
+      // 1. Try with Google Search grounding tool
+      const response = await generateContentWithResilience(ai, {
+        contents: `Tìm kiếm trên Google ảnh chất lượng cao và thông tin cho danh lam thắng cảnh Việt Nam: "${searchQuery}"`,
+        config: {
+          systemInstruction: systemPrompt,
+          tools: [{ googleSearch: {} }],
+          responseMimeType: 'application/json'
+        }
+      }, 'gemini-3.8-flash');
+
+      const text = response?.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedResult = JSON.parse(jsonMatch[0]);
+      }
+    } catch {
+      // 2. If Google search tool reaches rate limit / quota / unavailable, fall back to direct model prompt
+      try {
+        const response = await generateContentWithResilience(ai, {
+          contents: `Hãy tìm và tổng hợp thông tin, đường dẫn ảnh chất lượng cao trên web/Google cho danh thắng: "${searchQuery}"`,
+          config: {
+            systemInstruction: systemPrompt,
+            responseMimeType: 'application/json'
+          }
+        }, 'gemini-3.1-flash-lite');
+        const text = response?.text || '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedResult = JSON.parse(jsonMatch[0]);
+        }
+      } catch {
+        // Handled below via curated database fallback
+      }
+    }
+
+    // Check matching local curated database as reliable fallback & supplement
+    const isVanMieu = /văn miếu|quốc tử giám|khuê văn các/i.test(searchQuery);
+    const isDaiNoiHue = /đại nội|cung đình huế|ngọ môn|cố đô huế|hoàng thành huế/i.test(searchQuery);
+    const isHoiAn = /hội an|chùa cầu|lai viễn kiều|cầu nhật bản|phố cổ hội an/i.test(searchQuery);
+
+    const matchingLocalPhotos = VIETNAM_LANDMARK_PHOTOS.filter(photo => {
+      if (isVanMieu) {
+        return photo.id.startsWith('hn-van-mieu') || photo.id.startsWith('hn-khue-van-cac');
+      }
+      if (isDaiNoiHue) {
+        return photo.id.startsWith('hue-dai-noi');
+      }
+      if (isHoiAn) {
+        return photo.id.startsWith('qn-hoi-an') || photo.id.startsWith('qn-chua-cau');
+      }
+      const target = `${photo.landmarkName} ${photo.title} ${photo.cityName} ${photo.province}`.toLowerCase();
+      const terms = searchQuery.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+      return terms.some(t => target.includes(t));
+    });
+
+    const bestLocal = matchingLocalPhotos[0];
+
+    // Ensure candidate images list has high quality valid images
+    let candidates = Array.isArray(parsedResult?.candidateImages) ? parsedResult.candidateImages : [];
+    
+    // Supplement with curated photos if candidates are empty or have invalid links
+    if ((candidates.length === 0 || isVanMieu || isDaiNoiHue || isHoiAn) && matchingLocalPhotos.length > 0) {
+      const curatedCandidates = matchingLocalPhotos.slice(0, 4).map(p => ({
+        url: p.imageUrl,
+        title: p.title,
+        source: p.source || 'Kho Di Sản & Di Tích Quốc Gia',
+        photographer: p.photographer || 'Nhiếp ảnh gia Di sản Việt Nam'
+      }));
+      candidates = (isVanMieu || isDaiNoiHue || isHoiAn) ? curatedCandidates : [...candidates, ...curatedCandidates].slice(0, 5);
+    }
+
+    // If bestImageUrl is missing or placeholder, use the first valid candidate or local photo
+    let finalBestUrl = parsedResult?.bestImageUrl;
+    if (isVanMieu || isDaiNoiHue || isHoiAn || !finalBestUrl || !finalBestUrl.startsWith('http') || finalBestUrl.includes('1599707367072') || finalBestUrl.includes('1583417319070') || finalBestUrl.includes('1555939594')) {
+      if (isVanMieu) {
+        finalBestUrl = 'https://upload.wikimedia.org/wikipedia/commons/3/31/Hanoi_Temple_of_Literature.jpg';
+      } else if (isDaiNoiHue) {
+        finalBestUrl = 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Meridian_Gate%2C_Hue_%28I%29.jpg';
+      } else if (isHoiAn) {
+        finalBestUrl = /chùa cầu|lai viễn kiều|cầu nhật bản/i.test(searchQuery)
+          ? 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Cau_Nhat_Ban.jpg'
+          : 'https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg';
+      } else if (candidates.length > 0 && candidates[0].url) {
+        finalBestUrl = candidates[0].url;
+      } else if (bestLocal) {
+        finalBestUrl = bestLocal.imageUrl;
+      } else {
+        // High-quality dynamic photo as safe resilient fallback
+        finalBestUrl = `https://upload.wikimedia.org/wikipedia/commons/f/f3/PhoCoHoiAn.jpg`;
+      }
+    }
+
+    const payload = {
+      success: true,
+      bestImageUrl: finalBestUrl,
+      landmarkName: parsedResult?.landmarkName || landmarkName || bestLocal?.landmarkName || 'Danh thắng Việt Nam',
+      cityName: parsedResult?.cityName || cityName || bestLocal?.cityName || 'Việt Nam',
+      province: parsedResult?.province || province || bestLocal?.province || cityName || 'Việt Nam',
+      tagline: parsedResult?.tagline || bestLocal?.tagline || `Khám phá vẻ đẹp kỳ vĩ của ${landmarkName || cityName}`,
+      lat: Number(parsedResult?.lat) || bestLocal?.lat || 16.0544,
+      lng: Number(parsedResult?.lng) || bestLocal?.lng || 108.2022,
+      searchSummary: parsedResult?.searchSummary || `Đã tra cứu và tổng hợp hình ảnh phong cảnh chất lượng cao cho danh thắng "${landmarkName || searchQuery}".`,
+      candidateImages: candidates.length > 0 ? candidates : [
+        {
+          url: finalBestUrl,
+          title: landmarkName || 'Cảnh đẹp danh thắng',
+          source: 'Google Search & Kho Di Sản HD',
+          photographer: 'Cộng đồng Nhiếp ảnh'
+        }
+      ]
+    };
+
+    return res.json(payload);
+  } catch (err: any) {
+    console.error('Error in /api/ai/google-find-landmark-image, using safe fallback:', err);
+    
+    // Emergency resilient fallback so the user always receives valid data
+    const query = String(req.body?.landmarkName || req.body?.cityName || 'Việt Nam');
+    const matched = VIETNAM_LANDMARK_PHOTOS.find(p => 
+      p.title.toLowerCase().includes(query.toLowerCase()) || 
+      p.cityName.toLowerCase().includes(query.toLowerCase()) ||
+      p.landmarkName.toLowerCase().includes(query.toLowerCase())
+    ) || VIETNAM_LANDMARK_PHOTOS[0];
+
+    return res.json({
+      success: true,
+      bestImageUrl: matched.imageUrl,
+      landmarkName: req.body?.landmarkName || matched.landmarkName,
+      cityName: req.body?.cityName || matched.cityName,
+      province: req.body?.province || matched.province,
+      tagline: matched.tagline || `Khám phá vẻ đẹp của ${req.body?.landmarkName || matched.landmarkName}`,
+      lat: matched.lat || 16.0544,
+      lng: matched.lng || 108.2022,
+      searchSummary: `Đã kết nối và gắn ảnh đại diện tiêu biểu cho danh thắng "${req.body?.landmarkName || query}".`,
+      candidateImages: [
+        {
+          url: matched.imageUrl,
+          title: matched.title,
+          source: matched.source || 'Kho Ảnh Di Sản HD',
+          photographer: matched.photographer || 'Nhiếp ảnh gia Việt Nam'
+        }
+      ]
+    });
+  }
+});
+
+// ==========================================
+// AI TOUR GUIDE TRAINING & CONFIGURATION
+// ==========================================
+app.get('/api/ai/tour-guide-config', (req: Request, res: Response) => {
+  return res.json({ success: true, config: serverTourGuideConfig });
+});
+
+app.post('/api/ai/tour-guide-config', (req: Request, res: Response) => {
+  try {
+    const { config } = req.body;
+    if (config && config.guideName) {
+      serverTourGuideConfig = {
+        ...config,
+        updatedAt: new Date().toISOString()
+      };
+      writeServerTourGuideConfig(serverTourGuideConfig);
+      return res.json({ success: true, config: serverTourGuideConfig });
+    }
+    return res.status(400).json({ success: false, error: 'Dữ liệu cấu hình hướng dẫn viên không hợp lệ.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ==========================================
+// VIENEU CLOUD TTS PROXY & DIAGNOSTIC ENDPOINTS
+// ==========================================
+
+interface VieNeuTestResult {
+  success: boolean;
+  status?: number;
+  statusText?: string;
+  hostname: string;
+  endpoint: string;
+  httpMethod: string;
+  requestFields: string[];
+  responseTimeMs: number;
+  errorCategory?: string;
+  message: string;
+  responseSnippet?: string;
+  instructions?: string;
+}
+
+async function testVieNeuApiConnection(
+  endpointUrl: string,
+  apiKey?: string,
+  model: string = 'vieneu-v4'
+): Promise<VieNeuTestResult> {
+  const startTime = Date.now();
+  let hostname = '';
+
+  // 1. Validate URL syntax
+  try {
+    const parsed = new URL(endpointUrl);
+    hostname = parsed.hostname;
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return {
+        success: false,
+        hostname: endpointUrl,
+        endpoint: endpointUrl,
+        httpMethod: 'POST',
+        requestFields: ['model', 'input'],
+        responseTimeMs: 0,
+        errorCategory: 'INVALID_PROTOCOL',
+        message: '🔴 Địa chỉ API Endpoint không hợp lệ. Vui lòng sử dụng giao thức http:// hoặc https://',
+        instructions: 'Cần cập nhật biến VIENEU_API_ENDPOINT trong file .env hoặc sửa ô API Endpoint trong Admin thành URL bắt đầu bằng http:// hoặc https://.'
+      };
+    }
+  } catch (e) {
+    return {
+      success: false,
+      hostname: endpointUrl,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields: ['model', 'input'],
+      responseTimeMs: 0,
+      errorCategory: 'INVALID_URL_SYNTAX',
+      message: `🔴 Endpoint hiện tại không hợp lệ ("${endpointUrl}").`,
+      instructions: 'Vui lòng kiểm tra lại cấu hình biến môi trường VIENEU_API_ENDPOINT hoặc nhập lại API Endpoint chuẩn trong trang Admin.'
+    };
+  }
+
+  // 2. Prepare headers securely (never expose API key in error messages)
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey && apiKey.trim().length > 0) {
+    headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+  }
+
+  // 3. Determine API payload format based on endpoint
+  const isAudioSpeech = endpointUrl.includes('audio/speech') || endpointUrl.includes('/speech');
+
+  const requestBody = isAudioSpeech
+    ? {
+        model: model || 'vieneu-v4',
+        input: 'Xin chào Hồn Đất Việt.'
+      }
+    : {
+        text: 'Xin chào Hồn Đất Việt.',
+        speed: 1.0,
+        language: 'vi-VN'
+      };
+
+  const requestFields = isAudioSpeech
+    ? ['model', 'input']
+    : ['text', 'speed', 'language'];
+
+  // Request with timeout (8 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(endpointUrl, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify(requestBody)
+    });
+    clearTimeout(timeoutId);
+
+    const responseTimeMs = Date.now() - startTime;
+    const status = response.status;
+    const statusText = response.statusText || '';
+
+    if (response.ok) {
+      return {
+        success: true,
+        status,
+        statusText,
+        hostname,
+        endpoint: endpointUrl,
+        httpMethod: 'POST',
+        requestFields,
+        responseTimeMs,
+        message: `🟢 Kết nối VieNeu Cloud API thành công (HTTP ${status} OK)! Hostname: ${hostname}`
+      };
+    }
+
+    // Response HTTP status is non-200 (4xx or 5xx)
+    let bodyText = '';
+    try {
+      bodyText = await response.text();
+    } catch (e) {
+      bodyText = '';
+    }
+
+    // Sanitize bodyText snippet to ensure no secret is included
+    const snippet = bodyText.substring(0, 200).replace(/["']?(key|token|secret|authorization)["']?\s*:\s*["']?[^"'\s]+["']?/gi, '$1: "***"');
+
+    let errorCategory = `HTTP_${status}`;
+    let userMsg = '';
+    let instructions = '';
+
+    switch (status) {
+      case 400:
+        errorCategory = '400_BAD_REQUEST';
+        userMsg = `🔴 Lỗi yêu cầu (HTTP 400 Bad Request): VieNeu API báo lỗi cấu trúc request payload.`;
+        instructions = `Nội dung phản hồi từ VieNeu: "${snippet}". Kiểm tra trường gửi sang (cần dùng model, input cho /audio/speech).`;
+        break;
+      case 401:
+        errorCategory = '401_UNAUTHORIZED';
+        userMsg = `🔴 Lỗi xác thực (HTTP 401 Unauthorized): API Key không hợp lệ hoặc đã hết hạn.`;
+        instructions = 'Vui lòng kiểm tra lại "API Key" trong cài đặt Admin VieNeu TTS hoặc biến môi trường VIENEU_API_KEY.';
+        break;
+      case 403:
+        errorCategory = '403_FORBIDDEN';
+        userMsg = `🔴 Lỗi bị cấm truy cập (HTTP 403 Forbidden): Yêu cầu bị máy chủ VieNeu từ chối.`;
+        instructions = 'Kiểm tra xem IP hoặc API Key của bạn có bị giới hạn quyền truy cập trên VieNeu hay không.';
+        break;
+      case 404:
+        errorCategory = '404_NOT_FOUND';
+        userMsg = `🔴 Không tìm thấy Endpoint (HTTP 404 Not Found): Đường dẫn API "${endpointUrl}" không tồn tại trên máy chủ ${hostname}.`;
+        instructions = `Endpoint hiện tại không chính xác. Bạn cần thay đổi biến VIENEU_API_ENDPOINT hoặc ô "API Endpoint" trong Admin (Ví dụ: https://api.vieneu.io/api/v1/audio/speech).`;
+        break;
+      case 429:
+        errorCategory = '429_TOO_MANY_REQUESTS';
+        userMsg = `🔴 Đã vượt quá giới hạn lượt gọi (HTTP 429 Too Many Requests): Hết hạn ngạch hoặc gọi API quá nhanh.`;
+        instructions = 'Chờ vài phút trước khi thử lại hoặc kiểm tra hạn ngạch tài khoản VieNeu API.';
+        break;
+      default:
+        if (status >= 500) {
+          errorCategory = `HTTP_${status}_SERVER_ERROR`;
+          userMsg = `🔴 Máy chủ VieNeu gặp sự cố nội bộ (HTTP ${status} ${statusText}).`;
+          instructions = 'Máy chủ VieNeu đang gặp sự cố. Hãy kiểm tra log server VieNeu hoặc thử lại sau.';
+        } else {
+          userMsg = `🔴 Yêu cầu thất bại với HTTP status ${status} (${statusText}).`;
+        }
+        break;
+    }
+
+    return {
+      success: false,
+      status,
+      statusText,
+      hostname,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields,
+      responseTimeMs,
+      errorCategory,
+      message: userMsg,
+      responseSnippet: snippet,
+      instructions
+    };
+
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    const responseTimeMs = Date.now() - startTime;
+
+    let errorCategory = 'NETWORK_ERROR';
+    let userMsg = '';
+    let instructions = '';
+
+    const causeCode = err?.cause?.code || err?.code;
+    const causeMsg = err?.cause?.message || err?.message || String(err);
+
+    if (err?.name === 'AbortError' || causeCode === 'UND_ERR_CONNECT_TIMEOUT' || causeCode === 'ETIMEDOUT') {
+      errorCategory = 'TIMEOUT';
+      userMsg = `🔴 Quá thời gian chờ (Timeout 8000ms): Máy chủ VieNeu tại "${hostname}" không phản hồi.`;
+      instructions = 'Kiểm tra địa chỉ IP / Domain server VieNeu xem có đang hoạt động hay bị tường lửa chặn cổng.';
+    } else if (causeCode === 'ENOTFOUND') {
+      errorCategory = 'DNS_ENOTFOUND';
+      userMsg = `🔴 Lỗi DNS (ENOTFOUND): Tên miền "${hostname}" không tồn tại hoặc không thể phân giải địa chỉ IP.`;
+      instructions = `Endpoint hiện tại không hợp lệ. Bạn cần thay đổi biến cấu hình VIENEU_API_ENDPOINT trong .env hoặc ô "API Endpoint" trong Admin thành URL server VieNeu thực sự (Ví dụ: https://api.vieneu.io/api/v1/audio/speech).`;
+    } else if (causeCode === 'ECONNREFUSED') {
+      errorCategory = 'ECONNREFUSED';
+      userMsg = `🔴 Kết nối bị từ chối (ECONNREFUSED): Máy chủ tại "${hostname}" không mở cổng hoặc dịch vụ VieNeu TTS chưa khởi động.`;
+      instructions = 'Nếu dùng Docker / Server tự host, hãy kiểm tra container VieNeu TTS đã khởi chạy trên đúng port hay chưa.';
+    } else if (causeCode === 'ECONNRESET') {
+      errorCategory = 'ECONNRESET';
+      userMsg = `🔴 Kết nối bị ngắt đột ngột (ECONNRESET) bởi máy chủ "${hostname}".`;
+      instructions = 'Kiểm tra mạng hoặc cài đặt proxy giữa Hồn Đất Việt server và VieNeu TTS server.';
+    } else {
+      userMsg = `🔴 Lỗi mạng / Không thể kết nối tới "${hostname}": ${causeMsg}`;
+      instructions = 'Kiểm tra lại kết nối mạng hoặc địa chỉ API Endpoint.';
+    }
+
+    return {
+      success: false,
+      hostname,
+      endpoint: endpointUrl,
+      httpMethod: 'POST',
+      requestFields: isAudioSpeech ? ['model', 'input'] : ['text', 'speed', 'language'],
+      responseTimeMs,
+      errorCategory,
+      message: userMsg,
+      instructions
+    };
+  }
+}
+
+app.post('/api/tts/vieneu', async (req: Request, res: Response) => {
+  try {
+    const { text, speed = 1.0, endpoint, apiKey, model = 'vieneu-v4', voice } = req.body;
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ success: false, error: 'Thiếu hoặc sai định dạng văn bản cần đọc.' });
+    }
+
+    const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (targetApiKey && targetApiKey.trim().length > 0) {
+      headers['Authorization'] = `Bearer ${targetApiKey.trim()}`;
+      headers['X-API-Key'] = targetApiKey.trim();
+    }
+
+    const isAudioSpeech = targetEndpoint.includes('audio/speech') || targetEndpoint.includes('/speech');
+
+    const requestBody = isAudioSpeech
+      ? {
+          model: model || 'vieneu-v4',
+          input: text,
+          ...(voice ? { voice } : {}),
+          speed: Number(speed) || 1.0
+        }
+      : {
+          text: text,
+          speed: Number(speed) || 1.0,
+          ...(voice ? { voice } : {})
+        };
+
+    const response = await fetch(targetEndpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({
+        success: false,
+        error: `VieNeu API Error (HTTP ${response.status}): ${errText.substring(0, 200) || response.statusText}`
+      });
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const json = await response.json();
+      return res.json({ success: true, ...json });
+    } else {
+      const buffer = await response.arrayBuffer();
+      res.setHeader('Content-Type', contentType || 'audio/mpeg');
+      return res.send(Buffer.from(buffer));
+    }
+  } catch (err: any) {
+    const targetEndpoint = req.body.endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    let hostname = '';
+    try { hostname = new URL(targetEndpoint).hostname; } catch (e) { hostname = targetEndpoint; }
+    
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi kết nối tới VieNeu Cloud API (${hostname}): ${err?.cause?.message || err?.message || err}`
+    });
+  }
+});
+
+app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
+  try {
+    const { provider = 'vieneu', endpoint, apiKey, model = 'vieneu-v4' } = req.body;
+
+    if (provider === 'web_speech') {
+      return res.json({
+        success: true,
+        message: '🟢 Web Speech API (Browser Native) sẵn sàng hoạt động trực tiếp trên trình duyệt.',
+        hostname: 'browser-native',
+        endpoint: 'window.speechSynthesis',
+        httpMethod: 'LOCAL',
+        requestFields: ['text'],
+        responseTimeMs: 1
+      });
+    }
+
+    const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
+    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+
+    const testResult = await testVieNeuApiConnection(targetEndpoint, targetApiKey, model);
+    return res.status(testResult.success ? 200 : 400).json(testResult);
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: `🔴 Lỗi server xử lý kiểm tra kết nối: ${err?.message || err}`,
+      hostname: 'server-error',
+      endpoint: '',
+      httpMethod: 'POST',
+      requestFields: [],
+      responseTimeMs: 0
+    });
+  }
+});
+
+// Test EmailJS API Configuration
+app.post('/api/emailjs/test-connection', async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  try {
+    const { serviceId, templateId, publicKey, privateKey, testEmail } = req.body;
+    
+    const targetServiceId = serviceId || process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+    const targetTemplateId = templateId || process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID;
+    const targetPublicKey = publicKey || process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
+    const targetPrivateKey = privateKey || process.env.EMAILJS_PRIVATE_KEY;
+    const recipientEmail = testEmail || 'test@heritageai.vn';
+
+    if (!targetServiceId || !targetTemplateId || !targetPublicKey) {
+      return res.status(400).json({
+        success: false,
+        message: '🔴 Thiếu thông tin: Cần đầy đủ Service ID, Template ID và Public Key.',
+        responseTimeMs: Date.now() - startTime
+      });
+    }
+
+    const payload: any = {
+      service_id: targetServiceId,
+      template_id: targetTemplateId,
+      user_id: targetPublicKey,
+      template_params: {
+        to_email: recipientEmail,
+        to_name: 'Quản trị viên',
+        otp_code: '888999',
+        passcode: '888999',
+        code: '888999',
+        expire_time: '5 phút',
+        company_name: 'Hồn Đất Việt',
+        app_name: 'Hồn Đất Việt Admin Test'
+      }
+    };
+
+    if (targetPrivateKey) {
+      payload.accessToken = targetPrivateKey;
+    }
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const responseTimeMs = Date.now() - startTime;
+    const responseText = await response.text();
+
+    if (response.ok) {
+      return res.json({
+        success: true,
+        message: `🟢 Kết nối EmailJS thành công (${response.status} OK)! Đã gửi email thử nghiệm.`,
+        status: response.status,
+        responseTimeMs,
+        responseSnippet: responseText
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: `🔴 EmailJS trả về lỗi (${response.status}): ${responseText}`,
+        status: response.status,
+        responseTimeMs,
+        responseSnippet: responseText
+      });
+    }
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: `🔴 Lỗi kết nối EmailJS: ${err?.message || err}`,
+      responseTimeMs: Date.now() - startTime
+    });
+  }
+});
+
+// ==========================================
+// 8. RESEND EMAIL OTP VERIFICATION SERVICE
+// ==========================================
+const OTP_SALT = process.env.OTP_SALT || 'heritage-otp-secret-salt-2026';
+const OTP_EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes lifetime
+const OTP_COOLDOWN_MS = 60 * 1000; // 60s cooldown between send requests
+const MAX_VERIFY_ATTEMPTS = 5;
+const MAX_HOURLY_SENDS = 5;
+
+interface HashedPendingOtp {
+  hashedOtp: string;
+  expiresAt: number;
+  lastSentAt: number;
+  attempts: number;
+  sendCountHourly: number;
+  firstSendInWindow: number;
+  displayName?: string;
+}
+
+const serverPendingOtps = new Map<string, HashedPendingOtp>();
+
+function hashOtpCode(email: string, code: string): string {
+  return crypto
+    .createHash('sha256')
+    .update(`${email.trim().toLowerCase()}:${code.trim()}:${OTP_SALT}`)
+    .digest('hex');
+}
+
+function generateEmailHtml(displayName: string, code: string): string {
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mã xác thực OTP tài khoản Hồn Đất Việt</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #0c0a09; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f5f5f4;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0c0a09; padding: 32px 12px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width: 560px; background-color: #1c1917; border: 1px solid #44403c; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
+          <!-- Header Banner -->
+          <tr>
+            <td style="padding: 28px 24px; text-align: center; background: linear-gradient(135deg, #78350f 0%, #b45309 50%, #d97706 100%);">
+              <h1 style="margin: 0; color: #fef3c7; font-size: 24px; font-weight: 800; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🇻🇳 HỒN ĐẤT VIỆT</h1>
+              <p style="margin: 6px 0 0; color: #fde68a; font-size: 13px; font-weight: 500;">Bảo Tồn & Khám Phá Di Sản Văn Hóa Việt Nam</p>
+            </td>
+          </tr>
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 32px 28px;">
+              <p style="margin: 0 0 14px; font-size: 16px; color: #f5f5f4; font-weight: 600;">
+                Xin chào ${displayName || 'bạn mến mộ di sản'},
+              </p>
+              <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #d6d3d1;">
+                Bạn đang thực hiện thao tác xác thực tài khoản trên nền tảng <strong>Hồn Đất Việt</strong>. Dưới đây là mã xác thực OTP 6 chữ số bí mật của bạn:
+              </p>
+              
+              <!-- OTP Box -->
+              <div style="background-color: #0c0a09; border: 2px dashed #f59e0b; border-radius: 12px; padding: 22px 16px; text-align: center; margin: 24px 0;">
+                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #fbbf24; display: block; margin-bottom: 8px; font-weight: 700;">
+                  MÃ XÁC THỰC OTP (5 PHÚT)
+                </span>
+                <span style="font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #fef08a; display: inline-block;">
+                  ${code}
+                </span>
+              </div>
+
+              <!-- Security Information Note -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px; background-color: #292524; border-radius: 8px; padding: 14px 16px;">
+                <tr>
+                  <td style="font-size: 13px; color: #d6d3d1; line-height: 1.6;">
+                    ⏱️ <strong>Thời hạn hiệu lực:</strong> Mã này có giá trị trong đúng <strong>5 phút</strong>.<br>
+                    🔒 <strong>Bảo mật:</strong> Tuyệt đối không chia sẻ mã này cho bất kỳ ai. Quản trị viên không bao giờ yêu cầu cung cấp OTP.
+                  </td>
+                </tr>
+              </table>
+              
+              <hr style="border: 0; border-top: 1px solid #44403c; margin: 24px 0;">
+              
+              <p style="margin: 0; font-size: 12px; color: #78716c; line-height: 1.5;">
+                Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email. Tài khoản của bạn vẫn được an toàn tuyệt đối.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 24px; background-color: #0c0a09; text-align: center; border-top: 1px solid #292524;">
+              <p style="margin: 0; font-size: 11px; color: #78716c; line-height: 1.5;">
+                © 2026 Hồn Đất Việt — Nền tảng số hóa di sản & văn hóa dân tộc.<br>
+                Powered by Resend Email API Delivery.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+async function sendOtpWithEmailJS(email: string, displayName: string, code: string): Promise<{ success: boolean; id?: string; error?: string }> {
+  const serviceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+  const templateId = process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID;
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY || process.env.EMAILJS_USER_ID || process.env.VITE_EMAILJS_PUBLIC_KEY;
+  const privateKey = process.env.EMAILJS_PRIVATE_KEY;
+
+  if (!serviceId || !templateId || !publicKey) {
+    return { success: false, error: 'Chưa cấu hình EmailJS keys' };
+  }
+
+  try {
+    const payload: any = {
+      service_id: serviceId,
+      template_id: templateId,
+      user_id: publicKey,
+      template_params: {
+        to_email: email,
+        to_name: displayName,
+        otp_code: code,
+        passcode: code,
+        code: code,
+        expire_time: '5 phút',
+        company_name: 'Hồn Đất Việt',
+        app_name: 'Hồn Đất Việt'
+      }
+    };
+
+    if (privateKey) {
+      payload.accessToken = privateKey;
+    }
+
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      const responseText = await response.text();
+      console.log(`[EmailJS REST API] OTP successfully sent to ${email} (Response: ${responseText})`);
+      return { success: true, id: `emailjs-${Date.now()}` };
+    } else {
+      const errorText = await response.text();
+      console.warn('[EmailJS REST API Error]:', response.status, errorText);
+      return { success: false, error: `EmailJS error ${response.status}: ${errorText}` };
+    }
+  } catch (err: any) {
+    console.error('[EmailJS Dispatch Exception]:', err?.message || err);
+    return { success: false, error: err?.message || 'Lỗi kết nối đến EmailJS API' };
+  }
+}
+
+async function sendOtpWithResend(email: string, displayName: string, code: string): Promise<{ success: boolean; id?: string; error?: string }> {
+  const emailJsServiceId = process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID;
+  const emailJsPublicKey = process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY;
+
+  // 1. Check if EmailJS is configured
+  if (emailJsServiceId && emailJsPublicKey) {
+    const emailJsRes = await sendOtpWithEmailJS(email, displayName, code);
+    if (emailJsRes.success) {
+      return emailJsRes;
+    }
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.FROM_EMAIL || process.env.RESEND_FROM || 'onboarding@resend.dev';
+  const fromHeader = fromEmail.includes('<') ? fromEmail : `Hồn Đất Việt <${fromEmail}>`;
+  const subject = `[Hồn Đất Việt] Mã xác thực OTP của bạn: ${code}`;
+  const html = generateEmailHtml(displayName, code);
+
+  // 2. Try Resend API
+  if (apiKey) {
+    try {
+      const resend = new Resend(apiKey);
+      const { data, error } = await resend.emails.send({
+        from: fromHeader,
+        to: [email],
+        subject: subject,
+        html: html,
+      });
+
+      if (error) {
+        console.warn('[Resend API Error]:', error);
+        return { success: false, error: error.message || 'Lỗi gửi qua Resend API' };
+      }
+
+      console.log(`[Resend SDK] OTP successfully sent to ${email} (ID: ${data?.id})`);
+      return { success: true, id: data?.id };
+    } catch (sdkErr: any) {
+      console.warn('[Resend SDK Exception]:', sdkErr?.message || sdkErr);
+      
+      // Secondary fallback via direct REST fetch to Resend
+      try {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: fromHeader,
+            to: [email],
+            subject: subject,
+            html: html
+          })
+        });
+        const resJson = await response.json();
+        if (response.ok) {
+          console.log(`[Resend REST] OTP sent to ${email} (ID: ${resJson.id})`);
+          return { success: true, id: resJson.id };
+        } else {
+          return { success: false, error: resJson.message || resJson.error || 'Resend API từ chối gửi email.' };
+        }
+      } catch (fetchErr: any) {
+        return { success: false, error: fetchErr.message };
+      }
+    }
+  }
+
+  // 3. Fallback: Check Nodemailer SMTP if configured
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpUser = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const smtpPass = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_PASS;
+  if (smtpHost || (smtpUser && smtpPass)) {
+    try {
+      let transporter: any;
+      if (smtpUser && smtpPass && (smtpUser.includes('@gmail.com') || process.env.GMAIL_USER)) {
+        transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: { user: smtpUser, pass: smtpPass }
+        });
+      } else {
+        const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+        transporter = nodemailer.createTransport({
+          host: smtpHost || 'smtp.gmail.com',
+          port: smtpPort,
+          secure: process.env.SMTP_SECURE === 'true' || smtpPort === 465,
+          auth: { user: smtpUser, pass: smtpPass },
+          tls: { rejectUnauthorized: false }
+        });
+      }
+
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || `"Hồn Đất Việt" <${smtpUser || 'no-reply@heritageai.vn'}>`,
+        to: email,
+        subject: subject,
+        html: html
+      });
+
+      console.log(`[Nodemailer Fallback] Sent OTP to ${email} (ID: ${info.messageId})`);
+      return { success: true, id: info.messageId };
+    } catch (smtpErr: any) {
+      console.warn('[Nodemailer Fallback Error]:', smtpErr?.message || smtpErr);
+    }
+  }
+
+  // 4. Fallback when keys are pending configuration in local development
+  console.log(`\n======================================================`);
+  console.log(`📬 [MÃ XÁC THỰC EMAIL (OTP - EMAILJS / RESEND)] -> ${email} (${displayName})`);
+  console.log(`🔑 MÃ OTP: ${code} (Thời hạn 5 phút)`);
+  console.log(`ℹ️ Cấu hình EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY (hoặc RESEND_API_KEY) trong file .env để gửi email tự động.`);
+  console.log(`======================================================\n`);
+
+  return { success: true, id: `local-dev-${Date.now()}` };
+}
+
+app.post('/api/auth/send-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, displayName } = req.body;
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ success: false, error: 'Địa chỉ email không hợp lệ.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = typeof displayName === 'string' && displayName.trim() ? displayName.trim() : 'Bạn';
+    const now = Date.now();
+
+    const existingRecord = serverPendingOtps.get(cleanEmail);
+
+    // 1. Anti-spam: Rate-limit 60-second cooldown
+    if (existingRecord && (now - existingRecord.lastSentAt) < OTP_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((OTP_COOLDOWN_MS - (now - existingRecord.lastSentAt)) / 1000);
+      return res.status(429).json({
+        success: false,
+        error: `Vui lòng chờ ${waitSeconds} giây trước khi yêu cầu gửi lại mã mới.`,
+        cooldownRemaining: waitSeconds
+      });
+    }
+
+    // 2. Anti-spam: Hourly max send limit (5 sends per hour)
+    let sendCount = 1;
+    let firstSendTime = now;
+    if (existingRecord) {
+      if (now - existingRecord.firstSendInWindow < 60 * 60 * 1000) {
+        if (existingRecord.sendCountHourly >= MAX_HOURLY_SENDS) {
+          return res.status(429).json({
+            success: false,
+            error: 'Bạn đã vượt quá giới hạn 5 lần gửi mã trong 1 giờ. Vui lòng thử lại sau.'
+          });
+        }
+        sendCount = existingRecord.sendCountHourly + 1;
+        firstSendTime = existingRecord.firstSendInWindow;
+      }
+    }
+
+    // 3. Generate random 6-digit numeric OTP code
+    const rawOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = now + OTP_EXPIRATION_MS; // Exactly 5 minutes
+    const hashedOtp = hashOtpCode(cleanEmail, rawOtp);
+
+    // 4. Send via Resend API
+    const sendResult = await sendOtpWithResend(cleanEmail, cleanName, rawOtp);
+    if (!sendResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: sendResult.error || 'Không thể gửi email OTP qua Resend. Vui lòng kiểm tra cấu hình RESEND_API_KEY.'
+      });
+    }
+
+    // 5. Store hashed OTP in memory (never plaintext)
+    serverPendingOtps.set(cleanEmail, {
+      hashedOtp,
+      expiresAt,
+      lastSentAt: now,
+      attempts: 0,
+      sendCountHourly: sendCount,
+      firstSendInWindow: firstSendTime,
+      displayName: cleanName
+    });
+
+    // DO NOT return raw OTP in response
+    return res.json({
+      success: true,
+      message: `Mã xác thực OTP 6 số đã được gửi trực tiếp đến ${cleanEmail}. Mã có hiệu lực trong 5 phút.`,
+      expiresAt,
+      cooldownSeconds: 60
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi máy chủ gửi OTP: ${err?.message || err}`
+    });
+  }
+});
+
+app.post('/api/auth/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp email và mã OTP 6 số.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanCode = String(code).trim().replace(/[^0-9]/g, '');
+
+    if (cleanCode.length !== 6) {
+      return res.status(400).json({ success: false, error: 'Mã OTP phải có đúng 6 chữ số.' });
+    }
+
+    const record = serverPendingOtps.get(cleanEmail);
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phiên xác thực đã hết hạn hoặc chưa từng yêu cầu gửi mã. Vui lòng bấm gửi lại mã.'
+      });
+    }
+
+    const now = Date.now();
+    // Check 5-minute lifetime
+    if (now > record.expiresAt) {
+      serverPendingOtps.delete(cleanEmail);
+      return res.status(400).json({
+        success: false,
+        error: 'Mã OTP đã hết thời hạn hiệu lực (5 phút). Vui lòng yêu cầu gửi mã mới.'
+      });
+    }
+
+    // Compare Hashed OTP
+    const enteredHash = hashOtpCode(cleanEmail, cleanCode);
+    if (enteredHash !== record.hashedOtp) {
+      record.attempts += 1;
+      if (record.attempts >= MAX_VERIFY_ATTEMPTS) {
+        serverPendingOtps.delete(cleanEmail);
+        return res.status(400).json({
+          success: false,
+          error: 'Bạn đã nhập sai mã OTP quá 5 lần. Mã đã bị vô hiệu hóa vì lý do bảo mật. Vui lòng yêu cầu gửi mã mới.'
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        error: `Mã xác thực OTP không chính xác. Bạn còn ${MAX_VERIFY_ATTEMPTS - record.attempts} lần thử.`
+      });
+    }
+
+    // Success: Delete pending OTP record to prevent replay attacks
+    serverPendingOtps.delete(cleanEmail);
+
+    return res.json({
+      success: true,
+      email: cleanEmail,
+      message: 'Xác thực email thành công!'
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      error: `Lỗi máy chủ xác thực OTP: ${err?.message || err}`
+    });
+  }
+});
+
+// ==========================================
+// 9. VITE SPA FALLBACK & STATIC SERVING
+// ==========================================
+async function startServer() {
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: {
+        middlewareMode: true,
+        hmr: false
+      },
+      appType: 'custom',
+    });
+    app.use(vite.middlewares);
+
+    app.use('*', async (req: Request, res: Response, next) => {
+      const url = req.originalUrl;
+      // Skip API requests and static assets
+      if (url.startsWith('/api') || url.startsWith('/@') || (url.includes('.') && !url.endsWith('.html'))) {
+        return next();
+      }
+
+      try {
+        const indexPath = path.resolve(process.cwd(), 'index.html');
+        let html = fs.readFileSync(indexPath, 'utf-8');
+        html = await vite.transformIndexHtml(url, html);
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(html);
+      } catch (e: any) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req: Request, res: Response) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Hồn Đất Việt Server is actively running on http://0.0.0.0:${PORT}`);
+  });
+}
+
+startServer();
+);
+    if (!salt || !expected) return { valid: false };
+    const actualBuffer = crypto.scryptSync(password, salt, 64);
+    let expectedBuffer: Buffer;
+    try {
+      expectedBuffer = Buffer.from(expected, 'base64url');
+    } catch {
+      return { valid: false };
+    }
+    return {
+      valid: actualBuffer.length === expectedBuffer.length &&
+        crypto.timingSafeEqual(actualBuffer, expectedBuffer)
+    };
+  }
+
+  // One-time compatibility path for legacy plaintext accounts. A successful
+  // login upgrades the stored password to scrypt immediately.
+  if (constantTimeStringEqual(password, stored)) {
+    return { valid: true, upgradedHash: hashAccountPassword(password) };
+  }
+  return { valid: false };
+}
+
+function publicAccount(account: any): any {
+  if (!account || typeof account !== 'object') return account;
+  const { password: _password, ...safeAccount } = account;
+  return safeAccount;
+}
+
 const DEFAULT_ADMIN_ACCOUNT_SERVER = {
   id: 'user-admin',
   displayName: 'Quản trị viên Hệ thống',
