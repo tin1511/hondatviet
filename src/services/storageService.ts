@@ -219,7 +219,6 @@ const DEFAULT_ADMIN_ACCOUNT: UserProfile = {
   id: 'user-admin',
   displayName: 'Quản trị viên Hệ thống',
   email: 'admin@heritageai.vn',
-  password: 'AINHS2026',
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
   city: 'Hà Nội / Huế',
   role: 'admin',
