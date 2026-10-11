@@ -3022,7 +3022,6 @@ startServer();
   id: 'user-admin',
   displayName: 'Quản trị viên Hệ thống',
   email: 'admin@heritageai.vn',
-  password: 'AINHS2026',
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
   city: 'Hà Nội / Huế',
   role: 'admin',
@@ -3161,7 +3160,7 @@ app.post('/api/accounts/login', (req: Request, res: Response) => {
 
     // Check Admin Credentials
     if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
-      if (cleanPass === 'AINHS2026') {
+      if (process.env.ADMIN_PASSWORD && constantTimeStringEqual(cleanPass, process.env.ADMIN_PASSWORD)) {
         let adminAccount = serverAccounts.find((a: any) => a.id === 'user-admin' || (a.email && a.email.toLowerCase() === 'admin@heritageai.vn'));
         if (!adminAccount) {
           adminAccount = { ...DEFAULT_ADMIN_ACCOUNT_SERVER };
@@ -4932,7 +4931,6 @@ const DEFAULT_ADMIN_ACCOUNT_SERVER = {
   id: 'user-admin',
   displayName: 'Quản trị viên Hệ thống',
   email: 'admin@heritageai.vn',
-  password: 'AINHS2026',
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
   city: 'Hà Nội / Huế',
   role: 'admin',
@@ -5071,7 +5069,7 @@ app.post('/api/accounts/login', (req: Request, res: Response) => {
 
     // Check Admin Credentials
     if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
-      if (cleanPass === 'AINHS2026') {
+      if (process.env.ADMIN_PASSWORD && constantTimeStringEqual(cleanPass, process.env.ADMIN_PASSWORD)) {
         let adminAccount = serverAccounts.find((a: any) => a.id === 'user-admin' || (a.email && a.email.toLowerCase() === 'admin@heritageai.vn'));
         if (!adminAccount) {
           adminAccount = { ...DEFAULT_ADMIN_ACCOUNT_SERVER };
