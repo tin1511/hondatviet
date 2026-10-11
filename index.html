@@ -21,6 +21,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&display=swap" rel="stylesheet">
   </head>
   <body class="bg-stone-950 text-stone-100 antialiased selection:bg-amber-500 selection:text-stone-950 min-h-screen overflow-x-hidden">
+    <div id="google_translate_element" style="display:none; position:absolute; left:-9999px;"></div>
+    <script type="text/javascript">
+      window.googleTranslateElementInit = function() {
+        try {
+          if (window.google && window.google.translate) {
+            new window.google.translate.TranslateElement({
+              pageLanguage: 'vi',
+              includedLanguages: 'vi,en,fr,ja,ko,zh-CN',
+              autoDisplay: false
+            }, 'google_translate_element');
+          }
+        } catch (e) {
+          console.warn('Google Translate init:', e);
+        }
+      };
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

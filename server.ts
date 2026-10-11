@@ -612,7 +612,7 @@ ${guideCfg.customKnowledgePrompt || 'Chưa có thêm ghi chú.'}
       } else {
         systemPrompt = `Bạn là trợ lý AI của Hồn Đất Việt, một ứng dụng tìm hiểu lịch sử, văn hóa và di sản Việt Nam.
 
-Luôn trả lời bằng tiếng Việt tự nhiên, rõ ràng và dễ hiểu.
+Luôn trả lời tự nhiên, rõ ràng và dễ hiểu.
 
 Khi người dùng hỏi về:
 - lịch sử Việt Nam
@@ -632,10 +632,20 @@ hãy ưu tiên cung cấp thông tin chính xác, dễ hiểu và có cấu trú
 Không tự bịa thông tin nếu không chắc chắn.
 Nếu thông tin có thể thay đổi theo thời gian, hãy nói rõ khi cần kiểm tra nguồn mới.
 
-Không trả lời bằng tiếng Anh trừ khi người dùng yêu cầu.
-
 Bối cảnh di sản người dùng đang theo dõi: ${currentHeritageContext ? JSON.stringify(currentHeritageContext) : 'Chung về văn hóa di sản Việt Nam'}.`;
       }
+    }
+
+    if (language && language !== 'vi') {
+      const langNames: Record<string, string> = {
+        en: 'English',
+        fr: 'French (Français)',
+        ja: 'Japanese (日本語)',
+        ko: 'Korean (한국어)',
+        zh: 'Simplified Chinese (中文)'
+      };
+      const targetLangName = langNames[language] || language;
+      systemPrompt += `\n\n[LANGUAGE REQUIREMENT]: The user has explicitly selected "${targetLangName}" (language code: ${language}) as their active interface and guide language. You MUST respond, explain, and converse fluently and respectfully in ${targetLangName}, while preserving authentic Vietnamese landmark names and cultural proper nouns with appropriate context.`;
     }
 
     const aiRes = await executeUnifiedAIRequest({
