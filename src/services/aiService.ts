@@ -180,7 +180,7 @@ export const aiService = {
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Không thể nhận diện hình ảnh');
       }
-      return data.data as RecognizeHeritageResult;
+      return deepCleanVietnamese(data.data);
     } catch (err: any) {
       console.warn('AI Recognize Heritage network/server offline fallback:', err);
       return getOfflineHeritageRecognition(optionalPrompt);
@@ -225,13 +225,13 @@ export const aiService = {
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Không thể tạo câu chuyện');
       }
-      const cleanData = (data.data || {}) as Record<string, any>;
+      const cleanData = deepCleanVietnamese(data.data);
       return {
         heritageId: params.heritageName.toLowerCase().replace(/\s+/g, '-'),
         heritageName: cleanVietnameseText(params.heritageName),
         mode: params.mode,
         ...cleanData
-      } as HeritageStory;
+      };
     } catch (err) {
       console.warn('Storyteller offline fallback:', err);
       const heritageName = cleanVietnameseText(params.heritageName);
@@ -316,7 +316,7 @@ export const aiService = {
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Không thể xử lý bản ghi');
       }
-      return data.data;
+      return deepCleanVietnamese(data.data);
     } catch (err) {
       return {
         refinedStory: `[Biên tập Offline] ${params.rawTranscription}`,
@@ -346,7 +346,7 @@ export const aiService = {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        return data.data as PlaceReviewSummary;
+        return deepCleanVietnamese(data.data);
       }
     } catch (err) {
       console.warn('Place reviews offline fallback:', err);
@@ -377,7 +377,7 @@ export const aiService = {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        return data.matches as MatchReasoningResult[];
+        return deepCleanVietnamese(data.matches);
       }
     } catch (err) {
       console.warn('Match places offline fallback:', err);
@@ -412,8 +412,8 @@ export const aiService = {
       if (res.ok && data.success) {
         return {
           id: 'itin-' + Date.now(),
-          ...(data.itinerary || {})
-        } as ItineraryPlan;
+          ...deepCleanVietnamese(data.itinerary)
+        };
       }
     } catch (err) {
       console.warn('Smart itinerary offline fallback:', err);
@@ -563,7 +563,7 @@ export const aiService = {
       });
       const data = await res.json();
       if (res.ok && data && data.success) {
-        return (data.data || data) as any;
+        return deepCleanVietnamese(data);
       }
     } catch (err) {
       console.warn('Network or API error in findLandmarkImageWithGoogle, falling back to local database:', err);

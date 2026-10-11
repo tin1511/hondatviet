@@ -44,7 +44,6 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { FavoritesView } from './components/FavoritesView';
 import { UserProfileView } from './components/UserProfileView';
 import { CulturalToolsDashboard } from './components/CulturalToolsDashboard';
-import { NearbyRecommendationWidget } from './components/NearbyRecommendationWidget';
 import { AuthModal } from './components/AuthModal';
 import { AuthGateway } from './components/AuthGateway';
 import { CityLandmarkModal } from './components/CityLandmarkModal';
@@ -56,21 +55,18 @@ import { MobileAppDownloadBanner } from './components/MobileAppDownloadBanner';
 import { MobileAppDownloadModal } from './components/MobileAppDownloadModal';
 import { HeritageEditModal } from './components/HeritageEditModal';
 import { PlaceEditModal } from './components/PlaceEditModal';
-import { LanguageSettingsModal } from './components/LanguageSettingsModal';
 import { HeritageItem, UserProfile, CityLandmarkBackground } from './types';
 import { HERITAGE_DATABASE } from './data/vietnamHeritageData';
 import { storageService, applySiteLogoToDom } from './services/storageService';
-import { languageService } from './services/languageService';
 import { geolocationService, CITY_LANDMARK_PRESETS } from './services/geolocationService';
 import { getHeritageForLandmark } from './services/landmarkHeritageService';
 import { loadAIConfigFromFirebase, loadTTSConfigFromFirebase } from './services/systemConfigService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [language, setLanguage] = useState<string>(() => languageService.getCurrentLanguage());
+  const [language, setLanguage] = useState<string>('vi');
   const [favoritesCount, setFavoritesCount] = useState<number>(2);
   const [userProfile, setUserProfile] = useState<UserProfile>(storageService.getUserProfile());
-  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState<boolean>(false);
 
   // Dynamic GPS Landmark Background for the entire website
   const [currentLandmark, setCurrentLandmark] = useState<CityLandmarkBackground>(CITY_LANDMARK_PRESETS[0]);
@@ -149,26 +145,12 @@ export default function App() {
     };
     window.addEventListener('hdv_site_logo_changed', handleLogoChanged);
 
-    const handleLangChanged = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail?.language) {
-        setLanguage(customEvent.detail.language);
-      }
-    };
-    window.addEventListener('hdv_language_changed', handleLangChanged);
-
     detectGps();
 
     return () => {
       window.removeEventListener('hdv_site_logo_changed', handleLogoChanged);
-      window.removeEventListener('hdv_language_changed', handleLangChanged);
     };
   }, []);
-
-  const handleLanguageChange = (newLang: string) => {
-    setLanguage(newLang);
-    languageService.setLanguage(newLang);
-  };
 
   // Scroll to top immediately whenever activeTab changes so user never has to scroll down
   useEffect(() => {
@@ -329,13 +311,12 @@ export default function App() {
           favoritesCount={favoritesCount}
           userProfile={userProfile}
           language={language}
-          onLanguageChange={handleLanguageChange}
+          onLanguageChange={setLanguage}
           onOpenAuthModal={handleOpenAuthModal}
           onOpenOfflineManager={() => setIsOfflineModalOpen(true)}
           onLogout={handleLogout}
           onPeekBackground={() => setIsPeekingBackground(true)}
           onOpenAddHeritage={() => setIsGlobalHeritageModalOpen(true)}
-          onOpenLanguageModal={() => setIsLanguageModalOpen(true)}
         />
       </div>
 
@@ -368,9 +349,6 @@ export default function App() {
                   onOpenAddHeritage={() => setIsGlobalHeritageModalOpen(true)}
                   onOpenAuthModal={handleOpenAuthModal}
                   userProfile={userProfile}
-                  language={language}
-                  onLanguageChange={handleLanguageChange}
-                  onOpenLanguageModal={() => setIsLanguageModalOpen(true)}
                 />
 
                 {/* Mobile-optimized Comprehensive Tools and App Portal */}
@@ -379,17 +357,44 @@ export default function App() {
                   onNavigate={handleNavigate}
                   favoritesCount={favoritesCount}
                   userProfile={userProfile}
-                  language={language}
                 />
 
-                {/* Geolocation-Based Nearby Heritage & Places Recommender */}
-                <section id="gps-nearby-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <NearbyRecommendationWidget
-                    onSelectHeritage={handleSelectHeritage}
-                    onNavigateToFood={(heritageId) => handleNavigate('food', heritageId)}
-                    onNavigateToMap={() => handleNavigate('map')}
-                  />
+                {/* 🗺️ BẢN ĐỒ DU LỊCH TƯƠNG TÁC VIỆT NAM (HÌNH CHỮ S) TRỰC TIẾP TRÊN TRANG CHỦ */}
+                <section id="home-vietnam-map-section" className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+                  <div className="bg-gradient-to-b from-stone-900/95 via-stone-900/90 to-stone-950/95 border border-amber-500/30 rounded-3xl p-3 sm:p-6 shadow-2xl backdrop-blur">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-stone-800 pb-4">
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold mb-2">
+                          <Globe className="w-3.5 h-3.5" />
+                          <span>Bản Đồ Địa Lý & Du Lịch Tương Tác Trực Tiếp</span>
+                        </div>
+                        <h3 className="text-xl sm:text-3xl font-serif font-bold text-stone-100">
+                          Khám Phá Dải Đất Hình Chữ S Việt Nam
+                        </h3>
+                        <p className="text-xs sm:text-sm text-stone-400 mt-1">
+                          Chạm hoặc nhấn vào bất kỳ tỉnh thành nào trên bản đồ để phóng to và xem các di sản thực tế.
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => handleNavigate('map')}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-950/40 transition-all active:scale-95 cursor-pointer"
+                      >
+                        <Globe className="w-4 h-4 text-stone-950" />
+                        <span>Mở Bản Đồ Toàn Màn Hình</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <CulturalMap
+                      currentUser={userProfile}
+                      onNavigateToStory={handleNavigateToStory}
+                      onNavigateToFood={handleNavigateToFood}
+                    />
+                  </div>
                 </section>
+
+
 
                 {/* Featured Heritage Highlights */}
                 <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -397,10 +402,10 @@ export default function App() {
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-semibold mb-2">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>{languageService.t('home.featuredBadge', language, 'Di Sản Tiêu Biểu')}</span>
+                        <span>Di Sản Tiêu Biểu</span>
                       </div>
                       <h3 className="text-2xl sm:text-4xl font-serif font-bold text-stone-100">
-                        {languageService.t('home.featuredTitle', language, 'Báu Vật Ngàn Năm Của Dân Tộc')}
+                        Báu Vật Ngàn Năm Của Dân Tộc
                       </h3>
                     </div>
 
@@ -408,7 +413,7 @@ export default function App() {
                       onClick={() => handleNavigate('map')}
                       className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
                     >
-                      <span>{languageService.t('home.viewAllMap', language, 'Xem tất cả trên bản đồ')}</span>
+                      <span>Xem tất cả trên bản đồ</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -460,7 +465,7 @@ export default function App() {
                             title="Xem chi tiết di sản"
                           >
                             <Compass className="w-3.5 h-3.5" />
-                            <span>{languageService.t('btn.details', language, 'Chi tiết')}</span>
+                            <span>Chi tiết</span>
                           </button>
 
                           <button
@@ -469,7 +474,7 @@ export default function App() {
                             title="Nghe kể chuyện lịch sử"
                           >
                             <Volume2 className="w-3.5 h-3.5" />
-                            <span>{languageService.t('btn.story', language, 'Kể chuyện')}</span>
+                            <span>Kể chuyện</span>
                           </button>
 
                           <button
@@ -478,7 +483,7 @@ export default function App() {
                             title="Xem ẩm thực gần đây"
                           >
                             <Utensils className="w-3.5 h-3.5" />
-                            <span>{languageService.t('btn.food', language, 'Ăn uống')}</span>
+                            <span>Ăn uống</span>
                           </button>
                         </div>
                       </motion.div>
@@ -494,13 +499,13 @@ export default function App() {
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
                       <div className="lg:col-span-5 space-y-4">
                         <span className="text-[11px] font-bold text-amber-400 uppercase tracking-widest px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
-                          {languageService.t('home.archiveBadge', language, 'Hệ Thống Lưu Trữ Cá Nhân & Điểm Văn Hóa')}
+                          Hệ Thống Lưu Trữ Cá Nhân & Điểm Văn Hóa
                         </span>
                         <h3 className="font-serif font-bold text-2xl sm:text-3xl text-stone-100 leading-tight">
-                          {languageService.t('home.archiveTitle', language, 'Đồng Hành & Lưu Trữ Mọi Hành Trình Di Sản Của Bạn')}
+                          Đồng Hành & Lưu Trữ Mọi Hành Trình Di Sản Của Bạn
                         </h3>
                         <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
-                          {languageService.t('home.archiveDesc', language, 'Mỗi thao tác nhận diện ảnh chụp bằng AI, nghe kể chuyện lịch sử, hoàn thành câu đố văn hóa hay lập kế hoạch du lịch đều được tự động ghi lại trong hồ sơ cá nhân với hệ thống điểm thưởng XP và danh hiệu di sản.')}
+                          Mỗi thao tác nhận diện ảnh chụp bằng AI, nghe kể chuyện lịch sử, hoàn thành câu đố văn hóa hay lập kế hoạch du lịch đều được tự động ghi lại trong hồ sơ cá nhân với hệ thống điểm thưởng XP và danh hiệu di sản.
                         </p>
                         <div className="pt-2 flex flex-wrap gap-3">
                           <button
@@ -508,7 +513,7 @@ export default function App() {
                             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs shadow-lg flex items-center gap-2 cursor-pointer"
                           >
                             <Award className="w-4 h-4 text-stone-950" />
-                            <span>{languageService.t('home.viewBadges', language, 'Xem Bảng Danh Hiệu & Hồ Sơ')}</span>
+                            <span>Xem Bảng Danh Hiệu & Hồ Sơ</span>
                           </button>
 
                           <button
@@ -516,7 +521,7 @@ export default function App() {
                             className="px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-semibold text-xs border border-stone-700 flex items-center gap-2 cursor-pointer"
                           >
                             <UserCheck className="w-4 h-4 text-amber-400" />
-                            <span>{userProfile.isLoggedIn ? languageService.t('home.myAccount', language, 'Tài Khoản Cá Nhân') : languageService.t('home.loginSignup', language, 'Đăng Nhập / Đăng Ký')}</span>
+                            <span>{userProfile.isLoggedIn ? 'Tài Khoản Cá Nhân' : 'Đăng Nhập / Đăng Ký'}</span>
                           </button>
                         </div>
                       </div>
@@ -530,10 +535,10 @@ export default function App() {
                             <Camera className="w-5 h-5" />
                           </div>
                           <h4 className="font-serif font-bold text-base text-stone-100 group-hover:text-amber-400">
-                            {languageService.t('home.visionTitle', language, 'AI Nhận Diện Thị Giác')}
+                            AI Nhận Diện Thị Giác
                           </h4>
                           <p className="text-xs text-stone-400 mt-1">
-                            {languageService.t('home.visionDesc', language, 'Chụp ảnh di tích, đồ cổ, trang phục cổ hay món ăn để biết ngay tên gọi, niên đại và ý nghĩa lịch sử.')}
+                            Chụp ảnh di tích, đồ cổ, trang phục cổ hay món ăn để biết ngay tên gọi, niên đại và ý nghĩa lịch sử.
                           </p>
                         </div>
 
@@ -545,10 +550,10 @@ export default function App() {
                             <Volume2 className="w-5 h-5" />
                           </div>
                           <h4 className="font-serif font-bold text-base text-stone-100 group-hover:text-amber-400">
-                            {languageService.t('home.storyTitle', language, 'AI Kể Chuyện Đa Đối Tượng')}
+                            AI Kể Chuyện Đa Đối Tượng
                           </h4>
                           <p className="text-xs text-stone-400 mt-1">
-                            {languageService.t('home.storyDesc', language, 'Lắng nghe giọng kể truyền cảm phù hợp với trẻ em, học sinh, nhà nghiên cứu hay du khách quốc tế.')}
+                            Lắng nghe giọng kể truyền cảm phù hợp với trẻ em, học sinh, nhà nghiên cứu hay du khách quốc tế.
                           </p>
                         </div>
 
@@ -560,10 +565,10 @@ export default function App() {
                             <CalendarDays className="w-5 h-5" />
                           </div>
                           <h4 className="font-serif font-bold text-base text-stone-100 group-hover:text-amber-400">
-                            {languageService.t('home.itineraryTitle', language, 'Lập Lịch Trình Tự Động')}
+                            Lập Lịch Trình Tự Động
                           </h4>
                           <p className="text-xs text-stone-400 mt-1">
-                            {languageService.t('home.itineraryDesc', language, 'Lên kế hoạch du lịch văn hóa theo thời gian, ngân sách, tích hợp Google Places lân cận.')}
+                            Lên kế hoạch du lịch văn hóa theo thời gian, ngân sách, tích hợp Google Places lân cận.
                           </p>
                         </div>
                       </div>
@@ -596,7 +601,6 @@ export default function App() {
                 initialHistory={storyInitialTopic?.history}
                 initialPeriod={storyInitialTopic?.period}
                 onSelectHeritageForPlaces={handleNavigateToFood}
-                language={language}
               />
             )}
 
@@ -611,6 +615,7 @@ export default function App() {
             {/* VIEW 5: CULTURAL MAP */}
             {activeTab === 'map' && (
               <CulturalMap
+                currentUser={userProfile}
                 onNavigateToStory={handleNavigateToStory}
                 onNavigateToFood={handleNavigateToFood}
               />
@@ -677,8 +682,6 @@ export default function App() {
                 currentUser={userProfile}
                 onUserChange={handleUserChange}
                 onNavigateTab={handleNavigate}
-                language={language}
-                onOpenLanguageModal={() => setIsLanguageModalOpen(true)}
               />
             )}
           </motion.div>
@@ -693,9 +696,6 @@ export default function App() {
         initialTab={authModalTab}
         onUserChange={handleUserChange}
         onNavigateTab={handleNavigate}
-        language={language}
-        onLanguageChange={handleLanguageChange}
-        onOpenLanguageModal={() => setIsLanguageModalOpen(true)}
       />
 
       {/* Footer */}
@@ -722,43 +722,39 @@ export default function App() {
               <span className="font-serif font-bold text-stone-100 text-base tracking-wider">HỒN ĐẤT VIỆT</span>
             </div>
             <p className="text-stone-400 text-xs max-w-md leading-relaxed">
-              {languageService.t('footer.platformDesc', language, 'Nền tảng trí tuệ nhân tạo đồng hành khám phá, bảo tồn và lan tỏa giá trị di sản văn hóa, lịch sử và trải nghiệm du lịch Việt Nam.')}
+              Nền tảng trí tuệ nhân tạo đồng hành khám phá, bảo tồn và lan tỏa giá trị di sản văn hóa, lịch sử và trải nghiệm du lịch Việt Nam.
             </p>
             <p className="text-[11px] text-stone-500">
-              {languageService.t('footer.pride', language, 'Phát triển với sự trân trọng đối với 4.000 năm lịch sử hào hùng và nguồn tư liệu lịch sử dân tộc.')}
+              Phát triển với sự trân trọng đối với 4.000 năm lịch sử hào hùng và nguồn tư liệu lịch sử dân tộc.
             </p>
           </div>
 
           <div className="space-y-2">
-            <h5 className="font-semibold text-amber-300 uppercase tracking-wider text-[11px]">
-              {languageService.t('footer.coreFeatures', language, 'Chức năng cốt lõi')}
-            </h5>
+            <h5 className="font-semibold text-amber-300 uppercase tracking-wider text-[11px]">Chức năng cốt lõi</h5>
             <ul className="space-y-1.5">
-              <li><button onClick={() => handleNavigate('recognizer')} className="hover:text-amber-400">{languageService.t('footer.fRecognizer', language, 'Nhận diện di sản bằng AI Vision')}</button></li>
-              <li><button onClick={() => handleNavigate('storyteller')} className="hover:text-amber-400">{languageService.t('footer.fStory', language, 'Nghe AI kể chuyện văn hóa')}</button></li>
-              <li><button onClick={() => handleNavigate('food')} className="hover:text-amber-400">{languageService.t('footer.fFood', language, 'Ăn uống & vui chơi gần di sản')}</button></li>
-              <li><button onClick={() => handleNavigate('itinerary')} className="hover:text-amber-400">{languageService.t('footer.fItinerary', language, 'Lập lịch trình du lịch thông minh')}</button></li>
+              <li><button onClick={() => handleNavigate('recognizer')} className="hover:text-amber-400">Nhận diện di sản bằng AI Vision</button></li>
+              <li><button onClick={() => handleNavigate('storyteller')} className="hover:text-amber-400">Nghe AI kể chuyện văn hóa</button></li>
+              <li><button onClick={() => handleNavigate('food')} className="hover:text-amber-400">Ăn uống & vui chơi gần di sản</button></li>
+              <li><button onClick={() => handleNavigate('itinerary')} className="hover:text-amber-400">Lập lịch trình du lịch thông minh</button></li>
             </ul>
           </div>
 
           <div className="space-y-2">
-            <h5 className="font-semibold text-amber-300 uppercase tracking-wider text-[11px]">
-              {languageService.t('footer.accountDevice', language, 'Tài khoản & Thiết bị')}
-            </h5>
+            <h5 className="font-semibold text-amber-300 uppercase tracking-wider text-[11px]">Tài khoản & Thiết bị</h5>
             <ul className="space-y-1.5 text-stone-400 text-[11px]">
-              <li><button onClick={() => handleOpenAuthModal('login')} className="hover:text-amber-400">{languageService.t('footer.loginRegister', language, 'Đăng nhập / Đăng ký tài khoản')}</button></li>
-              <li><button onClick={() => setActiveTab('profile')} className="hover:text-amber-400">{languageService.t('footer.viewBadges', language, 'Xem điểm văn hóa & danh hiệu')}</button></li>
-              <li><button onClick={() => handleOpenAuthModal('activity')} className="hover:text-amber-400">{languageService.t('footer.activityHistory', language, 'Lịch sử thao tác thiết bị')}</button></li>
-              <li><button onClick={() => handleNavigate('favorites')} className="hover:text-amber-400">{languageService.t('footer.savedFavorites', language, 'Bộ sưu tập di sản đã lưu')}</button></li>
+              <li><button onClick={() => handleOpenAuthModal('login')} className="hover:text-amber-400">Đăng nhập / Đăng ký tài khoản</button></li>
+              <li><button onClick={() => setActiveTab('profile')} className="hover:text-amber-400">Xem điểm văn hóa & danh hiệu</button></li>
+              <li><button onClick={() => handleOpenAuthModal('activity')} className="hover:text-amber-400">Lịch sử thao tác thiết bị</button></li>
+              <li><button onClick={() => handleNavigate('favorites')} className="hover:text-amber-400">Bộ sưu tập di sản đã lưu</button></li>
             </ul>
           </div>
 
         </div>
 
         <div className="max-w-7xl mx-auto pt-6 border-t border-stone-800/80 flex flex-wrap items-center justify-between gap-4 text-[11px] text-stone-500">
-          <span>{languageService.t('footer.copyright', language, '© 2026 HỒN ĐẤT VIỆT. Tự hào Di sản Việt Nam.')}</span>
+          <span>&copy; 2026 HỒN ĐẤT VIỆT. Tự hào Di sản Việt Nam.</span>
           <div className="flex items-center gap-4">
-            <span>{languageService.t('footer.dataCredit', language, 'Dữ liệu đối chiếu: Đại Việt Sử Ký Toàn Thư, UNESCO & Google Places')}</span>
+            <span>Dữ liệu đối chiếu: Đại Việt Sử Ký Toàn Thư, UNESCO & Google Places</span>
           </div>
         </div>
       </footer>
@@ -777,7 +773,7 @@ export default function App() {
               title={`Khám phá & xem giới thiệu chi tiết di sản "${currentLandmark.landmarkName}"`}
             >
               <Sparkles className="w-3.5 h-3.5 text-stone-950" />
-              <span>{languageService.t('floating.exploreLandmark', language, 'Khám phá di sản')}</span>
+              <span>Khám phá di sản</span>
             </button>
 
             {/* Peek Background & Landmark Selector */}
@@ -788,7 +784,7 @@ export default function App() {
               title="Ẩn giao diện để chiêm ngưỡng trọn vẹn bức ảnh nền danh thắng"
             >
               <Eye className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <span>{languageService.t('floating.peekBackground', language, 'Ngắm ảnh nền')}</span>
+              <span>Ngắm ảnh nền</span>
             </button>
 
             <button
@@ -859,20 +855,10 @@ export default function App() {
         onSelectTab={handleNavigate}
         favoritesCount={favoritesCount}
         userProfile={userProfile}
-        language={language}
-        onOpenLanguageModal={() => setIsLanguageModalOpen(true)}
         onOpenCityPicker={() => setShowCityPicker(true)}
         currentLandmark={currentLandmark}
         onPeekBackground={() => setIsPeekingBackground(true)}
         onExploreLandmark={handleExploreCurrentLandmark}
-      />
-
-      {/* Modal: Tùy Chỉnh & Cài Đặt Ngôn Ngữ Hệ Thống */}
-      <LanguageSettingsModal
-        isOpen={isLanguageModalOpen}
-        onClose={() => setIsLanguageModalOpen(false)}
-        currentLanguage={language}
-        onSelectLanguage={handleLanguageChange}
       />
 
       {/* Modal: Khám phá & Chọn ảnh danh thắng Việt Nam làm hình nền trang web */}

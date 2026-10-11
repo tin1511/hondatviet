@@ -31,16 +31,12 @@ import {
   PanelRight,
   Minimize2,
   Maximize2,
-  Move,
-  ExternalLink,
-  Copy,
-  Check
+  Move
 } from 'lucide-react';
 import { HeritageItem, UserProfile, UserLocation } from '../types';
 import { storageService } from '../services/storageService';
 import { handleImageError, getSafeHeritageImageUrl } from '../utils/imageUtils';
 import { geolocationService, calculateDistanceKm } from '../services/geolocationService';
-import { VIETNAM_PROVINCES } from '../data/vietnamProvincesData';
 
 interface CulturalMapProps {
   currentUser?: UserProfile;
@@ -162,180 +158,6 @@ const getProvinceHashIndex = (name: string, modulo: number): number => {
   return Math.abs(hash) % modulo;
 };
 
-// Mapping between merged administrative units and constituent/historical province names
-const PROVINCE_SUB_REGIONS: Record<string, string[]> = {
-  hanoi: ['hà nội', 'ha noi', 'thăng long', 'đông đô', 'sơn tây', 'ba vì'],
-  laichau: ['lai châu', 'mường tè', 'sìn hồ', 'ô quy hồ', 'tam đường', 'sì thâu chải'],
-  dienbien: ['điện biên', 'mường thanh', 'a pa chải', 'đờ cát', 'đồi a1'],
-  sonla: ['sơn la', 'mộc châu'],
-  langson: ['lạng sơn', 'đồng đăng', 'chi lăng', 'tam thanh', 'tô thị'],
-  quangninh: ['quảng ninh', 'hạ long', 'yên tử', 'cô tô', 'vân đồn', 'móng cái', 'cẩm phả'],
-  caobang: ['cao bằng', 'trùng khánh', 'bản giốc', 'pác bó'],
-  tuyenquang: ['tuyên quang', 'hà giang', 'tân trào', 'đồng văn', 'mèo vạc', 'lũng cú', 'mã pí lèng'],
-  laocai: ['lào cai', 'yên bái', 'sa pa', 'fansipan', 'mù cang chải', 'bắc hà'],
-  thainguyen: ['thái nguyên', 'bắc kạn', 'ba bể', 'tân cương', 'định hóa'],
-  phutho: ['phú thọ', 'vĩnh phúc', 'hòa bình', 'đền hùng', 'tam đảo', 'mai châu'],
-  bacninh: ['bắc ninh', 'bắc giang', 'thuận thành', 'đông hồ', 'bút tháp', 'vĩnh nghiêm'],
-  hungyen: ['hưng yên', 'thái bình', 'phố hiến', 'chùa keo', 'chùa chuông'],
-  haiphong: ['hải phòng', 'hải dương', 'cát bà', 'lan hạ', 'côn sơn', 'kiếp bạc', 'chu đậu', 'bạch đằng giang'],
-  ninhbinh: ['ninh bình', 'nam định', 'hà nam', 'tràng an', 'hoa lư', 'tam chúc', 'đền trần', 'phát diệm', 'bái đính', 'cúc phương'],
-  thanhoa: ['thanh hóa', 'thành nhà hồ', 'sầm sơn', 'pù luông', 'lam kinh', 'tây đô'],
-  nghean: ['nghệ an', 'kim liên', 'nam đàn', 'cửa lò', 'pù mát'],
-  hatinh: ['hà tĩnh', 'đồng lộc', 'can lộc', 'nguyễn du', 'thiên cầm'],
-  quangtri: ['quảng trị', 'quảng bình', 'phong nha', 'sơn đoòng', 'thành cổ', 'hiền lương', 'vịnh mốc', 'đôi bờ'],
-  hue: ['huế', 'thừa thiên huế', 'thừa thiên', 'cố đô', 'đại nội', 'thiên mụ', 'khải định', 'đông ba'],
-  danang: ['đà nẵng', 'da nang', 'tp đà nẵng', 'sơn trà', 'bà nà', 'ngũ hành sơn', 'hải châu', 'hòa vang', 'liên chiểu', 'thanh khê', 'cẩm lệ', 'mỹ khê', 'rạn nam ô', 'hải vân quan', 'sông hàn'],
-  quangnam: ['quảng nam', 'quang nam', 'hội an', 'mỹ sơn', 'cù lao chàm', 'tam kỳ', 'thanh hà', 'duy xuyên', 'điện bàn', 'núi thành'],
-  quangngai: ['quảng ngãi', 'kon tum', 'lý sơn', 'măng đen', 'sơn mỹ', 'cù lao ré'],
-  gialai: ['gia lai', 'bình định', 'pleiku', 'quy nhơn', 'biển hồ', 'kỳ co', 'eo gió', 'quang trung', 't’nưng'],
-  khanhhoa: ['khánh hòa', 'ninh thuận', 'nha trang', 'phan rang', 'ponagar', 'po klong garai', 'vĩnh hy'],
-  daklak: ['đắk lắk', 'phú yên', 'buôn ma thuột', 'ghềnh đá đĩa', 'tuy hòa', 'mũi điện', 'hồ lắk', 'buôn jun'],
-  lamdong: ['lâm đồng', 'đắk nông', 'bình thuận', 'đà lạt', 'mũi né', 'phan thiết', 'bàu trắng', 'datanla', 'bảo đại'],
-  tphcm: ['hồ chí minh', 'tp.hcm', 'sài gòn', 'bình dương', 'bà rịa', 'vũng tàu', 'côn đảo', 'củ chi', 'dinh độc lập', 'bến thành'],
-  dongnai: ['đồng nai', 'bình phước', 'cát tiên', 'trị an', 'sóc bom bo', 'nam cát tiên'],
-  tayninh: ['tây ninh', 'long an', 'núi bà đen', 'tân lập', 'tòa thánh'],
-  cantho: ['cần thơ', 'hậu giang', 'sóc trăng', 'tây đô', 'cái răng', 'chùa dơi', 'bình thủy'],
-  vinhlong: ['vĩnh long', 'trà vinh', 'bến tre', 'mang thít', 'ao bà om', 'cồn phụng'],
-  dongthap: ['đồng tháp', 'tiền giang', 'mỹ tho', 'sa đéc', 'tràm chim', 'vĩnh tràng'],
-  angiang: ['an giang', 'kiên giang', 'phú quốc', 'nam du', 'núi sam', 'châu đốc', 'trà sư'],
-  camau: ['cà mau', 'bạc liêu', 'đất mũi', 'công tử bạc liêu', 'cao văn lầu']
-};
-
-export const matchesProvinceFilter = (itemProvince: string, selectedProvince: string | null, itemTags: string[] = []): boolean => {
-  if (!selectedProvince) return true;
-  const sel = selectedProvince.toLowerCase().trim();
-  const prov = itemProvince.toLowerCase().trim();
-
-  // Strict isolation between Da Nang and Quang Nam unless explicitly merged unit chosen
-  const isDaNangFilter = sel.includes('đà nẵng') || sel.includes('da nang');
-  const isQuangNamFilter = (sel.includes('quảng nam') || sel.includes('quang nam')) && !isDaNangFilter;
-
-  if (isDaNangFilter && !sel.includes('hợp nhất')) {
-    const isProvDN = prov.includes('đà nẵng') || prov.includes('da nang');
-    const isTagDN = itemTags.some(t => {
-      const lt = t.toLowerCase();
-      return lt.includes('đà nẵng') || lt.includes('sơn trà') || lt.includes('hải châu') || lt.includes('hòa vang') || lt.includes('ngũ hành sơn') || lt.includes('liên chiểu');
-    });
-    return isProvDN || isTagDN;
-  }
-
-  if (isQuangNamFilter) {
-    const isProvQN = prov.includes('quảng nam') || prov.includes('quang nam');
-    const isTagQN = itemTags.some(t => {
-      const lt = t.toLowerCase();
-      return lt.includes('quảng nam') || lt.includes('hội an') || lt.includes('mỹ sơn') || lt.includes('cù lao chàm');
-    });
-    return isProvQN || isTagQN;
-  }
-  
-  if (prov.includes(sel) || sel.includes(prov)) return true;
-
-  for (const [key, aliases] of Object.entries(PROVINCE_SUB_REGIONS)) {
-    const isSelectedMatch = sel.includes(key) || aliases.some(a => sel.includes(a));
-    if (isSelectedMatch) {
-      if (aliases.some(a => prov.includes(a) || itemTags.some(t => t.toLowerCase().includes(a)))) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-};
-
-// Category Metadata with distinct colors and icons
-export const CATEGORY_CONFIG: Record<string, { label: string; icon: string; pinBg: string; pinColor: string }> = {
-  nature_scenic: {
-    label: 'Danh thắng & Thiên nhiên',
-    icon: '🏞️',
-    pinBg: 'bg-emerald-600',
-    pinColor: '#10b981'
-  },
-  monument: {
-    label: 'Di tích Lịch sử & Cách mạng',
-    icon: '📜',
-    pinBg: 'bg-amber-600',
-    pinColor: '#f59e0b'
-  },
-  citadel: {
-    label: 'Thành lũy & Di tích Quân sự',
-    icon: '🏰',
-    pinBg: 'bg-red-700',
-    pinColor: '#ef4444'
-  },
-  palace: {
-    label: 'Hoàng thành & Lăng tẩm',
-    icon: '👑',
-    pinBg: 'bg-yellow-500',
-    pinColor: '#eab308'
-  },
-  temple: {
-    label: 'Đền chùa & Tín ngưỡng',
-    icon: '⛩️',
-    pinBg: 'bg-rose-600',
-    pinColor: '#f43f5e'
-  },
-  museum: {
-    label: 'Bảo tàng & Kiến trúc',
-    icon: '🏛️',
-    pinBg: 'bg-blue-600',
-    pinColor: '#3b82f6'
-  },
-  architecture: {
-    label: 'Công trình Kiến trúc Biểu tượng',
-    icon: '🌉',
-    pinBg: 'bg-cyan-600',
-    pinColor: '#06b6d4'
-  },
-  craft_village: {
-    label: 'Làng nghề truyền thống',
-    icon: '🏺',
-    pinBg: 'bg-orange-600',
-    pinColor: '#ea580c'
-  },
-  traditional_market: {
-    label: 'Chợ truyền thống & Chợ nổi',
-    icon: '🏮',
-    pinBg: 'bg-pink-600',
-    pinColor: '#db2777'
-  },
-  ancient_house: {
-    label: 'Đô thị cổ & Làng cổ',
-    icon: '🏘️',
-    pinBg: 'bg-amber-700',
-    pinColor: '#b45309'
-  },
-  beach_island: {
-    label: 'Bãi biển & Du lịch biển',
-    icon: '🏖️',
-    pinBg: 'bg-cyan-600',
-    pinColor: '#06b6d4'
-  },
-  mountain_cave: {
-    label: 'Núi, đèo & Hang động',
-    icon: '⛰️',
-    pinBg: 'bg-emerald-700',
-    pinColor: '#047857'
-  },
-  eco_tourism: {
-    label: 'Khu sinh thái & Vườn quốc gia',
-    icon: '🌲',
-    pinBg: 'bg-green-600',
-    pinColor: '#16a34a'
-  },
-  amusement_park: {
-    label: 'Khu vui chơi & Nghỉ dưỡng',
-    icon: '🎡',
-    pinBg: 'bg-purple-600',
-    pinColor: '#9333ea'
-  },
-  walking_street: {
-    label: 'Phố đi bộ & Không gian check-in',
-    icon: '🏮',
-    pinBg: 'bg-rose-600',
-    pinColor: '#e11d48'
-  }
-};
-
 export const CulturalMap: React.FC<CulturalMapProps> = ({
   currentUser,
   onNavigateToStory,
@@ -373,48 +195,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedRegion, setSelectedRegion] = useState<'all' | 'north' | 'central' | 'south'>('all');
 
-  // Sorting & Pagination states
-  const [sortMode, setSortMode] = useState<'verified' | 'name_asc' | 'name_desc' | 'distance'>('verified');
-  const [visibleCount, setVisibleCount] = useState<number>(30);
-
-  // OpenStreetMap live exploration states
-  const [isSyncingOsm, setIsSyncingOsm] = useState<boolean>(false);
-  const [osmSyncToast, setOsmSyncToast] = useState<string | null>(null);
-
   // GPS state
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [locationMessage, setLocationMessage] = useState<string>('');
-
-  // Reset pagination when search or filters change
-  useEffect(() => {
-    setVisibleCount(30);
-  }, [selectedProvinceName, selectedCategory, searchQuery, selectedRegion]);
-
-  const handleSyncOSM = async () => {
-    setIsSyncingOsm(true);
-    setOsmSyncToast(null);
-    try {
-      const res = await fetch('/api/tourism/sync-osm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ province: selectedProvinceName || 'Đà Nẵng' })
-      });
-      const data = await res.json();
-      if (data.success && data.syncedCount > 0) {
-        const updated = await storageService.fetchHeritages();
-        setHeritages(updated);
-        setOsmSyncToast(`✅ Đã đồng bộ thành công ${data.syncedCount} địa điểm du lịch từ OpenStreetMap!`);
-      } else {
-        setOsmSyncToast(data.message || 'Cơ sở dữ liệu đã đầy đủ các điểm tham quan đã xác minh.');
-      }
-    } catch (e: any) {
-      setOsmSyncToast('Không thể kết nối máy chủ OSM. Đang hiển thị dữ liệu địa phương.');
-    } finally {
-      setIsSyncingOsm(false);
-      setTimeout(() => setOsmSyncToast(null), 6000);
-    }
-  };
 
   // Side positioning state ("ô di sản nằm bên cạnh ô bản đồ"): 'right' (default) or 'left'
   const [sidePosition, setSidePosition] = useState<BoxSideMode>(() => {
@@ -748,7 +532,8 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
         const displayName = props.vietnameseName || props.Name;
 
         const heritagesInProv = heritages.filter(h => 
-          matchesProvinceFilter(h.province, displayName, h.tags)
+          h.province.toLowerCase().includes(displayName.toLowerCase()) ||
+          displayName.toLowerCase().includes(h.province.toLowerCase())
         );
 
         const tooltipContent = `
@@ -855,11 +640,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      itemsToPin = itemsToPin.filter(h => {
-        if (selectedCategory === 'monument') return h.category === 'monument' || h.category === 'citadel';
-        if (selectedCategory === 'museum') return h.category === 'museum' || h.category === 'architecture';
-        return h.category === selectedCategory;
-      });
+      itemsToPin = itemsToPin.filter(h => h.category === selectedCategory);
     }
 
     // Filter by region
@@ -867,71 +648,52 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
       itemsToPin = itemsToPin.filter(h => h.region === selectedRegion);
     }
 
-    // Filter by selected province using smart sub-region matching
+    // Filter by selected province
     if (selectedProvinceName) {
       itemsToPin = itemsToPin.filter(h => 
-        matchesProvinceFilter(h.province, selectedProvinceName, h.tags)
+        h.province.toLowerCase().includes(selectedProvinceName.toLowerCase()) ||
+        selectedProvinceName.toLowerCase().includes(h.province.toLowerCase())
       );
     }
 
-    // Filter by search query (name, alias, englishName, province, address, tags, categoryLabel)
+    // Filter by search query
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
+      const q = searchQuery.toLowerCase();
       itemsToPin = itemsToPin.filter(h => 
         h.name.toLowerCase().includes(q) || 
-        (h.vietnameseName && h.vietnameseName.toLowerCase().includes(q)) ||
-        (h.englishName && h.englishName.toLowerCase().includes(q)) ||
-        h.province.toLowerCase().includes(q) ||
-        h.address.toLowerCase().includes(q) ||
-        (h.tags && h.tags.some(t => t.toLowerCase().includes(q))) ||
-        (h.categoryLabel && h.categoryLabel.toLowerCase().includes(q))
+        h.province.toLowerCase().includes(q)
       );
     }
 
     itemsToPin.forEach(item => {
       if (!item.lat || !item.lng) return;
 
-      const catMeta = CATEGORY_CONFIG[item.category] || {
-        label: item.categoryLabel || 'Di sản',
-        icon: '🏛️',
-        pinBg: 'bg-amber-600',
-        pinColor: '#f59e0b'
-      };
-
       const isSelected = activeHeritage?.id === item.id;
 
       const pinIcon = L.divIcon({
         className: 'custom-heritage-pin',
         html: `
-          <div class="relative flex items-center justify-center group cursor-pointer" title="${item.name} (${item.province})">
-            <span class="absolute w-8 h-8 rounded-full ${isSelected ? 'bg-amber-400 scale-125' : 'bg-red-500/70'} opacity-75 animate-ping"></span>
-            <div class="relative w-8 h-8 rounded-full flex items-center justify-center shadow-2xl border-2 ${
+          <div class="relative flex items-center justify-center group cursor-pointer">
+            <span class="absolute w-7 h-7 rounded-full ${isSelected ? 'bg-amber-400' : 'bg-red-500'} opacity-75 animate-ping"></span>
+            <div class="relative w-7 h-7 rounded-full flex items-center justify-center shadow-2xl border-2 ${
               isSelected 
-                ? 'bg-amber-500 border-white text-stone-950 scale-125 ring-4 ring-amber-400/60 shadow-[0_0_15px_rgba(245,158,11,0.8)]' 
-                : `${catMeta.pinBg} border-stone-900 text-stone-100 hover:scale-125 hover:border-white ring-1 ring-white/40`
-            } transition-all duration-200">
-              <span class="text-[13px] select-none leading-none">${catMeta.icon}</span>
+                ? 'bg-amber-500 border-white text-stone-950 scale-125 ring-2 ring-amber-400' 
+                : 'bg-stone-900 border-amber-400 text-amber-300 hover:scale-115 hover:border-amber-200'
+            } transition-all">
+              <span class="text-[12px]">🏛️</span>
             </div>
-            <div class="absolute bottom-full mb-1.5 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
-              <div class="px-2.5 py-1 rounded-xl bg-stone-950/95 text-amber-200 text-[11px] font-bold whitespace-nowrap border border-amber-500/50 shadow-2xl backdrop-blur flex items-center gap-1.5">
-                <span>${catMeta.icon}</span>
-                <span>${item.name}</span>
-                <span class="text-[9px] px-1.5 py-0.5 rounded-md bg-stone-800 text-stone-300 font-normal">(${item.province})</span>
-              </div>
+            <div class="absolute bottom-full mb-1 hidden group-hover:flex px-2 py-0.5 rounded-lg bg-stone-950/95 text-amber-200 text-[10px] font-bold whitespace-nowrap border border-amber-500/50 shadow-xl backdrop-blur">
+              ${item.name}
             </div>
           </div>
         `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16]
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
       });
 
       const marker = L.marker([item.lat, item.lng], { icon: pinIcon });
       marker.on('click', () => {
         setActiveHeritage(item);
-        const map = mapInstanceRef.current;
-        if (map) {
-          map.setView([item.lat, item.lng], Math.max(map.getZoom(), 11), { animate: true });
-        }
       });
 
       markersGroup.addLayer(marker);
@@ -959,14 +721,6 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
         );
         if (matched?.properties && (matched.properties as any).center) {
           map.setView((matched.properties as any).center, 9, { animate: true });
-        } else {
-          const provInfo = VIETNAM_PROVINCES.find(p => 
-            p.name.toLowerCase().includes(name.toLowerCase()) || 
-            name.toLowerCase().includes(p.name.toLowerCase())
-          );
-          if (provInfo) {
-            map.setView([provInfo.lat, provInfo.lng], 9, { animate: true });
-          }
         }
       }
     }
@@ -1031,72 +785,29 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
   // Filter heritages for display in list
   const heritagesInView = heritages.filter(item => {
-    if (selectedCategory !== 'all') {
-      const matchCat = selectedCategory === 'monument'
-        ? (item.category === 'monument' || item.category === 'citadel')
-        : selectedCategory === 'museum'
-        ? (item.category === 'museum' || item.category === 'architecture')
-        : selectedCategory === 'amusement_park'
-        ? (item.category === 'amusement_park' || item.category === 'eco_tourism')
-        : item.category === selectedCategory;
-      if (!matchCat) return false;
-    }
+    if (selectedCategory !== 'all' && item.category !== selectedCategory) return false;
     if (selectedRegion !== 'all' && item.region !== selectedRegion) return false;
     if (selectedProvinceName) {
-      if (!matchesProvinceFilter(item.province, selectedProvinceName, item.tags)) {
-        return false;
-      }
+      const matchProv = item.province.toLowerCase().includes(selectedProvinceName.toLowerCase()) ||
+        selectedProvinceName.toLowerCase().includes(item.province.toLowerCase());
+      if (!matchProv) return false;
     }
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchQuery = 
-        item.name.toLowerCase().includes(q) || 
-        (item.vietnameseName && item.vietnameseName.toLowerCase().includes(q)) ||
-        (item.englishName && item.englishName.toLowerCase().includes(q)) ||
-        item.province.toLowerCase().includes(q) ||
-        item.address.toLowerCase().includes(q) ||
-        (item.tags && item.tags.some(t => t.toLowerCase().includes(q))) ||
-        (item.categoryLabel && item.categoryLabel.toLowerCase().includes(q));
+      const q = searchQuery.toLowerCase();
+      const matchQuery = item.name.toLowerCase().includes(q) || item.province.toLowerCase().includes(q);
       if (!matchQuery) return false;
     }
     return true;
   });
 
   const categories = [
-    { id: 'all', label: 'Tất cả địa điểm', count: heritages.length },
-    { id: 'nature_scenic', label: '🏞️ Danh thắng & Thiên nhiên', count: heritages.filter(h => h.category === 'nature_scenic').length },
-    { id: 'beach_island', label: '🏖️ Bãi biển & Biển đảo', count: heritages.filter(h => h.category === 'beach_island').length },
-    { id: 'mountain_cave', label: '⛰️ Núi rừng & Hang động', count: heritages.filter(h => h.category === 'mountain_cave').length },
-    { id: 'monument', label: '📜 Di tích lịch sử & Cách mạng', count: heritages.filter(h => h.category === 'monument' || h.category === 'citadel').length },
-    { id: 'temple', label: '⛩️ Đền chùa & Tín ngưỡng', count: heritages.filter(h => h.category === 'temple').length },
-    { id: 'palace', label: '👑 Hoàng thành & Lăng tẩm', count: heritages.filter(h => h.category === 'palace').length },
-    { id: 'museum', label: '🏛️ Bảo tàng & Kiến trúc', count: heritages.filter(h => h.category === 'museum' || h.category === 'architecture').length },
-    { id: 'craft_village', label: '🏺 Làng nghề truyền thống', count: heritages.filter(h => h.category === 'craft_village').length },
-    { id: 'traditional_market', label: '🏮 Chợ truyền thống & Đặc sản', count: heritages.filter(h => h.category === 'traditional_market').length },
-    { id: 'walking_street', label: '🚶 Phố đi bộ & Check-in', count: heritages.filter(h => h.category === 'walking_street').length },
-    { id: 'amusement_park', label: '🎡 Khu vui chơi & Sinh thái', count: heritages.filter(h => h.category === 'amusement_park' || h.category === 'eco_tourism').length },
-    { id: 'ancient_house', label: '🏘️ Đô thị & Phố cổ', count: heritages.filter(h => h.category === 'ancient_house').length }
+    { id: 'all', label: 'Tất cả di sản' },
+    { id: 'monument', label: '📜 Di tích lịch sử' },
+    { id: 'palace', label: '🏛 Hoàng thành & Cung điện' },
+    { id: 'temple', label: '⛩ Đền chùa & Tháp cổ' },
+    { id: 'ancient_house', label: '🏘 Đô thị cổ' },
+    { id: 'craft_village', label: '🏺 Làng nghề truyền thống' }
   ];
-
-  const sortedHeritagesInView = [...heritagesInView].sort((a, b) => {
-    if (sortMode === 'name_asc') {
-      return a.name.localeCompare(b.name, 'vi');
-    }
-    if (sortMode === 'name_desc') {
-      return b.name.localeCompare(a.name, 'vi');
-    }
-    if (sortMode === 'distance' && userLocation) {
-      const distA = calculateDistanceKm(userLocation.lat, userLocation.lng, a.lat, a.lng);
-      const distB = calculateDistanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng);
-      return distA - distB;
-    }
-    // Default: 'verified' (verified first, then rating)
-    if (a.verifiedStatus === 'verified' && b.verifiedStatus !== 'verified') return -1;
-    if (b.verifiedStatus === 'verified' && a.verifiedStatus !== 'verified') return 1;
-    return (b.rating || 4.5) - (a.rating || 4.5);
-  });
-
-  const pagedItems = sortedHeritagesInView.slice(0, visibleCount);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 py-3 sm:py-5 text-stone-100">
@@ -1137,6 +848,12 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
             </div>
           )}
 
+          {selectedProvinceName && (
+            <span className="text-xs text-stone-300 bg-stone-950/80 px-3 py-1.5 rounded-xl border border-stone-800 hidden sm:inline-block">
+              Tỉnh thành: <strong className="text-amber-300">{selectedProvinceName}</strong> ({heritagesInView.length} điểm)
+            </span>
+          )}
+
           {/* Quick Region Switcher */}
           <div className="inline-flex rounded-xl bg-stone-950 p-1 border border-stone-800">
             <button
@@ -1171,63 +888,6 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
             >
               Miền Nam
             </button>
-          </div>
-
-          {/* Province Selector Dropdown (34 administrative units) */}
-          <div className="relative">
-            <select
-              value={selectedProvinceName || ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (!val) {
-                  handleResetVietnamView();
-                } else {
-                  handleSelectProvince(val);
-                }
-              }}
-              className="px-3 py-1.5 rounded-xl bg-stone-950 text-amber-300 font-semibold text-xs border border-amber-500/40 focus:outline-none focus:border-amber-400 cursor-pointer shadow-sm"
-              title="Chọn nhanh tỉnh thành / đơn vị hành chính"
-            >
-              <option value="" className="bg-stone-900 text-stone-300">🗺️ Chọn tỉnh thành khám phá...</option>
-              <optgroup label="🌟 Đô Thị & Vùng Trọng Điểm" className="bg-stone-900 text-amber-300 font-bold">
-                <option value="Đà Nẵng" className="bg-stone-900 text-amber-300 font-bold">
-                  🌟 Thành phố Đà Nẵng (Đầy đủ 33+ điểm)
-                </option>
-                <option value="Quảng Nam" className="bg-stone-900 text-stone-200">
-                  🏛️ Tỉnh Quảng Nam (Hội An, Mỹ Sơn)
-                </option>
-                <option value="Hà Nội" className="bg-stone-900 text-stone-200">
-                  📜 Thủ đô Hà Nội
-                </option>
-                <option value="Thừa Thiên Huế" className="bg-stone-900 text-stone-200">
-                  👑 Cố đô Huế
-                </option>
-                <option value="TP. Hồ Chí Minh" className="bg-stone-900 text-stone-200">
-                  🌆 TP. Hồ Chí Minh
-                </option>
-              </optgroup>
-              <optgroup label="Miền Bắc (15 Đơn vị)" className="bg-stone-900 text-stone-400">
-                {VIETNAM_PROVINCES.filter(p => p.region === 'north').map(p => (
-                  <option key={p.id} value={p.name} className="bg-stone-900 text-stone-200 font-medium">
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Miền Trung & Tây Nguyên (11 Đơn vị)" className="bg-stone-900 text-stone-400">
-                {VIETNAM_PROVINCES.filter(p => p.region === 'central').map(p => (
-                  <option key={p.id} value={p.name} className="bg-stone-900 text-stone-200 font-medium">
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-              <optgroup label="Miền Nam & ĐBSCL (8 Đơn vị)" className="bg-stone-900 text-stone-400">
-                {VIETNAM_PROVINCES.filter(p => p.region === 'south').map(p => (
-                  <option key={p.id} value={p.name} className="bg-stone-900 text-stone-200 font-medium">
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            </select>
           </div>
         </div>
 
@@ -1406,7 +1066,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
         {/* Right: Search, GPS & Map Zoom Controls */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative w-36 sm:w-44">
+          <div className="relative w-36 sm:w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
             <input
               type="text"
@@ -1416,30 +1076,6 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
               className="w-full pl-8 pr-3 py-1.5 bg-stone-950 text-stone-100 placeholder-stone-500 text-xs rounded-xl border border-stone-700 focus:outline-none focus:border-amber-500"
             />
           </div>
-
-          {/* Sắp xếp danh sách */}
-          <select
-            value={sortMode}
-            onChange={(e) => setSortMode(e.target.value as any)}
-            className="px-2.5 py-1.5 bg-stone-950 text-stone-300 text-xs rounded-xl border border-stone-700 focus:outline-none focus:border-amber-500 cursor-pointer shrink-0"
-            title="Sắp xếp danh sách địa điểm"
-          >
-            <option value="verified">⭐ Xác minh ưu tiên</option>
-            <option value="name_asc">🔤 Tên (A - Z)</option>
-            <option value="name_desc">🔤 Tên (Z - A)</option>
-            {userLocation && <option value="distance">📍 Gần bạn nhất (GPS)</option>}
-          </select>
-
-          {/* Khám phá thêm từ OpenStreetMap */}
-          <button
-            onClick={handleSyncOSM}
-            disabled={isSyncingOsm}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 font-semibold text-xs transition-all cursor-pointer shadow-sm disabled:opacity-50 shrink-0"
-            title="Khám phá và đồng bộ thêm các điểm du lịch từ bản đồ mở OpenStreetMap (OSM)"
-          >
-            <Globe className={`w-3.5 h-3.5 text-cyan-400 ${isSyncingOsm ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{isSyncingOsm ? 'Đang tải OSM...' : 'Mở rộng OSM'}</span>
-          </button>
 
           <button
             onClick={handleRequestGPS}
@@ -1484,36 +1120,19 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
         </div>
       )}
 
-      {osmSyncToast && (
-        <div className="mb-3 text-xs text-cyan-300 bg-cyan-950/80 px-3.5 py-2 rounded-xl border border-cyan-500/40 flex items-center justify-between gap-2 shadow-lg animate-fadeIn">
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-cyan-400 shrink-0" />
-            <span>{osmSyncToast}</span>
-          </div>
-          <button onClick={() => setOsmSyncToast(null)} className="text-stone-400 hover:text-white p-0.5 cursor-pointer">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       {/* Category Pills Bar */}
       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar mb-4 pb-1">
         {categories.map(cat => (
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               selectedCategory === cat.id
                 ? 'bg-amber-500 text-stone-950 font-bold shadow-md shadow-amber-950/40'
                 : 'bg-stone-900/90 text-stone-300 hover:text-amber-300 border border-stone-800'
             }`}
           >
-            <span>{cat.label}</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-              selectedCategory === cat.id ? 'bg-stone-950/20 text-stone-950 font-bold' : 'bg-stone-800 text-stone-400'
-            }`}>
-              {cat.count}
-            </span>
+            {cat.label}
           </button>
         ))}
       </div>
@@ -1529,10 +1148,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 <div className="min-w-0">
                   <h3 className="font-serif font-bold text-stone-100 text-sm sm:text-base flex items-center gap-1.5 truncate">
                     <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="truncate">{selectedProvinceName ? `Điểm Đến: ${selectedProvinceName}` : 'Khám Phá Du Lịch Việt Nam'}</span>
+                    <span className="truncate">{selectedProvinceName ? `Di Sản: ${selectedProvinceName}` : 'Điểm Đến Di Sản Việt Nam'}</span>
                   </h3>
                   <p className="text-[11px] text-stone-400 mt-0.5">
-                    Tổng CSDL: <strong className="text-amber-300">{heritages.length}</strong> | Khu vực: <strong className="text-amber-300">{sortedHeritagesInView.length}</strong> | Hiển thị: <strong className="text-emerald-400">{Math.min(visibleCount, sortedHeritagesInView.length)}</strong>
+                    {selectedProvinceName ? `Tìm thấy ${heritagesInView.length} địa điểm` : `Tổng cộng ${heritagesInView.length} địa điểm`}
                   </p>
                 </div>
 
@@ -1561,11 +1180,11 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
             {/* List of Heritages (Collapsible) */}
             {!isBoxCollapsed && (
               <div className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar min-h-0">
-                {sortedHeritagesInView.length === 0 ? (
+                {heritagesInView.length === 0 ? (
                   <div className="py-10 text-center text-stone-400 space-y-2">
                     <Compass className="w-8 h-8 text-stone-600 mx-auto" />
-                    <p className="text-xs">Chưa có điểm du lịch nào khớp với bộ lọc này.</p>
-                    <p className="text-[10px] text-stone-500">Bạn có thể bấm "Mở rộng OSM" trên thanh công cụ để tìm kiếm thêm.</p>
+                    <p className="text-xs">Chưa có di sản nào khớp với bộ lọc này.</p>
+                    <p className="text-[10px] text-stone-500">Dữ liệu văn hóa đang được liên tục bổ sung và cập nhật.</p>
                     {selectedProvinceName && (
                       <button
                         onClick={handleResetVietnamView}
@@ -1577,97 +1196,58 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                     )}
                   </div>
                 ) : (
-                  <>
-                    {pagedItems.map(item => {
-                      const isSelected = activeHeritage?.id === item.id;
-                      const distance = userLocation ? calculateDistanceKm(userLocation.lat, userLocation.lng, item.lat, item.lng) : null;
+                  heritagesInView.map(item => {
+                    const isSelected = activeHeritage?.id === item.id;
+                    const distance = userLocation ? calculateDistanceKm(userLocation.lat, userLocation.lng, item.lat, item.lng) : null;
 
-                      return (
-                        <div
-                          key={item.id}
-                          onClick={() => {
-                            setActiveHeritage(item);
-                            if (mapInstanceRef.current && item.lat && item.lng) {
-                              mapInstanceRef.current.setView([item.lat, item.lng], 12, { animate: true });
-                            }
-                          }}
-                          className={`p-3 rounded-2xl border transition-all cursor-pointer flex gap-3 group ${
-                            isSelected 
-                              ? 'bg-amber-950/40 border-amber-500/80 shadow-md ring-1 ring-amber-500/30' 
-                              : 'bg-stone-950/70 hover:bg-stone-800/80 border-stone-800/80 hover:border-amber-500/40'
-                          }`}
-                        >
-                          <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-stone-900 border border-stone-800">
-                            <img 
-                              src={getSafeHeritageImageUrl(item.imageUrl)} 
-                              alt={item.name} 
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                              onError={handleImageError}
-                            />
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-semibold mb-0.5 flex-wrap">
-                              <MapPin className="w-3 h-3 text-red-400 shrink-0" />
-                              <span className="truncate">{item.province}</span>
-                              {item.subDistrict && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-300 truncate max-w-[120px]">
-                                  {item.subDistrict}
-                                </span>
-                              )}
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                {item.categoryLabel}
-                              </span>
-                              {item.rating && (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-stone-900 text-amber-400 font-bold ml-auto">
-                                  ⭐ {item.rating}
-                                </span>
-                              )}
-                              {distance !== null && (
-                                <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 ml-auto shrink-0">
-                                  ~{distance.toFixed(0)} km
-                                </span>
-                              )}
-                            </div>
-
-                            <h4 className="font-serif font-bold text-stone-100 text-xs sm:text-sm truncate group-hover:text-amber-300 transition-colors">
-                              {item.name}
-                            </h4>
-
-                            <p className="text-[11px] text-stone-400 line-clamp-1 mt-0.5">
-                              {item.culturalSignificance}
-                            </p>
-                          </div>
-
-                          <ChevronRight className="w-4 h-4 text-stone-600 group-hover:text-amber-400 self-center shrink-0" />
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          setActiveHeritage(item);
+                          if (mapInstanceRef.current && item.lat && item.lng) {
+                            mapInstanceRef.current.setView([item.lat, item.lng], 12, { animate: true });
+                          }
+                        }}
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex gap-3 group ${
+                          isSelected 
+                            ? 'bg-amber-950/40 border-amber-500/80 shadow-md ring-1 ring-amber-500/30' 
+                            : 'bg-stone-950/70 hover:bg-stone-800/80 border-stone-800/80 hover:border-amber-500/40'
+                        }`}
+                      >
+                        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-stone-900 border border-stone-800">
+                          <img 
+                            src={getSafeHeritageImageUrl(item.imageUrl)} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            onError={handleImageError}
+                          />
                         </div>
-                      );
-                    })}
 
-                    {/* Pagination / Load More Buttons */}
-                    {visibleCount < sortedHeritagesInView.length && (
-                      <div className="pt-2 pb-1 flex items-center justify-between gap-2 flex-wrap">
-                        <button
-                          onClick={() => setVisibleCount(prev => prev + 20)}
-                          className="flex-1 min-w-[150px] py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-semibold transition-all border border-stone-700 cursor-pointer"
-                        >
-                          Tải thêm 20 địa điểm ({sortedHeritagesInView.length - visibleCount} còn lại)
-                        </button>
-                        <button
-                          onClick={() => setVisibleCount(sortedHeritagesInView.length)}
-                          className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-semibold transition-all border border-amber-500/40 cursor-pointer"
-                        >
-                          Xem tất cả ({sortedHeritagesInView.length})
-                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-semibold mb-0.5">
+                            <MapPin className="w-3 h-3 text-red-400 shrink-0" />
+                            <span className="truncate">{item.province}</span>
+                            {distance !== null && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/30 ml-auto shrink-0">
+                                ~{distance.toFixed(0)} km
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="font-serif font-bold text-stone-100 text-xs sm:text-sm truncate group-hover:text-amber-300 transition-colors">
+                            {item.name}
+                          </h4>
+
+                          <p className="text-[11px] text-stone-400 line-clamp-1 mt-0.5">
+                            {item.culturalSignificance}
+                          </p>
+                        </div>
+
+                        <ChevronRight className="w-4 h-4 text-stone-600 group-hover:text-amber-400 self-center shrink-0" />
                       </div>
-                    )}
-
-                    {sortedHeritagesInView.length > 30 && visibleCount >= sortedHeritagesInView.length && (
-                      <p className="text-center text-[10px] text-stone-500 py-2">
-                        Đã tải toàn bộ {sortedHeritagesInView.length} địa điểm trong khu vực này.
-                      </p>
-                    )}
-                  </>
+                    );
+                  })
                 )}
               </div>
             )}
@@ -1757,19 +1337,13 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
             
             {/* Modal Header */}
             <div className="p-4 sm:p-5 border-b border-stone-800 bg-stone-950/80 flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <div className="flex items-center gap-2 min-w-0">
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold shrink-0">
                   {activeHeritage.categoryLabel}
                 </span>
-                {activeHeritage.verifiedStatus === 'verified' && (
-                  <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold shrink-0">
-                    <CheckCircle2 className="w-3 h-3" />
-                    <span>Đã xác minh thực tế</span>
-                  </span>
-                )}
-                <span className="text-[10px] text-stone-500 font-mono hidden sm:inline-block">
-                  #{activeHeritage.id}
-                </span>
+                <h3 className="font-serif font-bold text-stone-100 text-base sm:text-lg truncate">
+                  {activeHeritage.name}
+                </h3>
               </div>
               <button
                 onClick={() => setActiveHeritage(null)}
@@ -1781,142 +1355,62 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar">
-              <div className="space-y-1">
-                <h3 className="font-serif font-bold text-stone-100 text-lg sm:text-2xl">
-                  {activeHeritage.name}
-                </h3>
-                {(activeHeritage.englishName || activeHeritage.vietnameseName) && (
-                  <p className="text-xs sm:text-sm text-amber-300/90 font-serif italic">
-                    {activeHeritage.vietnameseName !== activeHeritage.name ? activeHeritage.vietnameseName : ''}
-                    {activeHeritage.englishName ? ` • ${activeHeritage.englishName}` : ''}
-                  </p>
-                )}
-              </div>
-
-              <div className="relative h-64 w-full rounded-2xl overflow-hidden bg-stone-950 border border-stone-800 shadow-inner">
+              <div className="relative h-60 w-full rounded-2xl overflow-hidden bg-stone-950 border border-stone-800">
                 <img
                   src={getSafeHeritageImageUrl(activeHeritage.imageUrl)}
                   alt={activeHeritage.name}
                   className="w-full h-full object-cover"
                   onError={handleImageError}
                 />
-                <div className="absolute bottom-2 left-2 right-2 px-3 py-1.5 rounded-xl bg-stone-950/80 backdrop-blur border border-stone-800 text-[11px] text-stone-300 flex items-center justify-between">
-                  <span className="flex items-center gap-1 text-amber-300 truncate">
-                    <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                    <span className="truncate">{activeHeritage.address}</span>
-                  </span>
-                  {activeHeritage.lat && activeHeritage.lng && (
-                    <span className="text-[10px] text-stone-400 font-mono shrink-0 ml-2">
-                      {activeHeritage.lat.toFixed(4)}, {activeHeritage.lng.toFixed(4)}
-                    </span>
-                  )}
-                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-                <div className="p-2.5 rounded-xl bg-stone-950 border border-stone-800">
-                  <span className="text-stone-400 block mb-0.5 text-[11px]">Địa phương</span>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-stone-950 border border-stone-800">
+                  <span className="text-stone-400 block mb-1">Địa phương</span>
                   <span className="font-semibold text-amber-200">{activeHeritage.province}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-stone-950 border border-stone-800">
-                  <span className="text-stone-400 block mb-0.5 text-[11px]">Thời kỳ / Triều đại</span>
-                  <span className="font-semibold text-amber-200">{activeHeritage.period || 'Hiện đại / Bản sắc truyền thống'}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-stone-950 border border-stone-800 col-span-2 sm:col-span-1">
-                  <span className="text-stone-400 block mb-0.5 text-[11px]">Trạng thái bảo tồn</span>
-                  <span className="font-semibold text-emerald-300 text-[11px] line-clamp-1">{activeHeritage.conservationStatus || 'Bảo tồn & phát huy giá trị'}</span>
+                <div className="p-3 rounded-xl bg-stone-950 border border-stone-800">
+                  <span className="text-stone-400 block mb-1">Thời kỳ / Triều đại</span>
+                  <span className="font-semibold text-amber-200">{activeHeritage.period || 'Đang cập nhật'}</span>
                 </div>
               </div>
 
-              {/* Significance */}
-              <div className="space-y-1.5 p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-                <h4 className="font-serif font-bold text-amber-300 text-sm flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>Giá Trị Di Sản & Bản Sắc Văn Hóa</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-stone-200 leading-relaxed font-light">
+              <div className="space-y-1.5">
+                <h4 className="font-serif font-bold text-amber-300 text-sm">Ý nghĩa Lịch sử & Văn hóa</h4>
+                <p className="text-xs sm:text-sm text-stone-300 leading-relaxed font-light">
                   {activeHeritage.culturalSignificance}
                 </p>
               </div>
 
-              {/* History */}
               <div className="space-y-1.5">
-                <h4 className="font-serif font-bold text-amber-300 text-sm">Lịch Sử & Bối Cảnh Thực Tế</h4>
+                <h4 className="font-serif font-bold text-amber-300 text-sm">Lịch sử Hình thành</h4>
                 <p className="text-xs sm:text-sm text-stone-300 leading-relaxed font-light">
-                  {activeHeritage.history || 'Đang cập nhật thêm tư liệu lịch sử từ các nguồn chính thống.'}
+                  {activeHeritage.history || 'Đang cập nhật thêm tư liệu lịch sử từ chuyên gia.'}
                 </p>
               </div>
 
-              {/* Interesting Facts if present */}
-              {activeHeritage.interestingFacts && activeHeritage.interestingFacts.length > 0 && (
-                <div className="space-y-2 p-3.5 rounded-2xl bg-stone-950 border border-stone-800">
-                  <h4 className="font-serif font-bold text-amber-300 text-xs flex items-center gap-1.5">
-                    <span>💡 Điều Thú Vị & Điểm Nhấn Đặc Sắc</span>
-                  </h4>
-                  <ul className="space-y-1.5 text-xs text-stone-300">
-                    {activeHeritage.interestingFacts.map((fact, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 mt-1.5" />
-                        <span className="leading-relaxed">{fact}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
               {/* Practical Info: Hours & Tickets */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-stone-950 border border-stone-800 text-xs">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-stone-950 border border-stone-800 text-xs">
                   <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-stone-400 block text-[11px]">Giờ đón khách / mở cửa</span>
-                    <span className="text-stone-200 font-medium truncate block">{activeHeritage.visitingHours || 'Mở cửa tham quan tự do'}</span>
+                  <div>
+                    <span className="text-stone-400 block">Giờ mở cửa</span>
+                    <span className="text-stone-200 font-medium">{activeHeritage.visitingHours || 'Chưa có dữ liệu xác nhận'}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-stone-950 border border-stone-800 text-xs">
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-stone-950 border border-stone-800 text-xs">
                   <Ticket className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-stone-400 block text-[11px]">Giá vé tham khảo</span>
-                    <span className="text-stone-200 font-medium truncate block">{activeHeritage.ticketPrice || 'Miễn phí vé vào cửa'}</span>
+                  <div>
+                    <span className="text-stone-400 block">Giá vé tham khảo</span>
+                    <span className="text-stone-200 font-medium">{activeHeritage.ticketPrice || 'Chưa có dữ liệu xác nhận'}</span>
                   </div>
                 </div>
               </div>
-
-              {/* Verification & Reference Note */}
-              {activeHeritage.verifiedNote && (
-                <div className="p-3 rounded-xl bg-stone-950/70 border border-stone-800 text-[11px] text-stone-400 flex items-start gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Nguồn xác minh:</strong> {activeHeritage.verifiedNote}</span>
-                </div>
-              )}
-
-              {/* Tags */}
-              {activeHeritage.tags && activeHeritage.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {activeHeritage.tags.map((tag, idx) => (
-                    <span key={idx} className="px-2 py-0.5 rounded-md bg-stone-950 text-stone-400 text-[10px] border border-stone-800">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-stone-800 bg-stone-950/80 flex items-center justify-between gap-2.5 flex-wrap">
-              {activeHeritage.googleMapsUri && (
-                <a
-                  href={activeHeritage.googleMapsUri}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-stone-700"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Google Maps</span>
-                </a>
-              )}
-
+            <div className="p-4 border-t border-stone-800 bg-stone-950/80 flex items-center justify-between gap-3">
               <button
                 onClick={() => {
                   const heritageName = activeHeritage.name;
@@ -1925,7 +1419,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                   setActiveHeritage(null);
                   onNavigateToStory(heritageName, history, period);
                 }}
-                className="flex-1 min-w-[130px] py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95 cursor-pointer"
               >
                 <Volume2 className="w-4 h-4" />
                 <span>Nghe AI Kể Chuyện</span>
@@ -1937,7 +1431,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                   setActiveHeritage(null);
                   onNavigateToFood(heritageId);
                 }}
-                className="flex-1 min-w-[130px] py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95 cursor-pointer"
               >
                 <Utensils className="w-4 h-4" />
                 <span>Ẩm Thực Gần Đây</span>

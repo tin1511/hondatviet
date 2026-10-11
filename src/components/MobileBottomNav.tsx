@@ -17,20 +17,15 @@ import {
   ShieldCheck, 
   MapPin,
   ChevronUp,
-  Eye,
-  Languages,
-  Settings
+  Eye
 } from 'lucide-react';
 import { UserProfile, CityLandmarkBackground } from '../types';
-import { languageService } from '../services/languageService';
 
 interface MobileBottomNavProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
   favoritesCount: number;
   userProfile: UserProfile;
-  language?: string;
-  onOpenLanguageModal?: () => void;
   onOpenCityPicker?: () => void;
   currentLandmark?: CityLandmarkBackground;
   onPeekBackground?: () => void;
@@ -42,8 +37,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onSelectTab,
   favoritesCount,
   userProfile,
-  language = 'vi',
-  onOpenLanguageModal,
   onOpenCityPicker,
   currentLandmark,
   onPeekBackground,
@@ -52,50 +45,36 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   const mainBottomTabs = [
-    { id: 'home', label: languageService.t('nav.home', language, 'Trang chủ'), icon: Compass },
-    { id: 'recognizer', label: languageService.t('nav.recognizer', language, 'Nhận diện'), icon: Camera, badge: 'AI' },
-    { id: 'storyteller', label: languageService.t('nav.storyteller', language, 'Kể chuyện'), icon: Sparkles },
-    { id: 'chat', label: languageService.t('nav.chat', language, 'HDV AI'), icon: MessageSquareQuote, badge: '3D' },
-    { id: 'map', label: languageService.t('nav.map', language, 'Bản đồ'), icon: Globe },
+    { id: 'home', label: 'Trang chủ', icon: Compass },
+    { id: 'recognizer', label: 'Nhận diện', icon: Camera, badge: 'AI' },
+    { id: 'storyteller', label: 'Kể chuyện', icon: Sparkles },
+    { id: 'chat', label: 'HDV AI', icon: MessageSquareQuote, badge: '3D' },
+    { id: 'map', label: 'Bản đồ', icon: Globe },
   ];
 
   const moreMenuItems = [
-    { 
-      id: 'food', 
-      label: languageService.t('tools.food', language, 'Ăn uống & Vui chơi'), 
-      description: languageService.t('tools.foodDesc', language, 'Quán ăn ngon, cafe & điểm giải trí bản xứ'), 
-      icon: Utensils, 
-      color: 'text-orange-400',
-      bg: 'bg-orange-500/10'
-    },
+
     { 
       id: 'itinerary', 
-      label: languageService.t('tools.itinerary', language, 'Lập Lịch Trình'), 
-      description: languageService.t('tools.itineraryDesc', language, 'Lên tour thông minh theo giờ & ngân sách'), 
+      label: 'Lập Lịch Trình', 
+      description: 'Lên tour thông minh theo giờ & ngân sách', 
       icon: CalendarDays, 
       color: 'text-amber-400',
       bg: 'bg-amber-500/10'
     },
-    { 
-      id: 'crafts', 
-      label: languageService.t('tools.crafts', language, 'Làng Nghề & Nghệ Thuật'), 
-      description: languageService.t('tools.craftsDesc', language, 'Gốm Bát Tràng, Nón lá, Nhã nhạc, Ca trù'), 
-      icon: BookOpen, 
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10'
-    },
+
     { 
       id: 'learning', 
-      label: languageService.t('tools.learning', language, 'Quiz & Thử Thách Di Sản'), 
-      description: languageService.t('tools.learningDesc', language, 'Trắc nghiệm văn hóa & tích điểm thăng hạng'), 
+      label: 'Quiz & Thử Thách Di Sản', 
+      description: 'Trắc nghiệm văn hóa & tích điểm thăng hạng', 
       icon: Award, 
       color: 'text-yellow-400',
       bg: 'bg-yellow-500/10'
     },
     { 
       id: 'favorites', 
-      label: languageService.t('tools.favorites', language, 'Bộ Sưu Tập Yêu Thích'), 
-      description: `${favoritesCount} ${languageService.t('tools.favoritesDesc', language, 'địa danh & lịch trình đã lưu')}`, 
+      label: 'Bộ Sưu Tập Yêu Thích', 
+      description: `${favoritesCount} địa danh & lịch trình đã lưu`, 
       icon: Heart, 
       color: 'text-red-400',
       bg: 'bg-red-500/10',
@@ -103,16 +82,16 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     },
     { 
       id: 'profile', 
-      label: languageService.t('tools.profile', language, 'Hồ Sơ & Danh Hiệu'), 
-      description: `${userProfile.points || 0} XP`, 
+      label: 'Hồ Sơ & Danh Hiệu', 
+      description: `Cấp bậc: ${userProfile.roleLabel || 'Người yêu Văn hóa'} (${userProfile.points || 0} XP)`, 
       icon: Award, 
       color: 'text-amber-400',
       bg: 'bg-amber-500/10'
     },
     { 
       id: 'community', 
-      label: languageService.t('tools.community', language, 'Cộng Đồng Di Sản'), 
-      description: languageService.t('tools.communityDesc', language, 'Đóng góp ảnh & chia sẻ câu chuyện cùng mọi người'), 
+      label: 'Cộng Đồng Di Sản', 
+      description: 'Đóng góp ảnh & chia sẻ câu chuyện cùng mọi người', 
       icon: Users, 
       color: 'text-sky-400',
       bg: 'bg-sky-500/10'
@@ -193,7 +172,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               )}
             </div>
             <span className="text-[10px] mt-1 tracking-tight">
-              {isMoreMenuOpen ? languageService.t('lang.close', language, 'Đóng') : languageService.t('nav.more', language, 'Thêm')}
+              {isMoreMenuOpen ? 'Đóng' : 'Thêm'}
             </span>
           </button>
         </div>
@@ -219,10 +198,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                   </div>
                   <div>
                     <h3 className="font-serif font-bold text-base text-stone-100">
-                      {languageService.t('tools.title', language, 'Tất Cả Tính Năng Di Sản')}
+                      Tất Cả Tính Năng Di Sản
                     </h3>
                     <p className="text-[11px] text-stone-400">
-                      {languageService.t('tools.desc', language, 'Chạm để chuyển nhanh sang chuyên mục mong muốn')}
+                      Chạm để chuyển nhanh sang chuyên mục mong muốn
                     </p>
                   </div>
                 </div>
@@ -235,42 +214,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                   <X className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-
-            {/* Quick Language Switcher Banner on Mobile Drawer */}
-            <div className="p-3 bg-stone-950/80 rounded-2xl border border-stone-800 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-lg">
-                  {languageService.getLanguageInfo(language).flag}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-stone-100">
-                      {languageService.getLanguageInfo(language).nativeName}
-                    </span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold uppercase">
-                      {language.toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-stone-400">
-                    Ngôn ngữ giao diện & Hướng dẫn viên AI
-                  </p>
-                </div>
-              </div>
-
-              {onOpenLanguageModal && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMoreMenuOpen(false);
-                    onOpenLanguageModal();
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1 shadow-sm transition-all active:scale-95 cursor-pointer"
-                >
-                  <Languages className="w-3.5 h-3.5" />
-                  <span>Đổi ngôn ngữ</span>
-                </button>
-              )}
             </div>
 
             {/* GPS Landmark Background Switcher Shortcut */}
