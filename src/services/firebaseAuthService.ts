@@ -4,10 +4,7 @@ import {
   getDocs, 
   getDoc, 
   setDoc, 
-  updateDoc, 
-  deleteField,
-  query, 
-  where 
+  deleteField
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { UserProfile } from '../types';
