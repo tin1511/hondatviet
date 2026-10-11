@@ -170,16 +170,14 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      const res = storageService.login(loginIdentifier, loginPassword);
-      setIsLoading(false);
-
+    try {
+      const res = await storageService.login(loginIdentifier, loginPassword);
       if (!res.success || !res.user) {
         setErrorMessage(res.error || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
         return;
@@ -189,7 +187,11 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
       setTimeout(() => {
         onLoginSuccess(res.user!);
       }, 500);
-    }, 300);
+    } catch {
+      setErrorMessage('Đăng nhập thất bại do lỗi kết nối. Vui lòng thử lại.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInitiateRegister = (e: React.FormEvent) => {

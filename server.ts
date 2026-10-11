@@ -1183,11 +1183,44 @@ if (!fs.existsSync(DATA_DIR)) {
 const ACCOUNTS_FILE = path.join(DATA_DIR, 'server_accounts.json');
 const ACTIVITIES_FILE = path.join(DATA_DIR, 'server_activities.json');
 
+function constantTimeStringEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left, 'utf8');
+  const rightBuffer = Buffer.from(right, 'utf8');
+  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function hashAccountPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString('base64url');
+  const derived = crypto.scryptSync(password, salt, 64).toString('base64url');
+  return `scrypt$${salt}$${derived}`;
+}
+
+function verifyAccountPassword(password: string, stored: string): { valid: boolean; upgradedHash?: string } {
+  if (stored.startsWith('scrypt$')) {
+    const [, salt, expected] = stored.split('$');
+    if (!salt || !expected) return { valid: false };
+    const actual = crypto.scryptSync(password, salt, 64);
+    const expectedBuffer = Buffer.from(expected, 'base64url');
+    return {
+      valid: actual.length === expectedBuffer.length && crypto.timingSafeEqual(actual, expectedBuffer)
+    };
+  }
+  if (constantTimeStringEqual(password, stored)) {
+    return { valid: true, upgradedHash: hashAccountPassword(password) };
+  }
+  return { valid: false };
+}
+
+function publicAccount(account: any): any {
+  if (!account || typeof account !== 'object') return account;
+  const { password: _password, ...safeAccount } = account;
+  return safeAccount;
+}
+
 const DEFAULT_ADMIN_ACCOUNT_SERVER = {
   id: 'user-admin',
   displayName: 'Quản trị viên Hệ thống',
   email: 'admin@heritageai.vn',
-  password: 'AINHS2026',
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
   city: 'Hà Nội / Huế',
   role: 'admin',
@@ -1252,205 +1285,98 @@ function writeServerActivities(activities: any[]) {
 let serverAccounts = readServerAccounts();
 let serverActivities = readServerActivities();
 
-app.get('/api/accounts', (req: Request, res: Response) => {
-  return res.json({ success: true, accounts: serverAccounts });
+app.get('/api/accounts', (_req: Request, res: Response) => {
+  return res.status(403).json({ success: false, error: 'Danh sách tài khoản chỉ khả dụng qua giao diện quản trị đã xác thực.' });
 });
 
 app.post('/api/accounts/register', (req: Request, res: Response) => {
   try {
     const newUser = req.body;
-    if (!newUser || !newUser.email) {
-      return res.status(400).json({ success: false, error: 'Dữ liệu tài khoản không hợp lệ.' });
+    if (!newUser || !newUser.email || !newUser.displayName || typeof newUser.password !== 'string') {
+      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp họ tên, email và mật khẩu.' });
     }
     const cleanEmail = String(newUser.email).trim().toLowerCase();
-    const existingIndex = serverAccounts.findIndex((a: any) => a.email && a.email.toLowerCase() === cleanEmail);
-    
-    if (existingIndex >= 0) {
-      // Update existing account details or return updated account
-      const existing = serverAccounts[existingIndex];
-      const updatedUser = {
-        ...existing,
-        ...newUser,
-        email: cleanEmail,
-        password: newUser.password || existing.password || '123456',
-        lastLoginAt: new Date().toISOString(),
-        isLoggedIn: true
-      };
-      serverAccounts[existingIndex] = updatedUser;
-      writeServerAccounts(serverAccounts);
-      return res.json({ success: true, user: updatedUser, alreadyExisted: true });
+    const password = newUser.password;
+    if (password.length < 6) return res.status(400).json({ success: false, error: 'Mật khẩu cần tối thiểu 6 ký tự.' });
+    if (['admin', 'admin@heritageai.vn', 'admin@gmail.com'].includes(cleanEmail)) {
+      return res.status(400).json({ success: false, error: 'Email này được dành riêng cho quản trị viên.' });
     }
-
+    if (serverAccounts.some((a: any) => a.email && a.email.toLowerCase() === cleanEmail)) {
+      return res.status(409).json({ success: false, error: 'Email này đã được đăng ký.' });
+    }
+    const role = ['user', 'student', 'researcher'].includes(newUser.role) ? newUser.role : 'user';
     const userToSave = {
       ...newUser,
+      id: typeof newUser.id === 'string' && newUser.id ? newUser.id : 'user-' + crypto.randomUUID(),
       email: cleanEmail,
-      password: newUser.password || '123456',
+      role,
+      password: hashAccountPassword(password),
       createdAt: newUser.createdAt || new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
       isLoggedIn: true
     };
-
     serverAccounts.push(userToSave);
     writeServerAccounts(serverAccounts);
-
-    const log = {
-      id: 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-      userId: userToSave.id,
-      userName: userToSave.displayName,
-      userRole: userToSave.role || 'user',
-      userEmail: userToSave.email,
-      actionType: 'auth',
-      title: 'Tạo tài khoản mới',
-      description: `Đăng ký thành công tài khoản ${userToSave.displayName} (${userToSave.email}) trên hệ thống`,
-      timestamp: new Date().toISOString()
-    };
-    serverActivities.unshift(log);
-    if (serverActivities.length > 500) serverActivities = serverActivities.slice(0, 500);
-    writeServerActivities(serverActivities);
-
-    return res.json({ success: true, user: userToSave });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.status(201).json({ success: true, user: publicAccount(userToSave) });
+  } catch {
+    return res.status(500).json({ success: false, error: 'Không thể tạo tài khoản lúc này.' });
   }
 });
 
 app.post('/api/accounts/login', (req: Request, res: Response) => {
   try {
-    const { identifier, password } = req.body;
-    if (!identifier) {
-      return res.status(400).json({ success: false, error: 'Vui lòng nhập tên đăng nhập hoặc email.' });
+    const { identifier, password } = req.body || {};
+    if (!identifier || typeof password !== 'string' || !password) {
+      return res.status(400).json({ success: false, error: 'Vui lòng nhập tên đăng nhập và mật khẩu.' });
     }
-
     const cleanId = String(identifier).trim().toLowerCase();
-    const cleanPass = password ? String(password).trim() : '';
-
-    // Check Admin Credentials
-    if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
-      if (cleanPass === 'AINHS2026') {
-        let adminAccount = serverAccounts.find((a: any) => a.id === 'user-admin' || (a.email && a.email.toLowerCase() === 'admin@heritageai.vn'));
-        if (!adminAccount) {
-          adminAccount = { ...DEFAULT_ADMIN_ACCOUNT_SERVER };
-          serverAccounts.push(adminAccount);
-        }
-        adminAccount.lastLoginAt = new Date().toISOString();
-        adminAccount.isLoggedIn = true;
-        writeServerAccounts(serverAccounts);
-        return res.json({ success: true, user: adminAccount });
-      } else {
-        return res.status(400).json({ success: false, error: 'Mật khẩu quản trị viên không chính xác.' });
+    if (['admin', 'admin@heritageai.vn', 'admin@gmail.com'].includes(cleanId)) {
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (!adminPassword) return res.status(503).json({ success: false, error: 'Chưa cấu hình ADMIN_PASSWORD trên máy chủ.' });
+      if (!constantTimeStringEqual(password, adminPassword)) {
+        return res.status(401).json({ success: false, error: 'Thông tin quản trị viên không chính xác.' });
       }
+      let adminAccount = serverAccounts.find((a: any) => a.id === 'user-admin' || (a.email && a.email.toLowerCase() === 'admin@heritageai.vn'));
+      if (!adminAccount) {
+        adminAccount = { ...DEFAULT_ADMIN_ACCOUNT_SERVER };
+        serverAccounts.push(adminAccount);
+      }
+      delete adminAccount.password;
+      adminAccount.lastLoginAt = new Date().toISOString();
+      adminAccount.isLoggedIn = true;
+      writeServerAccounts(serverAccounts);
+      return res.json({ success: true, user: publicAccount(adminAccount) });
     }
-
-    // Regular User authentication
-    const account = serverAccounts.find((a: any) => 
-      (a.email && a.email.toLowerCase() === cleanId) || 
+    const account = serverAccounts.find((a: any) =>
+      (a.email && a.email.toLowerCase() === cleanId) ||
       (a.displayName && a.displayName.toLowerCase() === cleanId) ||
       (a.id && a.id.toLowerCase() === cleanId)
     );
-
-    if (!account) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Tài khoản không tồn tại. Vui lòng kiểm tra lại thông tin hoặc Đăng Ký Mới.' 
-      });
+    if (!account || typeof account.password !== 'string') {
+      return res.status(401).json({ success: false, error: 'Thông tin đăng nhập không chính xác.' });
     }
-
-    if (cleanPass && account.password && account.password !== cleanPass) {
-      return res.status(400).json({ success: false, error: 'Mật khẩu không chính xác. Vui lòng thử lại.' });
-    }
-
+    const verification = verifyAccountPassword(password, account.password);
+    if (!verification.valid) return res.status(401).json({ success: false, error: 'Thông tin đăng nhập không chính xác.' });
+    if (verification.upgradedHash) account.password = verification.upgradedHash;
     account.lastLoginAt = new Date().toISOString();
     account.isLoggedIn = true;
     writeServerAccounts(serverAccounts);
-
-    return res.json({ success: true, user: account });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
+    return res.json({ success: true, user: publicAccount(account) });
+  } catch {
+    return res.status(500).json({ success: false, error: 'Không thể đăng nhập lúc này.' });
   }
 });
 
-app.post('/api/accounts/reset-password', (req: Request, res: Response) => {
-  try {
-    const { email, newPassword } = req.body;
-    if (!email || !newPassword) {
-      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp email và mật khẩu mới.' });
-    }
-
-    const cleanEmail = String(email).trim().toLowerCase();
-    const cleanNew = String(newPassword).trim();
-
-    const accountIndex = serverAccounts.findIndex((a: any) => 
-      (a.email && a.email.toLowerCase() === cleanEmail) || 
-      (cleanEmail === 'admin' && (a.id === 'user-admin' || a.role === 'admin'))
-    );
-
-    if (accountIndex < 0) {
-      return res.status(404).json({ success: false, error: 'Không tìm thấy tài khoản tương ứng với email này.' });
-    }
-
-    serverAccounts[accountIndex].password = cleanNew;
-    writeServerAccounts(serverAccounts);
-
-    return res.json({ success: true, user: serverAccounts[accountIndex] });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
+app.post('/api/accounts/reset-password', (_req: Request, res: Response) => {
+  return res.status(410).json({ success: false, error: 'Đặt lại mật khẩu cần được thực hiện qua luồng khôi phục đã xác minh.' });
 });
 
-app.post('/api/accounts/change-password', (req: Request, res: Response) => {
-  try {
-    const { userId, oldPassword, newPassword } = req.body;
-    if (!userId || !oldPassword || !newPassword) {
-      return res.status(400).json({ success: false, error: 'Thiếu dữ liệu đổi mật khẩu.' });
-    }
-
-    const cleanOld = String(oldPassword).trim();
-    const cleanNew = String(newPassword).trim();
-
-    const account = serverAccounts.find((a: any) => a.id === userId);
-    if (!account) {
-      return res.status(404).json({ success: false, error: 'Không tìm thấy tài khoản người dùng.' });
-    }
-
-    if (account.password && account.password !== cleanOld) {
-      return res.status(400).json({ success: false, error: 'Mật khẩu hiện tại không chính xác.' });
-    }
-
-    account.password = cleanNew;
-    writeServerAccounts(serverAccounts);
-
-    return res.json({ success: true, user: account });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
+app.post('/api/accounts/change-password', (_req: Request, res: Response) => {
+  return res.status(410).json({ success: false, error: 'Đổi mật khẩu qua API cũ đã bị vô hiệu hóa.' });
 });
 
-app.delete('/api/accounts/:id', (req: Request, res: Response) => {
-  const targetId = req.params.id;
-  if (targetId === 'user-admin') {
-    return res.status(400).json({ success: false, error: 'Không thể xóa tài khoản Quản trị viên gốc.' });
-  }
-  const target = serverAccounts.find((a: any) => a.id === targetId);
-  serverAccounts = serverAccounts.filter((a: any) => a.id !== targetId);
-  writeServerAccounts(serverAccounts);
-
-  if (target) {
-    const log = {
-      id: 'act-' + Date.now(),
-      userId: 'user-admin',
-      userName: 'Quản trị viên Hệ thống',
-      userRole: 'admin',
-      userEmail: 'admin@heritageai.vn',
-      actionType: 'admin_action',
-      title: 'Xóa tài khoản người dùng',
-      description: `Quản trị viên đã xóa tài khoản ${target.displayName} (${target.email}) khỏi hệ thống server`,
-      timestamp: new Date().toISOString()
-    };
-    serverActivities.unshift(log);
-    writeServerActivities(serverActivities);
-  }
-
-  return res.json({ success: true });
+app.delete('/api/accounts/:id', (_req: Request, res: Response) => {
+  return res.status(403).json({ success: false, error: 'Thao tác quản trị tài khoản cần xác thực quản trị viên phía máy chủ.' });
 });
 
 app.get('/api/activities', (req: Request, res: Response) => {
