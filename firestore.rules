@@ -1,72 +1,111 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper functions
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
+
     function isAdmin() {
-      return isAuthenticated() && 
-        (request.auth.token.role == 'admin' || request.auth.token.email == 'btin2499@gmail.com');
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin' ||
+        request.auth.token.email == 'btin2499@gmail.com'
+      );
     }
 
-    // User profiles & accounts
+    function ownsUserProfile() {
+      return isAuthenticated() &&
+        resource.data.email is string &&
+        resource.data.email.lower() == request.auth.token.email.lower();
+    }
+
+    function validUserProfileCreate() {
+      return isAuthenticated() &&
+        request.resource.data.email is string &&
+        request.resource.data.email.lower() == request.auth.token.email.lower() &&
+        request.resource.data.role in ['user', 'student', 'researcher'] &&
+        !request.resource.data.keys().hasAny(['password']);
+    }
+
+    // User profiles are private. A client must never store an account password
+    // in Firestore. Profile ownership is based on the verified Firebase Auth email.
     match /users/{userId} {
-      allow read, write: if true;
-    }
-    match /accounts/{accountId} {
-      allow read, write: if true;
+      allow get: if isAdmin() || ownsUserProfile();
+      allow list: if isAdmin();
+      allow create: if validUserProfileCreate() ||
+        (isAdmin() &&
+         !request.resource.data.keys().hasAny(['password']));
+      allow update: if isAdmin() ||
+        (ownsUserProfile() &&
+         request.resource.data.email == resource.data.email &&
+         request.resource.data.role == resource.data.role &&
+         !request.resource.data.keys().hasAny(['password']));
+      allow delete: if isAdmin();
     }
 
-    // Heritage cultural items (Public read, Admin write)
+    // Legacy custom account documents are blocked from all client access.
+    // Authentication must be handled by Firebase Authentication, not by
+    // reading password records from Firestore.
+    match /accounts/{accountId} {
+      allow read, write: if false;
+    }
+
+    // Public cultural information can be read by everyone; only an authenticated
+    // administrator can change canonical heritage records.
     match /heritage/{heritageId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Grandparents oral stories (Private, Family, or Public read; Owner write)
+    // Family stories: public stories are readable by everyone, private stories
+    // are visible only to their owner or an administrator.
     match /familyStories/{storyId} {
-      allow read: if resource.data.visibility == 'public' || 
-                     (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.visibility == 'family')) ||
-                     isAdmin();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if resource.data.visibility == 'public' ||
+        (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+        isAdmin();
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Community contributions (Approved items public, Author sees own, Admin manages all)
+    // Community submissions: only approved posts are public.
     match /communityPosts/{postId} {
-      allow read: if resource.data.status == 'approved' || 
-                     (isAuthenticated() && resource.data.userId == request.auth.uid) ||
-                     isAdmin();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if resource.data.status == 'approved' ||
+        (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+        isAdmin();
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Itineraries (Owner read/write, Admin read/write)
     match /itineraries/{itineraryId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Favorites (Owner read/write)
     match /favorites/{favoriteId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // System & API Configuration (AI and TTS API parameters)
+    // AI/TTS/email settings can contain private API keys. Never expose them
+    // to unauthenticated clients. Only administrators may access these docs.
     match /system_config/{configId} {
-      allow read: if true;
-      allow write: if true;
+      allow read, write: if isAdmin();
     }
 
-    // Default deny
+    // Default deny.
     match /{document=**} {
       allow read, write: if false;
     }
