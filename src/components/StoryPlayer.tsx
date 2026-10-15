@@ -42,6 +42,10 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
   onSelectHeritageForPlaces,
   language = 'vi'
 }) => {
+  const isEnglish = language === 'en';
+  const ui = (vi: string, en: string) => isEnglish ? en : vi;
+  const displayHeritageName = (heritage: HeritageItem) => isEnglish ? (heritage.englishName || heritage.name) : heritage.name;
+  const displayProvince = (province?: string) => isEnglish ? ({ 'Thừa Thiên Huế': 'Thua Thien Hue', 'Thành phố Hà Nội': 'Hanoi', 'Hà Nội': 'Hanoi', 'Quảng Nam': 'Quang Nam', 'Ninh Bình': 'Ninh Binh', 'Thành phố Hồ Chí Minh': 'Ho Chi Minh City', 'Quảng Ninh': 'Quang Ninh', 'Quảng Bình': 'Quang Binh', 'Khánh Hòa': 'Khanh Hoa', 'Lào Cai': 'Lao Cai' } as Record<string, string>)[province || ''] || province || '' : province || '';
   const [heritagesList, setHeritagesList] = useState<HeritageItem[]>(storageService.getHeritages());
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -61,11 +65,11 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
   const [isStoryModalOpen, setIsStoryModalOpen] = useState<boolean>(false);
 
   const audienceModes: { id: StoryMode; label: string; icon: string; desc: string }[] = [
-    { id: 'children', label: 'Trẻ em', icon: '👦', desc: 'Truyện cổ tích ấm áp, dễ thương, nhân văn' },
-    { id: 'student', label: 'Học sinh', icon: '🎒', desc: 'Sinh động, khơi gợi tự hào dân tộc' },
-    { id: 'university', label: 'Sinh viên', icon: '🎓', desc: 'Chuyên sâu bối cảnh, triết lý kiến trúc' },
-    { id: 'adult', label: 'Người lớn', icon: '☕', desc: 'Điềm đạm, lắng đọng giá trị tâm hồn' },
-    { id: 'foreigner', label: 'Khách quốc tế (EN)', icon: '🌐', desc: 'Clear English cultural narrative' },
+    { id: 'children', label: ui('Trẻ em', 'Children'), icon: '👦', desc: ui('Truyện cổ tích ấm áp, dễ thương, nhân văn', 'Warm, engaging and meaningful stories') },
+    { id: 'student', label: ui('Học sinh', 'School students'), icon: '🎒', desc: ui('Sinh động, khơi gợi tự hào dân tộc', 'Vivid stories that inspire cultural pride') },
+    { id: 'university', label: ui('Sinh viên', 'University students'), icon: '🎓', desc: ui('Chuyên sâu bối cảnh, triết lý kiến trúc', 'In-depth historical context and architectural philosophy') },
+    { id: 'adult', label: ui('Người lớn', 'Adults'), icon: '☕', desc: ui('Điềm đạm, lắng đọng giá trị tâm hồn', 'Calm narration highlighting enduring human values') },
+    { id: 'foreigner', label: ui('Khách quốc tế (EN)', 'International visitors (EN)'), icon: '🌐', desc: ui('Clear English cultural narrative', 'Clear English cultural narrative') },
   ];
 
   // Sync initialHeritageName prop when navigating from other screens
@@ -237,13 +241,13 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       <div className="text-center max-w-3xl mx-auto mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-semibold mb-3">
           <Volume2 className="w-3.5 h-3.5" />
-          <span>Giọng Kể Di Sản Đa Đối Tượng</span>
+          <span>{ui('Giọng Kể Di Sản Đa Đối Tượng', 'Multi-Audience Heritage Narration')}</span>
         </div>
         <h2 className="text-2xl sm:text-4xl font-serif font-bold text-stone-100">
-          Nghe AI Kể Chuyện Di Sản
+          {ui('Nghe AI Kể Chuyện Di Sản', 'Listen to AI Heritage Stories')}
         </h2>
         <p className="text-stone-300 text-xs sm:text-sm mt-2">
-          Truyền cảm xúc và sự thật lịch sử vào từng câu chuyện, phân biệt rạch ròi giữa chính sử và huyền tích dân gian.
+          {ui('Truyền cảm xúc và sự thật lịch sử vào từng câu chuyện, phân biệt rạch ròi giữa chính sử và huyền tích dân gian.', 'Bring emotion and historical facts to every story, clearly distinguishing documented history from folk legends.')}
         </p>
       </div>
 
@@ -251,7 +255,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       <div className="mb-6 bg-stone-900 border border-stone-800 rounded-2xl p-4 sm:p-5 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <label className="block text-xs font-semibold text-amber-300 uppercase tracking-wider">
-            Chọn di sản để nghe chuyện ({heritagesList.length}):
+            {ui('Chọn di sản để nghe chuyện', 'Choose a heritage to hear its story')} ({heritagesList.length}):
           </label>
 
           {/* Search box for Heritages */}
@@ -259,7 +263,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
             <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Tìm di sản để nghe chuyện..."
+              placeholder={ui('Tìm di sản để nghe chuyện...', 'Search heritage stories...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-stone-950 border border-stone-800 text-stone-200 text-xs focus:outline-none focus:border-amber-500 transition-colors"
@@ -271,7 +275,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
           {heritagesList
             .filter(item => 
               !searchQuery.trim() || 
-              item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.name.toLowerCase().includes(searchQuery.toLowerCase()) || (item.englishName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
               item.province?.toLowerCase().includes(searchQuery.toLowerCase()) ||
               item.categoryLabel?.toLowerCase().includes(searchQuery.toLowerCase())
             )
@@ -285,10 +289,10 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                     : 'bg-stone-950/60 border-stone-800 text-stone-300 hover:bg-stone-800'
                 }`}
               >
-                <img src={item.imageUrl} alt={item.name} className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                <img src={item.imageUrl} alt={displayHeritageName(item)} className="w-9 h-9 rounded-lg object-cover shrink-0" />
                 <div className="overflow-hidden">
-                  <span className="font-medium line-clamp-1 block">{item.name}</span>
-                  <span className="text-[10px] text-stone-400 block truncate">{item.province}</span>
+                  <span className="font-medium line-clamp-1 block">{displayHeritageName(item)}</span>
+                  <span className="text-[10px] text-stone-400 block truncate">{displayProvince(item.province)}</span>
                 </div>
               </button>
             ))}
@@ -298,7 +302,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       {/* 5 Audience Mode Switchers */}
       <div className="mb-6">
         <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">
-          Chọn đối tượng nghe chuyện:
+          {ui('Chọn đối tượng nghe chuyện:', 'Choose your story audience:')}
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
           {audienceModes.map((item) => (
@@ -336,10 +340,10 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
               <button
                 onClick={() => setIsStoryModalOpen(true)}
                 className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-lg transition-all cursor-pointer"
-                title="Chỉnh sửa nội dung câu chuyện AI cho đối tượng đã chọn"
+                title={ui('Chỉnh sửa nội dung câu chuyện AI cho đối tượng đã chọn', 'Edit the AI story for the selected audience')}
               >
                 <Edit3 className="w-3.5 h-3.5" />
-                <span>Sửa Nội Dung AI (Admin)</span>
+                <span>{ui('Sửa Nội Dung AI (Admin)', 'Edit AI Story (Admin)')}</span>
               </button>
             )}
           </div>
@@ -347,10 +351,10 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
           <div className="absolute bottom-4 left-4 sm:left-6 right-4 sm:right-6 flex flex-wrap items-end justify-between gap-3">
             <div>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                {selectedHeritage.categoryLabel}
+                {isEnglish ? (selectedHeritage.englishName ? 'Cultural Heritage' : selectedHeritage.categoryLabel) : selectedHeritage.categoryLabel}
               </span>
               <h3 className="text-xl sm:text-3xl font-serif font-bold text-white mt-1">
-                {story?.title || selectedHeritage.name}
+                {story?.title || displayHeritageName(selectedHeritage)}
               </h3>
               <p className="text-xs text-stone-300 flex items-center gap-1.5 mt-1">
                 <MapPin className="w-3.5 h-3.5 text-red-400" />
@@ -360,7 +364,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
 
             {/* Quick Tag */}
             <div className="text-xs px-3 py-1 bg-black/60 backdrop-blur rounded-lg text-amber-300 border border-amber-500/30">
-              Chế độ: <span className="font-bold">{audienceModes.find(m => m.id === mode)?.label}</span>
+              {ui('Chế độ: ', 'Mode: ')}<span className="font-bold">{audienceModes.find(m => m.id === mode)?.label}</span>
             </div>
           </div>
         </div>
@@ -378,7 +382,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                   ? 'bg-amber-400 hover:bg-amber-300 animate-pulse' 
                   : 'bg-red-600 hover:bg-red-500 text-white'
               }`}
-              title={isPlaying ? 'Tạm dừng đọc' : 'Đọc câu chuyện'}
+              title={isPlaying ? ui('Tạm dừng đọc', 'Pause narration') : ui('Đọc câu chuyện', 'Read story')}
             >
               {isPlaying ? <Pause className="w-5 h-5 text-stone-950" /> : <Play className="w-5 h-5 ml-0.5 fill-current" />}
             </button>
@@ -396,8 +400,8 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
             <div>
               <p className="text-xs font-semibold text-stone-200">
                 {isPlaying 
-                  ? (mode === 'foreigner' || language === 'en' ? 'Đang đọc bằng Giọng đọc Tiếng Anh (English AI Voice)...' : 'Đang đọc truyền cảm qua AI Voice...') 
-                  : (mode === 'foreigner' || language === 'en' ? 'Bấm Play để nghe giọng đọc Tiếng Anh' : 'Bấm Play để nghe AI đọc to')}
+                  ? (mode === 'foreigner' || language === 'en' ? ui('Đang đọc bằng Giọng đọc Tiếng Anh (English AI Voice)...', 'Reading with English AI voice...') : ui('Đang đọc truyền cảm qua AI Voice...', 'AI is narrating your story...')) 
+                  : (mode === 'foreigner' || language === 'en' ? ui('Bấm Play để nghe giọng đọc Tiếng Anh', 'Press Play to listen in English') : ui('Bấm Play để nghe AI đọc to', 'Press Play to hear the AI narration'))}
               </p>
               <div className="flex items-center gap-1 mt-1">
                 {/* Audio Waveform simulation */}
@@ -408,7 +412,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                   <div className="w-1 bg-amber-400 h-2.5 animate-bounce [animation-delay:0.1s]"></div>
                 </div>
                 <span className="text-[10px] text-amber-300 ml-1.5 font-semibold">
-                  {mode === 'foreigner' || language === 'en' ? '🌐 Giọng đọc Tiếng Anh (English Voice)' : '🇻🇳 Tiếng Việt chuẩn'}
+                  {mode === 'foreigner' || language === 'en' ? ui('🌐 Giọng đọc Tiếng Anh (English Voice)', '🌐 English voice') : ui('🇻🇳 Tiếng Việt chuẩn', '🇻🇳 Vietnamese voice')}
                 </span>
               </div>
             </div>
@@ -416,7 +420,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
 
           {/* Voice Speed Controls */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-stone-400">Tốc độ:</span>
+            <span className="text-xs text-stone-400">{ui('Tốc độ:', 'Speed:')}</span>
             {[0.8, 1.0, 1.2].map((s) => (
               <button
                 key={s}
@@ -438,15 +442,15 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
           {loading ? (
             <div className="py-12 text-center space-y-3">
               <RefreshCw className="w-8 h-8 text-amber-400 animate-spin mx-auto" />
-              <p className="text-sm font-medium text-amber-200">AI đang sáng tác câu chuyện di sản cho bạn...</p>
-              <p className="text-xs text-stone-500">Áp dụng bộ lọc phong cách: {audienceModes.find(m => m.id === mode)?.label}</p>
+              <p className="text-sm font-medium text-amber-200">{ui('AI đang sáng tác câu chuyện di sản cho bạn...', 'AI is creating a heritage story for you...')}</p>
+              <p className="text-xs text-stone-500">{ui('Áp dụng bộ lọc phong cách: ', 'Narration style: ')}{audienceModes.find(m => m.id === mode)?.label}</p>
             </div>
           ) : story ? (
             <>
               {story.isFallback && (
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 text-xs font-medium">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Bản kể biên soạn từ Kho lưu trữ Di sản Quốc gia (Chế độ tin cậy khi AI đang bận)</span>
+                  <span>{ui('Bản kể biên soạn từ Kho lưu trữ Di sản Quốc gia (Chế độ tin cậy khi AI đang bận)', 'Story adapted from the National Heritage Archive (fallback while AI is unavailable)')}</span>
                 </div>
               )}
 
@@ -463,7 +467,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                   <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                      Phân biệt Rạch ròi: Lịch sử & Truyền thuyết
+                      {ui('Phân biệt Rạch ròi: Lịch sử & Truyền thuyết', 'Clearly Distinguishing History & Legend')}
                     </h4>
                     <p className="text-xs sm:text-sm text-stone-300 mt-1 leading-relaxed">
                       {cleanVietnameseText(story.distinctionNote)}
@@ -477,7 +481,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                 <div className="pt-4 border-t border-stone-800 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2 text-xs text-stone-400">
                     <BookOpen className="w-4 h-4 text-stone-500" />
-                    <span>Nguồn tư liệu tham khảo:</span>
+                    <span>{ui('Nguồn tư liệu tham khảo:', 'References:')}</span>
                     <span className="text-stone-300 font-medium">
                       {story.sourceReferences.join(' • ')}
                     </span>
@@ -487,7 +491,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                     onClick={() => onSelectHeritageForPlaces?.(selectedHeritage.id)}
                     className="text-xs text-amber-400 hover:text-amber-300 underline font-medium"
                   >
-                    Xem quán ăn & trải nghiệm gần đây →
+                    {ui('Xem quán ăn & trải nghiệm gần đây →', 'Explore nearby food & experiences →')}
                   </button>
                 </div>
               )}
@@ -498,7 +502,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                 <AlertCircle className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-stone-200">Máy chủ AI đang có lượng yêu cầu cao</p>
+                <p className="text-sm font-semibold text-stone-200">{ui('Máy chủ AI đang có lượng yêu cầu cao', 'AI server is experiencing high demand')}</p>
                 <p className="text-xs text-stone-400 mt-1.5 leading-relaxed">{error}</p>
               </div>
               <button
@@ -506,7 +510,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-stone-950 font-bold text-xs hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/10 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Thử lại với AI</span>
+                <span>{ui('Thử lại với AI', 'Try AI again')}</span>
               </button>
             </div>
           ) : null}
