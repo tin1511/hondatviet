@@ -2328,8 +2328,8 @@ public setLanguage(code: string): void {
     })
   );
 
-  // Dịch các cụm từ đã có trong từ điển của dự án.
-  this.translateDOM(code);
+  // Translate the full page, including dynamic content outside the manual dictionary.
+  this.applyFullPageTranslation(code);
 }
 
   /**
