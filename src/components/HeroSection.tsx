@@ -21,12 +21,15 @@ import {
   AlertCircle,
   Award,
   Plus,
+  Languages,
+  ChevronDown,
+  Settings
 } from 'lucide-react';
 import { HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 import { geolocationService, CITY_LANDMARK_PRESETS } from '../services/geolocationService';
 import { getHeritageForLandmark } from '../services/landmarkHeritageService';
 import { UserProfile, HeritageItem, CityLandmarkBackground } from '../types';
-import { languageService } from '../services/languageService';
+import { languageService, SUPPORTED_LANGUAGES } from '../services/languageService';
 
 interface HeroSectionProps {
   onNavigate: (tab: string, heritageId?: string) => void;
@@ -134,9 +137,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${locationSource === 'gps' ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
               </span>
               <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
-              <span className="text-stone-400 hidden sm:inline">Ảnh nền GPS:</span>
+              <span className="text-stone-400 hidden sm:inline">{languageService.t('hero.gpsWallpaper', language, 'Ảnh nền GPS:')} </span>
               <span className="font-semibold text-amber-300 truncate max-w-[200px] sm:max-w-[320px] group-hover:text-amber-200">
-                {detectedLocationName} • {currentLandmark.landmarkName}
+                {languageService.t(detectedLocationName, language, detectedLocationName)} • {languageService.t(currentLandmark.landmarkName, language, currentLandmark.landmarkName)}
               </span>
               {currentLandmark.distanceKm !== undefined && (
                 <span className="text-[11px] text-stone-400 hidden md:inline">
@@ -185,8 +188,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <span>{languageService.t('hero.changeLandmark', language, 'Đổi danh thắng khác')}</span>
               </button>
             )}
-
-
           </div>
 
           {gpsError && (
@@ -229,7 +230,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   onClick={() => { setSearchTerm(''); setSearchResults([]); }}
                   className="mr-3 text-xs text-stone-400 hover:text-stone-200 px-2 py-1 bg-stone-800 rounded"
                 >
-                  Xóa
+                  {languageService.t('btn.clear', language, 'Xóa')}
                 </button>
               )}
             </div>
@@ -291,6 +292,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
+
+
                 <button
                   type="button"
                   id="hero-guest-btn-login"
@@ -400,7 +403,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               <span>{languageService.t('hero.ctaProfile', language, 'Hồ sơ & Danh hiệu')}</span>
             </button>
-
 
           </div>
         </motion.div>

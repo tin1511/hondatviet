@@ -40,6 +40,7 @@ interface UserProfileViewProps {
   onNavigateTab: (tab: string, heritageId?: string) => void;
   initialSubTab?: 'badges' | 'profile' | 'activity' | 'security';
   language?: string;
+  onOpenLanguageModal?: () => void;
 }
 
 interface MilestoneBadge {
@@ -238,6 +239,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   onNavigateTab,
   initialSubTab = 'badges',
   language = 'vi',
+  onOpenLanguageModal
 }) => {
   // Tabs are prominently positioned AT THE VERY TOP
   const [activeSubTab, setActiveSubTab] = useState<'badges' | 'profile' | 'activity' | 'security'>(initialSubTab);
@@ -945,8 +947,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-                <span>{languageService.getLanguageInfo(language).flag} {languageService.getLanguageInfo(language).nativeName}</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-950 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                <span>Chuyển đổi trên thanh menu trên cùng</span>
               </div>
             </div>
 
@@ -983,7 +985,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                     "{languageService.getLanguageInfo(language).greeting}"
                   </p>
                 </div>
-
               </div>
             </div>
           </div>

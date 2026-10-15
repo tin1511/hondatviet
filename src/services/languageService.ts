@@ -49,10 +49,10 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
     nativeName: 'Français',
     flag: '🇫🇷',
     bcp47: 'fr-FR',
-    greeting: 'Bienvenue au Patrimoine du Vietnam !',
-    sampleGreeting: 'Bonjour et chaleureuse bienvenue ! Je suis votre guide virtuel IA Hồn Đất Việt, prêt à vous faire découvrir des millénaires d histoire et de culture vietnamienne.',
-    description: 'Langue française avec guide de visite virtuel et récits patrimoniaux détaillés.',
-    aiVoiceAccent: 'Français naturel et expressif',
+    greeting: 'Bienvenue au patrimoine du Vietnam!',
+    sampleGreeting: 'Bonjour et bienvenue! Je suis votre guide virtuel pour explorer les trésors culturels et historiques du Vietnam.',
+    description: 'Langue officielle pour les voyageurs francophones et historiens du monde.',
+    aiVoiceAccent: 'Français métropolitain fluide',
     googleTranslateCode: 'fr'
   },
   {
@@ -61,10 +61,10 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
     nativeName: '日本語',
     flag: '🇯🇵',
     bcp47: 'ja-JP',
-    greeting: 'ベトナム遺産へようこそ！',
-    sampleGreeting: 'こんにちは！ベトナム文化遺産AIガイドです。何千年の豊かな歴史と美しい伝統文化の旅へご案内いたします。',
-    description: '日本語によるベトナム全国の文化遺産・名勝地の詳細な音声ガイドと解説。',
-    aiVoiceAccent: '自然で丁寧な日本語音声',
+    greeting: 'ベトナムの遺産へようこそ！',
+    sampleGreeting: 'こんにちは！ベトナムの歴史と世界遺産をご案内するAIツアーガイドです。素晴らしい旅をお楽しみください。',
+    description: '日本の旅行者や研究者向けの丁寧で正確な文化案内。',
+    aiVoiceAccent: '丁寧な標準日本語案内',
     googleTranslateCode: 'ja'
   },
   {
@@ -74,21 +74,21 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
     flag: '🇰🇷',
     bcp47: 'ko-KR',
     greeting: '베트남 문화유산에 오신 것을 환영합니다!',
-    sampleGreeting: '안녕하세요! 베트남 문화유산 AI 가이드입니다. 유구한 역사와 매력적인 명소 탐방을 정성껏 안내해 드리겠습니다.',
-    description: '한국어 지원으로 베트남 전역의 역사 문화 명소와 이야기를 생생하게 탐방하세요.',
-    aiVoiceAccent: '자연스럽고 부드러운 한국어 음성',
+    sampleGreeting: '안녕하세요! 베트남의 유구한 역사와 찬란한 문화유산을 안내해 드릴 AI 문화유산 가이드입니다.',
+    description: '한국인 관광객과 문화 애호가를 위한 친절한 맞춤형 안내.',
+    aiVoiceAccent: '친절하고 정확한 표준 한국어',
     googleTranslateCode: 'ko'
   },
   {
     code: 'zh',
     name: 'Tiếng Trung',
-    nativeName: '中文',
+    nativeName: '中文 (简体)',
     flag: '🇨🇳',
     bcp47: 'zh-CN',
     greeting: '欢迎探索越南文化遗产！',
-    sampleGreeting: '您好！我是越南文化遗产AI虚拟导游，很高兴陪伴您探索千年古越的历史瑰宝与灿烂文化。',
-    description: '中文全方位解说，包含名胜古迹历史背景、民间传说与智能语音讲解。',
-    aiVoiceAccent: '标准流利的中文普通话语音',
+    sampleGreeting: '您好！我是您的AI文化遗产导游，带您领略越南千年的历史风华与名胜古迹。',
+    description: '深入诠释汉喃文化渊源与东亚文明交流的典故.',
+    aiVoiceAccent: '标准普通话导游解说',
     googleTranslateCode: 'zh-CN'
   }
 ];
@@ -1052,6 +1052,288 @@ export const DICTIONARY: Translations = {
     zh: '考据典籍：《大越史记全书》、联合国教科文组织(UNESCO)及 Google Places'
   },
 
+  // Aliases for navigation
+  'nav.recognize': {
+    vi: 'Nhận diện AI',
+    en: 'AI Vision',
+    fr: 'Vision IA',
+    ja: 'AI画像認識',
+    ko: 'AI 비전 인식',
+    zh: 'AI 视觉识别'
+  },
+  'nav.story': {
+    vi: 'Kể chuyện AI',
+    en: 'AI Stories',
+    fr: 'Récits IA',
+    ja: 'AIストーリー',
+    ko: 'AI 이야기',
+    zh: 'AI 故事讲述'
+  },
+  'nav.quiz': {
+    vi: 'Quiz & Lịch sử',
+    en: 'Quiz & History',
+    fr: 'Quiz & Histoire',
+    ja: 'クイズ・歴史',
+    ko: '퀴즈 & 역사',
+    zh: '历史问答'
+  },
+
+  // Home Page S-Shaped Map Section
+  'home.mapSectionBadge': {
+    vi: 'Bản Đồ Địa Lý & Du Lịch Tương Tác Trực Tiếp',
+    en: 'Interactive Geographical & Travel Map',
+    fr: 'Carte Géographique & Touristique Interactive',
+    ja: 'インタラクティブ地理・観光マップ',
+    ko: '인터랙티브 지리 및 관광 지도',
+    zh: '全景交互式地理与文旅地图'
+  },
+  'home.mapSectionTitle': {
+    vi: 'Khám Phá Dải Đất Hình Chữ S Việt Nam',
+    en: 'Explore the S-Shaped Land of Vietnam',
+    fr: 'Explorez la Terre en Forme de S du Vietnam',
+    ja: 'ベトナムのS字型の国土を探訪',
+    ko: '베트남 S자형 국토 탐험',
+    zh: '探索越南S形壮丽山河'
+  },
+  'home.mapSectionDesc': {
+    vi: 'Chạm hoặc nhấn vào bất kỳ tỉnh thành nào trên bản đồ để phóng to và xem các di sản thực tế.',
+    en: 'Touch or click any province on the map to zoom in and discover real heritages.',
+    fr: 'Touchez ou cliquez sur une province pour zoomer et découvrir ses patrimoines réels.',
+    ja: '地図上の各省をタップしてズームし、実在の世界遺産や史跡を発見。',
+    ko: '지도의 각 성/시를 터치하여 확대하고 실제 문화유산을 확인하세요.',
+    zh: '点击地图上的任意省市即可放大浏览当地真实的文化名胜。'
+  },
+  'home.mapSectionFullscreen': {
+    vi: 'Mở Bản Đồ Toàn Màn Hình',
+    en: 'Open Fullscreen Map',
+    fr: 'Ouvrir la Carte Plein Écran',
+    ja: '全画面マップを開く',
+    ko: '전체 화면 지도 열기',
+    zh: '开启全屏地图'
+  },
+
+  // Heritage Detail Modal
+  'detail.title': {
+    vi: 'Chi Tiết Di Sản Văn Hóa',
+    en: 'Cultural Heritage Details',
+    fr: 'Détails du Patrimoine Culturel',
+    ja: '文化遺産の詳細',
+    ko: '문화유산 상세 정보',
+    zh: '文化遗产详细介绍'
+  },
+  'detail.significance': {
+    vi: 'Ý nghĩa & Giá trị di sản',
+    en: 'Significance & Cultural Value',
+    fr: 'Signification & Valeur Culturelle',
+    ja: '文化的意義と価値',
+    ko: '문화적 의의 및 가치',
+    zh: '历史文化价值与意义'
+  },
+  'detail.history': {
+    vi: 'Niên đại & Lịch sử hình thành',
+    en: 'Chronology & Historical Origins',
+    fr: 'Chronologie & Origines Historiques',
+    ja: '年代と歴史的起源',
+    ko: '연대 및 역사적 기원',
+    zh: '历史年代与形成渊源'
+  },
+  'detail.practical': {
+    vi: 'Thông tin tham quan & Lời khuyên',
+    en: 'Visitor Information & Travel Tips',
+    fr: 'Informations Pratiques & Conseils',
+    ja: '拝観・見学案内とアドバイス',
+    ko: '관람 정보 및 여행 팁',
+    zh: '参观指南与游玩建议'
+  },
+  'detail.openHours': {
+    vi: 'Giờ mở cửa',
+    en: 'Opening Hours',
+    fr: 'Horaires d\'ouverture',
+    ja: '開館時間',
+    ko: '운영 시간',
+    zh: '开放时间'
+  },
+  'detail.ticketPrice': {
+    vi: 'Giá vé tham quan',
+    en: 'Admission Fee',
+    fr: 'Tarif d\'entrée',
+    ja: '拝観料・入場料',
+    ko: '입장료',
+    zh: '门票价格'
+  },
+  'detail.free': {
+    vi: 'Miễn phí vé vào cổng',
+    en: 'Free Admission',
+    fr: 'Entrée Gratuite',
+    ja: '無料拝観',
+    ko: '무료 입장',
+    zh: '免费参观'
+  },
+  'detail.nearbyFood': {
+    vi: 'Ẩm thực xung quanh',
+    en: 'Nearby Delicacies',
+    fr: 'Gastronomie aux alentours',
+    ja: '周辺グルメ',
+    ko: '주변 먹거리',
+    zh: '周边特色美食'
+  },
+  'detail.listenStory': {
+    vi: 'Nghe kể chuyện',
+    en: 'Listen to Story',
+    fr: 'Écouter le récit',
+    ja: '物語を聴く',
+    ko: '이야기 듣기',
+    zh: '聆听历史故事'
+  },
+  'detail.askAI': {
+    vi: 'Hỏi Hướng Dẫn Viên AI',
+    en: 'Ask AI Tour Guide',
+    fr: 'Demander au Guide IA',
+    ja: 'AIガイドに質問',
+    ko: 'AI 가이드에게 질문',
+    zh: '咨询AI虚拟导游'
+  },
+  'detail.audioNarration': {
+    vi: 'Thuyết minh tự động (AI)',
+    en: 'AI Audio Narration',
+    fr: 'Narration Audio IA',
+    ja: 'AI自動音声解説',
+    ko: 'AI 자동 오디오 해설',
+    zh: 'AI 语音讲解'
+  },
+  'detail.save': {
+    vi: 'Lưu vào yêu thích',
+    en: 'Save to Favorites',
+    fr: 'Enregistrer aux favoris',
+    ja: 'お気に入りに保存',
+    ko: '즐겨찾기에 저장',
+    zh: '收藏此地标'
+  },
+  'detail.saved': {
+    vi: 'Đã lưu yêu thích',
+    en: 'Saved in Favorites',
+    fr: 'Enregistré dans les favoris',
+    ja: 'お気に入り登録済み',
+    ko: '저장 완료',
+    zh: '已收藏'
+  },
+  'detail.map': {
+    vi: 'Xem vị trí bản đồ',
+    en: 'View on Map',
+    fr: 'Voir sur la carte',
+    ja: '地図で位置を確認',
+    ko: '지도에서 위치 보기',
+    zh: '在地图中查看'
+  },
+  'detail.distance': {
+    vi: 'Khoảng cách từ bạn',
+    en: 'Distance from you',
+    fr: 'Distance depuis vous',
+    ja: '現在地からの距離',
+    ko: '현재 위치에서의 거리',
+    zh: '距离您的当前位置'
+  },
+  'detail.historicalPhoto': {
+    vi: 'Ảnh tư liệu lịch sử',
+    en: 'Historical Archive Photo',
+    fr: 'Photo d\'Archives Historiques',
+    ja: '歴史資料写真',
+    ko: '역사 사료 사진',
+    zh: '历史档案老照片'
+  },
+  'detail.currentPhoto': {
+    vi: 'Ảnh hiện tại',
+    en: 'Current Photo',
+    fr: 'Photo actuelle',
+    ja: '現在の写真',
+    ko: '현재 사진',
+    zh: '当代实景照片'
+  },
+  'detail.share': {
+    vi: 'Chia sẻ di sản',
+    en: 'Share Heritage',
+    fr: 'Partager le patrimoine',
+    ja: '遺産を共有',
+    ko: '문화유산 공유',
+    zh: '分享此文化遗产'
+  },
+  'detail.copied': {
+    vi: 'Đã sao chép liên kết!',
+    en: 'Link copied to clipboard!',
+    fr: 'Lien copié dans le presse-papiers !',
+    ja: 'リンクをクリップボードにコピーしました！',
+    ko: '링크가 클립보드에 복사되었습니다!',
+    zh: '链接已复制到剪贴板！'
+  },
+
+  // Mobile Bottom Nav
+  'mobile.home': {
+    vi: 'Trang chủ',
+    en: 'Home',
+    fr: 'Accueil',
+    ja: 'ホーム',
+    ko: '홈',
+    zh: '首页'
+  },
+  'mobile.recognizer': {
+    vi: 'Nhận diện',
+    en: 'Vision',
+    fr: 'Vision',
+    ja: '認識',
+    ko: '인식',
+    zh: '识别'
+  },
+  'mobile.storyteller': {
+    vi: 'Kể chuyện',
+    en: 'Stories',
+    fr: 'Récits',
+    ja: '物語',
+    ko: '이야기',
+    zh: '讲述'
+  },
+  'mobile.chat': {
+    vi: 'HDV AI',
+    en: 'AI Guide',
+    fr: 'Guide IA',
+    ja: 'AI案内',
+    ko: 'AI가이드',
+    zh: 'AI导游'
+  },
+  'mobile.map': {
+    vi: 'Bản đồ',
+    en: 'Map',
+    fr: 'Carte',
+    ja: '地図',
+    ko: '지도',
+    zh: '地图'
+  },
+  'mobile.more': {
+    vi: 'Thêm',
+    en: 'More',
+    fr: 'Plus',
+    ja: 'その他',
+    ko: '더보기',
+    zh: '更多'
+  },
+  'mobile.close': {
+    vi: 'Đóng menu',
+    en: 'Close Menu',
+    fr: 'Fermer',
+    ja: '閉じる',
+    ko: '닫기',
+    zh: '关闭'
+  },
+
+  // Floating Controls
+  'floating.showUI': {
+    vi: 'Hiện giao diện',
+    en: 'Show Interface',
+    fr: 'Afficher',
+    ja: 'UIを表示',
+    ko: '화면 표시',
+    zh: '显示界面'
+  },
+
   // Common buttons
   'btn.details': {
     vi: 'Chi tiết',
@@ -1092,628 +1374,367 @@ export const DICTIONARY: Translations = {
     ja: 'キャンセル',
     ko: '취소',
     zh: '取消'
-  },
-  // Heritage Destinations & Cultural Map
-  'destinations.title': {
-    vi: 'Điểm Đến Di Sản Việt Nam',
-    en: 'Vietnam Heritage Destinations',
-    fr: 'Destinations du Patrimoine du Vietnam',
-    ja: 'ベトナム文化遺産・名勝目的地',
-    ko: '베트남 문화유산 명소',
-    zh: '越南文化遗产名胜目的地'
-  },
-  'destinations.heritageIn': {
-    vi: 'Di Sản',
-    en: 'Heritage in',
-    fr: 'Patrimoine à',
-    ja: '遺産エリア',
-    ko: '지역 문화유산',
-    zh: '地区遗产'
-  },
-  'destinations.foundCount': {
-    vi: 'Tìm thấy {count} địa điểm',
-    en: 'Found {count} locations',
-    fr: '{count} lieux trouvés',
-    ja: '{count} か所の名所が見つかりました',
-    ko: '{count}개 장소 발견',
-    zh: '找到 {count} 个地点'
-  },
-  'destinations.totalCount': {
-    vi: 'Tổng cộng {count} địa điểm',
-    en: 'Total {count} locations',
-    fr: 'Total de {count} lieux',
-    ja: '合計 {count} か所の名所',
-    ko: '총 {count}개 장소',
-    zh: '共计 {count} 个地点'
-  },
-  'destinations.viewAllNationwide': {
-    vi: 'Xem toàn quốc',
-    en: 'View nationwide',
-    fr: 'Vue nationale',
-    ja: '全国を表示',
-    ko: '전국 보기',
-    zh: '查看全国'
-  },
-  'destinations.noMatches': {
-    vi: 'Chưa có di sản nào khớp với bộ lọc này.',
-    en: 'No heritage matches this filter.',
-    fr: 'Aucun patrimoine ne correspond à ce filtre.',
-    ja: 'この条件に一致する遺産は見つかりませんでした。',
-    ko: '이 조건에 맞는 문화유산이 없습니다.',
-    zh: '暂无符合此筛选条件的文化遗产。'
-  },
-  'destinations.updatingData': {
-    vi: 'Dữ liệu văn hóa đang được liên tục bổ sung và cập nhật.',
-    en: 'Cultural archives are continuously enriched and updated.',
-    fr: 'Les archives culturelles sont continuellement enrichies et mises à jour.',
-    ja: '文化データベースは継続的に拡充・更新されています。',
-    ko: '문화유산 데이터는 지속적으로 추가 및 업데이트되고 있습니다.',
-    zh: '文化遗产数据库正在持续补充与更新。'
-  },
-  'destinations.searchPlaceholder': {
-    vi: 'Tìm di tích, tỉnh thành...',
-    en: 'Search heritage, province...',
-    fr: 'Rechercher un monument, une province...',
-    ja: '史跡や省・都市を検索...',
-    ko: '유적지, 지역 검색...',
-    zh: '搜索名胜古迹、省市...'
-  },
-  'destinations.locality': {
-    vi: 'Địa phương',
-    en: 'Province / City',
-    fr: 'Province / Ville',
-    ja: '所在地・省',
-    ko: '지역 / 성',
-    zh: '地区省份'
-  },
-  'destinations.periodLabel': {
-    vi: 'Thời kỳ / Triều đại',
-    en: 'Period / Dynasty',
-    fr: 'Époque / Dynastie',
-    ja: '時代・王朝',
-    ko: '시대 / 왕조',
-    zh: '时期与朝代'
-  },
-  'destinations.significanceLabel': {
-    vi: 'Ý nghĩa Lịch sử & Văn hóa',
-    en: 'Historical & Cultural Significance',
-    fr: 'Importance historique et culturelle',
-    ja: '歴史・文化的重要価値',
-    ko: '역사적 및 문화적 의의',
-    zh: '历史与文化重要价值'
-  },
-  'destinations.historyLabel': {
-    vi: 'Lịch sử Hình thành',
-    en: 'Historical Background',
-    fr: 'Origine et histoire',
-    ja: '歴史の成り立ち',
-    ko: '형성 역사',
-    zh: '历史形成与渊源'
-  },
-  'destinations.visitingHoursLabel': {
-    vi: 'Giờ mở cửa',
-    en: 'Opening Hours',
-    fr: 'Horaires d ouverture',
-    ja: '開館時間',
-    ko: '관람 시간',
-    zh: '开放时间'
-  },
-  'destinations.ticketPriceLabel': {
-    vi: 'Giá vé tham khảo',
-    en: 'Admission Price',
-    fr: 'Tarif indicatif',
-    ja: '参考拝観料・入場料',
-    ko: '참고 입장료',
-    zh: '门票参考价格'
-  },
-  'destinations.listenStory': {
-    vi: 'Nghe AI Kể Chuyện',
-    en: 'Listen to AI Story',
-    fr: 'Écouter le récit IA',
-    ja: 'AI物語を聴く',
-    ko: 'AI 이야기 듣기',
-    zh: '收听AI讲述故事'
-  },
-  'destinations.nearbyFood': {
-    vi: 'Ẩm Thực Gần Đây',
-    en: 'Nearby Cuisine',
-    fr: 'Gastronomie proche',
-    ja: '周辺の郷土料理',
-    ko: '주변 향토 음식',
-    zh: '周边特色美食'
-  },
-  'destinations.askAI': {
-    vi: 'Hỏi HDV AI',
-    en: 'Ask AI Guide',
-    fr: 'Demander au Guide IA',
-    ja: 'AIガイドに質問',
-    ko: 'AI 가이드에게 질문',
-    zh: '向AI导游提问'
-  },
-  'destinations.directions': {
-    vi: 'Chỉ đường Maps',
-    en: 'Directions',
-    fr: 'Itinéraire',
-    ja: 'ルート案内',
-    ko: '길찾기',
-    zh: '地图导航'
-  },
-
-  // Category Filter Pills
-  'categories.all': {
-    vi: 'Tất cả di sản',
-    en: 'All Heritages',
-    fr: 'Tous les patrimoines',
-    ja: 'すべての遺産',
-    ko: '모든 문화유산',
-    zh: '全部文化遗产'
-  },
-  'categories.monument': {
-    vi: '📜 Di tích lịch sử',
-    en: '📜 Historical Monuments',
-    fr: '📜 Monuments historiques',
-    ja: '📜 歴史史跡',
-    ko: '📜 역사 유적',
-    zh: '📜 历史古迹'
-  },
-  'categories.palace': {
-    vi: '🏛 Hoàng thành & Cung điện',
-    en: '🏛 Citadels & Palaces',
-    fr: '🏛 Citadelles & Palais',
-    ja: '🏛 皇城・宮殿',
-    ko: '🏛 황성 및 궁궐',
-    zh: '🏛 皇城与宫殿'
-  },
-  'categories.temple': {
-    vi: '⛩ Đền chùa & Tháp cổ',
-    en: '⛩ Temples & Ancient Towers',
-    fr: '⛩ Temples & Tours antiques',
-    ja: '⛩ 寺院・古代塔群',
-    ko: '⛩ 사찰 및 고대 탑',
-    zh: '⛩ 寺庙与古塔'
-  },
-  'categories.ancient_house': {
-    vi: '🏘 Đô thị cổ',
-    en: '🏘 Ancient Towns',
-    fr: '🏘 Villes anciennes',
-    ja: '🏘 古代都市・古民家',
-    ko: '🏘 고대 도시 및 고택',
-    zh: '🏘 古镇古邑'
-  },
-  'categories.craft_village': {
-    vi: '🏺 Làng nghề truyền thống',
-    en: '🏺 Craft Villages',
-    fr: '🏺 Villages artisanaux',
-    ja: '🏺 伝統工芸村',
-    ko: '🏺 전통 공예 마을',
-    zh: '🏺 传统手工艺村'
-  },
-
-  // Region Filters
-  'region.all': {
-    vi: 'Toàn quốc',
-    en: 'Nationwide',
-    fr: 'Tout le pays',
-    ja: '全国',
-    ko: '전국',
-    zh: '全国'
-  },
-  'region.north': {
-    vi: 'Miền Bắc',
-    en: 'Northern',
-    fr: 'Nord',
-    ja: '北部',
-    ko: '북부',
-    zh: '北部'
-  },
-  'region.central': {
-    vi: 'Miền Trung',
-    en: 'Central',
-    fr: 'Centre',
-    ja: '中部',
-    ko: '중부',
-    zh: '中部'
-  },
-  'region.south': {
-    vi: 'Miền Nam',
-    en: 'Southern',
-    fr: 'Sud',
-    ja: '南部',
-    ko: '남부',
-    zh: '南部'
-  },
-
-  // Map Controls & Legends
-  'map.legendTitle': {
-    vi: 'Chú giải bản đồ Việt Nam:',
-    en: 'Vietnam Map Legend:',
-    fr: 'Légende de la carte du Vietnam :',
-    ja: 'ベトナム地図の凡例：',
-    ko: '베트남 지도 범례:',
-    zh: '越南全图图例：'
-  },
-  'map.borders63': {
-    vi: 'Đường ranh giới 63 tỉnh thành',
-    en: '63 Provincial boundaries',
-    fr: 'Frontières des 63 provinces',
-    ja: '63省・都市の境界線',
-    ko: '63개 성 및 도시 경계선',
-    zh: '63个省市行政区边界'
-  },
-  'map.heritagePoints': {
-    vi: 'Điểm di sản văn hóa & danh thắng',
-    en: 'Cultural heritage & scenic sites',
-    fr: 'Sites patrimoniaux et paysages',
-    ja: '文化遺産および景勝地',
-    ko: '문화유산 및 명승지',
-    zh: '文化遗产与风景名胜'
-  },
-  'map.sovereignty': {
-    vi: 'Chủ quyền Hoàng Sa & Trường Sa',
-    en: 'Hoang Sa & Truong Sa Islands Sovereignty',
-    fr: 'Souveraineté des îles Paracels et Spratleys',
-    ja: 'ホアンサ・チュオンサ諸島領有権',
-    ko: '황사 및 쯔엉사 군도 주권',
-    zh: '黄沙与长沙群岛神圣主权'
-  },
-  'map.exclusiveVietnam': {
-    vi: 'Chế độ: Độc quyền bản đồ Việt Nam',
-    en: 'Mode: Vietnam Exclusive Vector Map',
-    fr: 'Mode : Carte vectorielle exclusive du Vietnam',
-    ja: 'モード：ベトナム専用ベクター地図',
-    ko: '모드: 베트남 전용 벡터 지도',
-    zh: '模式：专属越南矢量地图'
-  },
-  'map.clickToZoom': {
-    vi: '• Nhấn để phóng to',
-    en: '• Click to zoom',
-    fr: '• Cliquer pour zoomer',
-    ja: '• クリックで拡大',
-    ko: '• 클릭하여 확대',
-    zh: '• 点击放大聚焦'
-  },
-  'map.vietnamOnly': {
-    vi: 'Chỉ Bản Đồ VN',
-    en: 'Vietnam Map',
-    fr: 'Carte Vietnam',
-    ja: 'ベトナム単独',
-    ko: '베트남 단독',
-    zh: '专属越南全图'
-  },
-  'map.satellite': {
-    vi: 'Vệ Tinh',
-    en: 'Satellite',
-    fr: 'Satellite',
-    ja: '衛星写真',
-    ko: '위성',
-    zh: '卫星影像'
-  },
-  'map.streets': {
-    vi: 'Du Lịch',
-    en: 'Travel Map',
-    fr: 'Tourisme',
-    ja: '観光街道',
-    ko: '관광 도로',
-    zh: '旅游街道'
-  },
-  'map.borders': {
-    vi: 'Ranh giới',
-    en: 'Borders',
-    fr: 'Frontières',
-    ja: '境界線',
-    ko: '경계선',
-    zh: '省界'
-  },
-  'map.provinceNames': {
-    vi: 'Tên tỉnh',
-    en: 'Provinces',
-    fr: 'Provinces',
-    ja: '省名',
-    ko: '성명',
-    zh: '省名'
-  },
-  'map.overviewS': {
-    vi: 'Toàn cảnh chữ S',
-    en: 'S-Shape Overview',
-    fr: 'Vue en S intégrale',
-    ja: 'S字全景',
-    ko: 'S자형 전경',
-    zh: 'S形全景'
-  },
-  'map.overviewVN': {
-    vi: 'Toàn cảnh Việt Nam',
-    en: 'Overview Vietnam',
-    fr: 'Vue du Vietnam',
-    ja: 'ベトナム全景',
-    ko: '베트남 전경',
-    zh: '全景越南'
-  },
-  'map.province': {
-    vi: 'Tỉnh thành:',
-    en: 'Province:',
-    fr: 'Province :',
-    ja: '省・都市：',
-    ko: '지역 성시:',
-    zh: '所属省市：'
-  },
-
-  // Detail Modal Translations
-  'detail.nationalHeritage': {
-    vi: 'Di sản Quốc gia',
-    en: 'National Heritage',
-    fr: 'Patrimoine National',
-    ja: '国家特別遺産',
-    ko: '국가 공인 문화유산',
-    zh: '国家级文化遗产'
-  },
-  'detail.visitingHours': {
-    vi: 'Giờ tham quan:',
-    en: 'Visiting hours:',
-    fr: 'Heures de visite :',
-    ja: '参観時間：',
-    ko: '관람 시간:',
-    zh: '参观时间：'
-  },
-  'detail.ticketPrice': {
-    vi: 'Giá vé tham khảo:',
-    en: 'Ticket price:',
-    fr: 'Tarif indicatif :',
-    ja: '参考拝観料：',
-    ko: '참고 요금:',
-    zh: '参考门票：'
-  },
-  'detail.region': {
-    vi: 'Tỉnh / Vùng miền:',
-    en: 'Province / Region:',
-    fr: 'Province / Région :',
-    ja: '所在省・地域：',
-    ko: '지역 / 성시:',
-    zh: '省份与区域：'
-  },
-  'detail.culturalSignificance': {
-    vi: 'Giá Trị Văn Hóa & Nghệ Thuật',
-    en: 'Cultural & Artistic Significance',
-    fr: 'Importance culturelle et artistique',
-    ja: '文化・芸術的価値',
-    ko: '문화 및 예술적 가치',
-    zh: '文化与艺术历史价值'
-  },
-  'detail.historicalBackground': {
-    vi: 'Lịch Sử Hình Thành & Niên Đại',
-    en: 'Historical Background & Timeline',
-    fr: 'Chronologie et Contexte Historique',
-    ja: '歴史の歩みと年代記',
-    ko: '형성 역사 및 연대기',
-    zh: '历史背景与建制年代'
-  },
-  'detail.interestingFacts': {
-    vi: 'Có Thể Bạn Chưa Biết (Kỳ Tích & Bí Ẩn)',
-    en: 'Fascinating Facts & Folklore',
-    fr: 'Faits fascinants et anecdotes',
-    ja: '豆知識・歴史の秘話',
-    ko: '흥미로운 역사 이야기와 일화',
-    zh: '趣味典故与历史奇观'
-  },
-  'detail.suggestedQuestions': {
-    vi: 'Hỏi Nhanh Hướng Dẫn Viên Du Lịch AI',
-    en: 'Quick Questions for AI Tour Guide',
-    fr: 'Questions rapides pour le Guide IA',
-    ja: 'AIツアーガイドへの質問例',
-    ko: 'AI 가이드에게 질문하기',
-    zh: '快捷向AI虚拟导游提问'
-  },
-  'detail.directions': {
-    vi: 'Chỉ đường Maps',
-    en: 'Directions',
-    fr: 'Itinéraire Maps',
-    ja: 'マップ案内',
-    ko: '지도 길찾기',
-    zh: '地图路线'
-  },
-  'detail.listenStory': {
-    vi: 'Kể Chuyện',
-    en: 'Listen to Story',
-    fr: 'Écouter l histoire',
-    ja: '歴史物語を聴く',
-    ko: '이야기 듣기',
-    zh: '聆听历史故事'
-  },
-  'detail.nearbyFood': {
-    vi: 'Ăn Uống Gần Đây',
-    en: 'Nearby Food',
-    fr: 'Restaurants proches',
-    ja: '周辺グルメ',
-    ko: '주변 음식점',
-    zh: '周边特色餐饮'
-  },
-  'detail.askAI': {
-    vi: 'Hỏi HDV AI',
-    en: 'Ask AI Guide',
-    fr: 'Demander au Guide IA',
-    ja: 'AIガイドに質問',
-    ko: 'AI 가이드에게 질문',
-    zh: '询问AI导游'
-  },
-  'detail.playingAudio': {
-    vi: '🔊 Đang thuyết minh...',
-    en: '🔊 Playing narration...',
-    fr: '🔊 Narration en cours...',
-    ja: '🔊 音声ガイド再生中...',
-    ko: '🔊 오디오 해설 재생 중...',
-    zh: '🔊 正在语音讲解中...'
-  },
-  'detail.audioGuide': {
-    vi: 'Thuyết minh giọng nói Di sản',
-    en: 'Heritage Audio Narration',
-    fr: 'Guide audio du patrimoine',
-    ja: '文化遺産・名勝音声ガイド',
-    ko: '문화유산 음성 해설',
-    zh: '名胜文化遗产语音讲解'
-  },
-  'detail.audioSubtitle': {
-    vi: 'Nghe giọng đọc AI truyền cảm tóm tắt di tích',
-    en: 'Listen to expressive AI narration of this heritage',
-    fr: 'Écoutez le récit expressif de l IA sur ce monument',
-    ja: '感情豊かなAI音声による名所解説を聴く',
-    ko: '풍부한 감정의 AI 음성으로 듣는 문화유산 해설',
-    zh: '聆听生动生动的AI语音讲解文化遗产概要'
-  },
-  'detail.copied': {
-    vi: '✓ Đã sao chép thông tin và liên kết di sản vào bộ nhớ tạm!',
-    en: '✓ Copied heritage info and link to clipboard!',
-    fr: '✓ Informations et lien copiés dans le presse-papiers !',
-    ja: '✓ 遺産情報とリンクをクリップボードにコピーしました！',
-    ko: '✓ 문화유산 정보와 링크가 클립보드에 복사되었습니다!',
-    zh: '✓ 已将文化遗产信息与链接复制到剪贴板！'
-  },
-  'detail.distanceAway': {
-    vi: 'Cách {km} km',
-    en: '{km} km away',
-    fr: 'À {km} km',
-    ja: '{km} km 先',
-    ko: '{km} km 거리',
-    zh: '距离 {km} 公里'
-  },
-
-  // Nearby Widget
-  'nearby.closest': {
-    vi: 'Gần bạn nhất',
-    en: 'Closest to you',
-    fr: 'Le plus proche de vous',
-    ja: '現在地から最寄り',
-    ko: '가장 가까운 명소',
-    zh: '离您最近'
-  },
-  'nearby.distanceAway': {
-    vi: 'Cách {km} km',
-    en: '{km} km away',
-    fr: 'À {km} km',
-    ja: '{km} km 先',
-    ko: '{km} km 거리',
-    zh: '距离 {km} 公里'
-  },
-  'nearby.estimate': {
-    vi: 'Ước tính:',
-    en: 'Estimate:',
-    fr: 'Estimation :',
-    ja: '目安時間：',
-    ko: '예상 소요 시간:',
-    zh: '估算耗时：'
-  },
-  'nearby.exploreNow': {
-    vi: 'Khám phá ngay',
-    en: 'Explore now',
-    fr: 'Explorer maintenant',
-    ja: '今すぐ探訪',
-    ko: '지금 탐험하기',
-    zh: '立即探索'
-  },
-  'nearby.listenStory': {
-    vi: 'Nghe AI kể chuyện',
-    en: 'Listen to AI story',
-    fr: 'Écouter l histoire IA',
-    ja: 'AI歴史物語を聴く',
-    ko: 'AI 이야기 듣기',
-    zh: '收听AI讲述'
-  },
-  'nearby.food': {
-    vi: 'Ăn uống gần đây',
-    en: 'Nearby food',
-    fr: 'Cuisine proche',
-    ja: '周辺グルメ',
-    ko: '주변 음식점',
-    zh: '周边餐饮'
-  },
-  'nearby.tabHeritages': {
-    vi: '🏛 Di Sản & Di Tích Gần Bạn',
-    en: '🏛 Heritage & Monuments Nearby',
-    fr: '🏛 Patrimoine & Monuments Proches',
-    ja: '🏛 周辺の文化遺産・名勝',
-    ko: '🏛 가까운 문화유산 및 유적지',
-    zh: '🏛 附近的文化遗产与名胜'
-  },
-  'nearby.tabPlaces': {
-    vi: '🍜 Ăn Uống & Trải Nghiệm Gần Bạn',
-    en: '🍜 Food & Experiences Nearby',
-    fr: '🍜 Gastronomie & Expériences Proches',
-    ja: '🍜 周辺の郷土グルメ＆体験',
-    ko: '🍜 가까운 향토 음식 및 체험',
-    zh: '🍜 附近的特色餐饮与体验'
-  },
-  'nearby.newHeritage': {
-    vi: 'Đề Xuất Di Sản Mới',
-    en: 'Propose New Heritage',
-    fr: 'Proposer un Nouveau Site',
-    ja: '新しい遺産を提案',
-    ko: '새로운 문화유산 제안',
-    zh: '推荐新文化遗产'
-  },
-
-  // Landmark background picker
-  'landmark.modalTitle': {
-    vi: 'Ảnh Nền Danh Thắng Việt Nam',
-    en: 'Vietnam Scenic Wallpaper Backgrounds',
-    fr: 'Arrière-plans des Paysages du Vietnam',
-    ja: 'ベトナムの名勝景観・壁紙コレクション',
-    ko: '베트남 명승지 배경 화면',
-    zh: '越南名胜景致背景壁纸'
-  },
-  'landmark.modalSubtitle': {
-    vi: 'Ảnh nền toàn bộ trang web tự động khớp với thành phố theo định vị GPS của bạn',
-    en: 'The website background automatically matches your city via GPS location',
-    fr: 'L arrière-plan du site s adapte automatiquement à votre ville par GPS',
-    ja: 'ウェブサイトの背景はGPS位置情報に合わせて各都市の景観に自動連動します',
-    ko: 'GPS 위치에 따라 거주 도시의 명승지 배경이 웹사이트 전체에 자동 적용됩니다',
-    zh: '全站背景将根据您的GPS定位自动匹配对应城市的代表性名胜风貌'
-  },
-  'landmark.gpsLabel': {
-    vi: 'Dùng cảm biến GPS thực tế trên thiết bị của bạn:',
-    en: 'Use real GPS sensor on your device:',
-    fr: 'Utiliser le capteur GPS réel de votre appareil :',
-    ja: '端末の実際のGPSセンサーを使用：',
-    ko: '기기의 실제 GPS 센서 사용:',
-    zh: '使用您设备上的实时GPS传感器：'
-  },
-  'landmark.aiSearch': {
-    vi: 'AI Tìm ảnh',
-    en: 'AI Photo Search',
-    fr: 'Recherche photo IA',
-    ja: 'AI画像検索',
-    ko: 'AI 사진 검색',
-    zh: 'AI 找图'
-  },
-  'landmark.enableGps': {
-    vi: 'Bật GPS của tôi',
-    en: 'Enable My GPS',
-    fr: 'Activer mon GPS',
-    ja: '現在地のGPSを取得',
-    ko: '내 GPS 켜기',
-    zh: '开启我的GPS'
-  },
-  'landmark.locating': {
-    vi: 'Đang định vị...',
-    en: 'Locating...',
-    fr: 'Localisation...',
-    ja: '測位中...',
-    ko: '위치 확인 중...',
-    zh: '正在定位中...'
-  },
-  'landmark.default': {
-    vi: 'Mặc định',
-    en: 'Default',
-    fr: 'Par défaut',
-    ja: '初期設定',
-    ko: '기본값',
-    zh: '恢复默认'
-  },
-  'landmark.manualAdd': {
-    vi: 'Thêm thủ công',
-    en: 'Manual add',
-    fr: 'Ajouter manuellement',
-    ja: '手動追加',
-    ko: '직접 추가',
-    zh: '手动添加'
   }
+};
+
+/**
+ * Direct phrase translations dictionary for auto-translating Vietnamese text in any component
+ */
+export const PHRASE_TRANSLATIONS: Record<string, Record<string, string>> = {
+  // Navigation & General
+  'Trang chủ': { en: 'Home', fr: 'Accueil', ja: 'ホーム', ko: '홈', zh: '首页' },
+  'Di sản': { en: 'Heritage', fr: 'Patrimoine', ja: '世界遺産', ko: '문화유산', zh: '文化遗产' },
+  'Nhận diện AI': { en: 'AI Vision', fr: 'Vision IA', ja: 'AI画像認識', ko: 'AI 비전', zh: 'AI 识别' },
+  'Nhận diện': { en: 'Vision', fr: 'Vision', ja: '認識', ko: '인식', zh: '识别' },
+  'Kể chuyện AI': { en: 'AI Stories', fr: 'Récits IA', ja: 'AI物語音声', ko: 'AI 스토리', zh: 'AI 讲述' },
+  'Kể chuyện': { en: 'Story', fr: 'Histoire', ja: 'ストーリー', ko: '이야기', zh: '讲故事' },
+  'Hướng Dẫn Viên AI': { en: 'AI Tour Guide', fr: 'Guide IA', ja: 'AIツアーガイド', ko: 'AI 가이드', zh: 'AI 虚拟导游' },
+  'HDV AI': { en: 'AI Guide', fr: 'Guide IA', ja: 'AI案内', ko: 'AI가이드', zh: 'AI导游' },
+  'Bản đồ': { en: 'Map', fr: 'Carte', ja: '地図', ko: '지도', zh: '全景地图' },
+  'Bản đồ Việt Nam': { en: 'Vietnam Map', fr: 'Carte du Vietnam', ja: 'ベトナム地図', ko: '베트남 지도', zh: '越南地图' },
+  'Ăn uống & Vui chơi': { en: 'Food & Leisure', fr: 'Gastronomie & Loisirs', ja: 'グルメ＆レジャー', ko: '음식 & 즐길거리', zh: '美食与休闲' },
+  'Ăn uống': { en: 'Food', fr: 'Cuisine', ja: 'グルメ', ko: '음식', zh: '餐饮' },
+  'Lịch trình': { en: 'Itinerary', fr: 'Itinéraire', ja: '旅行日程', ko: '여행 일정', zh: '行程规划' },
+  'Lập lịch trình': { en: 'Tour Planner', fr: 'Planificateur', ja: '日程プランナー', ko: '일정 플래너', zh: '规划行程' },
+  'Lập Lịch Trình': { en: 'Tour Planner', fr: 'Planificateur', ja: '日程プランナー', ko: '일정 플래너', zh: '规划行程' },
+  'Làng nghề & Nghệ thuật': { en: 'Crafts & Arts', fr: 'Artisanat & Arts', ja: '伝統工芸・芸能', ko: '전통공예 & 예술', zh: '传统手工艺与艺术' },
+  'Quiz & Lịch sử': { en: 'Quiz & History', fr: 'Quiz & Histoire', ja: 'クイズ・歴史', ko: '퀴즈 & 역사', zh: '历史问答' },
+  'Hồ sơ & Danh hiệu': { en: 'Profile & Badges', fr: 'Profil & Titres', ja: 'プロフィール＆称号', ko: '프로필 및 칭호', zh: '个人档案与成就' },
+  'Cộng đồng': { en: 'Community', fr: 'Communauté', ja: 'コミュニティ', ko: '커뮤니티', zh: '互动社区' },
+  'Quản trị viên': { en: 'Admin', fr: 'Administration', ja: '管理者', ko: '관리자', zh: '管理后台' },
+  'Yêu thích': { en: 'Favorites', fr: 'Favoris', ja: 'お気に入り', ko: '즐겨찾기', zh: '收藏夹' },
+  'Đề Xuất Mới': { en: 'Submit New', fr: 'Proposer', ja: '遺産提案', ko: '신규 제안', zh: '推荐遗址' },
+  'Đề Xuất Di Sản / Địa Điểm Mới': { en: 'Submit Heritage / New Place', fr: 'Proposer un site', ja: '新名勝・遺産提案', ko: '새 명소 제안', zh: '推荐新遗址/地点' },
+  'Ngoại tuyến': { en: 'Offline', fr: 'Hors ligne', ja: 'オフライン', ko: '오프라인', zh: '离线模式' },
+  'Đăng nhập': { en: 'Sign In', fr: 'Connexion', ja: 'ログイン', ko: '로그인', zh: '登录' },
+  'Đăng Nhập': { en: 'Sign In', fr: 'Connexion', ja: 'ログイン', ko: '로그인', zh: '登录' },
+  'Đăng ký': { en: 'Sign Up', fr: 'Inscription', ja: '新規登録', ko: '회원가입', zh: '注册' },
+  'Đăng Ký': { en: 'Sign Up', fr: 'Inscription', ja: '新規登録', ko: '회원가입', zh: '注册' },
+  'Đăng xuất': { en: 'Sign Out', fr: 'Déconnexion', ja: 'ログアウト', ko: '로그아웃', zh: '退出登录' },
+  'Chi tiết': { en: 'Details', fr: 'Détails', ja: '詳細', ko: '상세보기', zh: '详情' },
+  'Lưu': { en: 'Save', fr: 'Enregistrer', ja: '保存', ko: '저장', zh: '保存' },
+  'Hủy': { en: 'Cancel', fr: 'Annuler', ja: 'キャンセル', ko: '취소', zh: '取消' },
+  'Đóng': { en: 'Close', fr: 'Fermer', ja: '閉じる', ko: '닫기', zh: '关闭' },
+  'Thêm': { en: 'More', fr: 'Plus', ja: 'その他', ko: '더보기', zh: '更多' },
+  'Xóa': { en: 'Clear', fr: 'Effacer', ja: 'クリア', ko: '삭제', zh: '清除' },
+  'Khám phá di sản này': { en: 'Explore this heritage', fr: 'Explorer ce site', ja: 'この遺産を探索', ko: '이 유산 탐험', zh: '探索此遗址' },
+  'Khám phá di sản': { en: 'Explore Heritage', fr: 'Explorer le site', ja: '遺産を探索', ko: '문화유산 탐험', zh: '探索名胜' },
+  'Ngắm ảnh nền': { en: 'View Wallpaper', fr: 'Voir le fond', ja: '壁紙を鑑賞', ko: '배경 감상', zh: '欣赏壁纸' },
+  'Đổi cảnh sắc': { en: 'Change View', fr: 'Changer la vue', ja: '景色を変更', ko: '배경 변경', zh: '更换名胜' },
+  'Đổi danh thắng khác': { en: 'Change Landmark', fr: 'Changer de site', ja: '名勝を変更', ko: '명소 변경', zh: '更换名胜' },
+  'Lấy GPS của tôi': { en: 'Get My GPS', fr: 'Localiser mon GPS', ja: '現在地を取得', ko: '내 GPS 위치', zh: '获取当前位置' },
+  'Đang dò GPS...': { en: 'Locating GPS...', fr: 'Localisation GPS...', ja: 'GPS測位中...', ko: 'GPS 탐색 중...', zh: '正在定位...' },
+  'Gần Bạn Nhất (GPS)': { en: 'Nearest You (GPS)', fr: 'Le Plus Proche (GPS)', ja: '最寄りの名所 (GPS)', ko: '가장 가까운 곳 (GPS)', zh: '离你最近 (GPS)' },
+  'Hiện giao diện': { en: 'Show Interface', fr: 'Afficher', ja: 'UIを表示', ko: '화면 표시', zh: '显示界面' },
+  'Quay về Trang chủ': { en: 'Back to Home', fr: 'Retour Accueil', ja: 'ホームに戻る', ko: '홈으로 돌아가기', zh: '返回首页' },
+  'Quay lại Trang chủ': { en: 'Back to Home', fr: 'Retour Accueil', ja: 'ホームに戻る', ko: '홈으로 돌아가기', zh: '返回首页' },
+  'Ngắm trọn vẹn bức ảnh nền danh thắng': { en: 'View Full Wallpaper', fr: 'Voir le fond d\'écran complet', ja: '壁紙をフル鑑賞', ko: '배경화면 전체 감상', zh: '全屏欣赏背景壁纸' },
+  'Hiểu di sản. Khám phá Việt Nam.': { en: 'Understand Heritage. Discover Vietnam.', fr: 'Comprendre le Patrimoine. Explorer le Vietnam.', ja: '遺産を知り、ベトナムを巡る。', ko: '역사를 이해하고, 베트남을 탐험하세요.', zh: '感悟文化遗产，探索大美越南。' },
+
+  // Home Page Sections
+  'Di Sản Tiêu Biểu': { en: 'Featured Heritages', fr: 'Patrimoines Remarquables', ja: '代表的な世界遺産', ko: '대표 문화유산', zh: '代表性文化遗产' },
+  'Báu Vật Ngàn Năm Của Dân Tộc': { en: 'Millennial Treasures of the Nation', fr: 'Trésors Millénaires de la Nation', ja: '千年の歴史を誇る国の宝', ko: '민족의 찬란한 천년 보물', zh: '千百年来流传的民族瑰宝' },
+  'Xem tất cả trên bản đồ': { en: 'View all on map', fr: 'Voir tout sur la carte', ja: '地図ですべて見る', ko: '지도에서 전체 보기', zh: '在全景地图中查看' },
+  'Bản Đồ Địa Lý & Du Lịch Tương Tác Trực Tiếp': { en: 'Interactive Geographical & Travel Map', fr: 'Carte Géographique & Touristique Interactive', ja: 'インタラクティブ地理・観光マップ', ko: '인터랙티브 지리 및 관광 지도', zh: '全景交互式地理与文旅地图' },
+  'Khám Phá Dải Đất Hình Chữ S Việt Nam': { en: 'Explore the S-Shaped Land of Vietnam', fr: 'Explorez la Terre en Forme de S du Vietnam', ja: 'ベトナムのS字型の国土を探訪', ko: '베트남 S자형 국토 탐험', zh: '探索越南S形壮丽山河' },
+  'Chạm hoặc nhấn vào bất kỳ tỉnh thành nào trên bản đồ để phóng to và xem các di sản thực tế.': {
+    en: 'Touch or click any province on the map to zoom in and discover real heritages.',
+    fr: 'Touchez ou cliquez sur une province pour zoomer et découvrir ses patrimoines réels.',
+    ja: '地図上の各省をタップしてズームし、実在の世界遺産や史跡を発見。',
+    ko: '지도의 각 성/시를 터치하여 확대하고 실제 문화유산을 확인하세요.',
+    zh: '点击地图上的任意省市即可放大浏览当地真实的文化名胜。'
+  },
+  'Mở Bản Đồ Toàn Màn Hình': { en: 'Open Fullscreen Map', fr: 'Ouvrir la Carte Plein Écran', ja: '全画面マップを開く', ko: '전체 화면 지도 열기', zh: '开启全屏地图' },
+  'Hệ Thống Lưu Trữ Cá Nhân & Điểm Văn Hóa': { en: 'Personal Archive & Cultural XP System', fr: 'Système d\'Archives Personnelles & Points XP', ja: '個人アーカイブ＆文化ポイントシステム', ko: '개인 보관함 & 문화 포인트 시스템', zh: '个人档案与文化积分系统' },
+  'Đồng Hành & Lưu Trữ Mọi Hành Trình Di Sản Của Bạn': { en: 'Accompanying & Preserving All Your Heritage Journeys', fr: 'Accompagner & Préserver Tous Vos Voyages Culturels', ja: 'あなたの歴史遺産の旅を記録・共有', ko: '당신의 모든 문화유산 여정을 함께 기록합니다', zh: '陪伴并记录您的每一段文化遗产之旅' },
+  'Mỗi thao tác nhận diện ảnh chụp bằng AI, nghe kể chuyện lịch sử, hoàn thành câu đố văn hóa hay lập kế hoạch du lịch đều được tự động ghi lại trong hồ sơ cá nhân với hệ thống điểm thưởng XP và danh hiệu di sản.': {
+    en: 'Every AI image recognition, historical story listened to, cultural quiz completed, and trip plan made is automatically recorded with XP rewards and heritage badges.',
+    fr: 'Chaque reconnaissance d\'image IA, histoire écoutée, quiz réussi ou itinéraire planifié est enregistré avec des points XP et des titres patrimoniaux.',
+    ja: 'AI画像認識、歴史ストーリーの再生、クイズの挑戦、旅行日程の作成のすべてが個人プロファイルに記録され、XPやバッジが付与されます。',
+    ko: 'AI 사진 인식, 역사 이야기 청취, 문화 퀴즈 풀이 및 여행 계획 등 모든 활동이 XP 포인트와 문화유산 칭호로 기록됩니다.',
+    zh: '每一次AI视觉识别、倾听历史故事、完成文化问答或规划行程，都将自动记录在个人档案中，并累积XP积分与专属成就。'
+  },
+  'Xem Bảng Danh Hiệu & Hồ Sơ': { en: 'View Badges & Profile', fr: 'Voir les Titres & Profil', ja: '称号＆プロフィールを見る', ko: '칭호 및 프로필 보기', zh: '查看成就与档案' },
+  'Tài Khoản Cá Nhân': { en: 'Personal Account', fr: 'Compte Personnel', ja: 'マイアカウント', ko: '개인 계정', zh: '个人账户' },
+  'Đăng Nhập / Đăng Ký': { en: 'Sign In / Register', fr: 'Connexion / Inscription', ja: 'ログイン／新規登録', ko: '로그인 / 회원가입', zh: '登录 / 注册' },
+  'AI Nhận Diện Thị Giác': { en: 'AI Visual Recognition', fr: 'Vision IA Patrimoniale', ja: 'AI視覚・画像認識', ko: 'AI 시각 인식', zh: 'AI 视觉识别' },
+  'Chụp ảnh di tích, đồ cổ, trang phục cổ hay món ăn để biết ngay tên gọi, niên đại và ý nghĩa lịch sử.': {
+    en: 'Take photos of monuments, antiques, historic costumes or food to discover names, periods and cultural origins.',
+    fr: 'Prenez en photo monuments, antiquités, costumes ou plats pour connaître leur histoire et signification.',
+    ja: '写真から寺院、古美術品、伝統衣装、郷土料理を瞬時に特定し、時代背景を解説。',
+    ko: '유적지, 골동품, 전통 의상 또는 음식을 촬영하여 이름, 연대 및 역사적 의미를 즉시 확인하세요.',
+    zh: '拍摄古迹、文物古董、传统服饰或特色菜肴，即时获知其名称、历史年代与文化底蕴。'
+  },
+  'AI Kể Chuyện Đa Đối Tượng': { en: 'Multi-Audience AI Storyteller', fr: 'Récits IA Personnalisés', ja: 'AI歴史ストーリーテリング', ko: '맞춤형 AI 이야기꾼', zh: 'AI 多群体故事讲述' },
+  'Lắng nghe giọng kể truyền cảm phù hợp với trẻ em, học sinh, nhà nghiên cứu hay du khách quốc tế.': {
+    en: 'Listen to expressive storytelling crafted for children, students, scholars, or international tourists.',
+    fr: 'Écoutez une narration captivante adaptée aux enfants, étudiants, chercheurs ou voyageurs du monde.',
+    ja: '子供向け、学生向け、研究者向け、外国人観光客向けに最適化された感情豊かな音声解説。',
+    ko: '어린이, 학생, 연구자 및 해외 관광객에 맞춘 감동적인 내레이션을 들어보세요.',
+    zh: '倾听针对儿童、青少年、历史学者或国际游客量身定制的生动语音导览。'
+  },
+  'Lập Lịch Trình Tự Động': { en: 'Automated Itinerary Planner', fr: 'Planificateur d\'Itinéraire', ja: 'スマート旅行計画', ko: '스마트 일정 플래너', zh: '智能行程规划' },
+  'Lên kế hoạch du lịch văn hóa theo thời gian, ngân sách, tích hợp Google Places lân cận.': {
+    en: 'Generate customized cultural tour plans by time and budget with nearby Google Places.',
+    fr: 'Organisez des circuits culturels selon votre temps et budget avec les lieux Google Places à proximité.',
+    ja: '時間や予算に合わせて最適な文化ツアーを自動編成し、周辺の人気スポットも提案。',
+    ko: '시간과 예산에 맞추어 맞춤형 문화 여행을 계획하고 주변 장소를 추천받으세요.',
+    zh: '根据游玩时间与预算，自动生成深度文化游览路线，并推荐周边精选地标。'
+  },
+
+  // Footer & Miscellaneous
+  'Chức năng cốt lõi': { en: 'Core Features', fr: 'Fonctionnalités Clés', ja: '主要機能', ko: '핵심 기능', zh: '核心功能' },
+  'Nhận diện di sản bằng AI Vision': { en: 'Heritage AI Vision Recognition', fr: 'Reconnaissance de patrimoine par IA', ja: 'AI視覚による遺産認識', ko: 'AI 비전 기반 문화유산 인식', zh: 'AI 视觉识别历史遗迹' },
+  'Nghe AI kể chuyện văn hóa': { en: 'Listen to AI Cultural Stories', fr: 'Écouter les récits culturels de l\'IA', ja: 'AIによる文化ストーリーテリング', ko: 'AI 문화 역사 이야기 청취', zh: '倾听AI讲述文化典故' },
+  'Ăn uống & vui chơi gần di sản': { en: 'Food & leisure near heritage', fr: 'Gastronomie & sorties à proximité', ja: '名所周辺のグルメ＆レジャー', ko: '문화유산 주변 먹거리 & 즐길거리', zh: '胜地周边地道风味与娱乐' },
+  'Lập lịch trình du lịch thông minh': { en: 'Smart travel itinerary planner', fr: 'Planificateur de voyage intelligent', ja: 'スマート旅行計画の作成', ko: '스마트 맞춤 여행 일정 설계', zh: '智能定制深度游览线路' },
+  'Tài khoản & Thiết bị': { en: 'Account & Device', fr: 'Compte & Appareil', ja: 'アカウント＆端末', ko: '계정 & 기기', zh: '账户与设备' },
+  'Đăng nhập / Đăng ký tài khoản': { en: 'Sign In / Register Account', fr: 'Connexion / Inscription', ja: 'ログイン / 新規登録', ko: '로그인 / 회원가입', zh: '登录 / 注册新账户' },
+  'Xem điểm văn hóa & danh hiệu': { en: 'View Cultural XP & Badges', fr: 'Voir les points XP & titres', ja: '文化XPと獲得称号の確認', ko: '문화 XP 및 획득 칭호 확인', zh: '查看文化积分与专属勋章' },
+  'Lịch sử thao tác thiết bị': { en: 'Device Activity History', fr: 'Historique d\'activité', ja: '端末の操作履歴', ko: '기기 활동 기록', zh: '设备历史浏览与活动记录' },
+  'Bộ sưu tập di sản đã lưu': { en: 'Saved Heritage Collection', fr: 'Collection de patrimoine enregistrée', ja: 'お気に入り保存コレクション', ko: '저장한 문화유산 컬렉션', zh: '已收藏的文化遗产名录' },
+  '© 2026 HỒN ĐẤT VIỆT. Tự hào Di sản Việt Nam.': {
+    en: '© 2026 HERITAGEAI. Pride of Vietnamese Heritage.',
+    fr: '© 2026 HERITAGEAI. Fierté du Patrimoine Vietnamien.',
+    ja: '© 2026 HERITAGEAI. ベトナムの遺産を誇りに。',
+    ko: '© 2026 HERITAGEAI. 베트남 문화유산의 자부심.',
+    zh: '© 2026 越南之魂 HERITAGEAI. 传承华夏与越裳文化之美。'
+  },
+  'Dữ liệu đối chiếu: Đại Việt Sử Ký Toàn Thư, UNESCO & Google Places': {
+    en: 'Sources verified with Dai Viet Su Ky Toan Thu, UNESCO & Google Places',
+    fr: 'Sources vérifiées avec Dai Viet Su Ky Toan Thu, UNESCO & Google Places',
+    ja: '参照文献：大越史記全書、UNESCO世界遺産、Google Places',
+    ko: '자료 검증: 대월사기전서, UNESCO 세계유산, Google Places',
+    zh: '考据典籍：《大越史记全书》、联合国教科文组织(UNESCO)及 Google Places'
+  },
+  'Phát triển với sự trân trọng đối với 4.000 năm lịch sử hào hùng và nguồn tư liệu lịch sử dân tộc.': {
+    en: 'Crafted with reverence for 4,000 years of heroic history and national cultural treasures.',
+    fr: 'Conçu avec respect pour 4 000 ans d\'histoire héroïque et de trésors culturels nationaux.',
+    ja: '4000年の輝かしい歴史と民族の文化財への敬意を込めて開発。',
+    ko: '4,000년의 자랑스러운 역사와 민족 문화유산에 대한 깊은 경의를 담아 개발되었습니다.',
+    zh: '致敬四千年波澜壮阔的历史文明与璀璨的民族文献宝库。'
+  },
+  'Nền tảng trí tuệ nhân tạo đồng hành khám phá, bảo tồn và lan tỏa giá trị di sản văn hóa, lịch sử và trải nghiệm du lịch Việt Nam.': {
+    en: 'AI-powered platform to discover, preserve, and promote Vietnamese cultural heritage, history, and authentic travel experiences.',
+    fr: 'Plateforme propulsée par l\'IA pour découvrir, préserver et valoriser le patrimoine culturel et historique du Vietnam.',
+    ja: 'ベトナムの文化遺産、歴史、そして本物の旅行体験を発見・保存・発信するAIプラットフォーム。',
+    ko: '베트남의 문화유산과 역사, 생생한 여행 경험을 발견하고 보존하며 널리 알리는 AI 플랫폼입니다.',
+    zh: '致力于探索、保护与传承越南璀璨历史遗产与真实旅游体验的人工智能综合平台。'
+  },
+
+  // Categories and Regions
+  'Di tích lịch sử': { en: 'Historical Monument', fr: 'Monument historique', ja: '歴史史跡', ko: '역사 유적', zh: '历史遗迹' },
+  'Di sản văn hóa thế giới': { en: 'World Cultural Heritage', fr: 'Patrimoine mondial', ja: '世界文化遺産', ko: '세계문화유산', zh: '世界文化遗产' },
+  'Di tích quốc gia đặc biệt': { en: 'Special National Monument', fr: 'Monument national spécial', ja: '特別国家史跡', ko: '특별국가유적', zh: '特别国家级古迹' },
+  'Di sản thiên nhiên thế giới': { en: 'World Natural Heritage', fr: 'Patrimoine naturel mondial', ja: '世界自然遺産', ko: '세계자연유산', zh: '世界自然遗产' },
+  'Văn hóa phi vật thể': { en: 'Intangible Cultural Heritage', fr: 'Patrimoine immatériel', ja: '無形文化遺産', ko: '무형문화유산', zh: '非物质文化遗产' },
+  'Danh lam thắng cảnh': { en: 'Scenic Landscape', fr: 'Paysage pittoresque', ja: '名勝景勝地', ko: '명승지', zh: '名胜古迹' },
+  'Làng nghề truyền thống': { en: 'Traditional Craft Village', fr: 'Village artisanal', ja: '伝統工芸村', ko: '전통 공예 마을', zh: '传统手工艺村' },
+  'Ẩm thực truyền thống': { en: 'Traditional Cuisine', fr: 'Cuisine traditionnelle', ja: '郷土料理', ko: '전통 요리', zh: '传统美食' },
+  'Miền Bắc': { en: 'Northern Vietnam', fr: 'Nord du Vietnam', ja: 'ベトナム北部', ko: '베트남 북부', zh: '越南北部' },
+  'Miền Trung': { en: 'Central Vietnam', fr: 'Centre du Vietnam', ja: 'ベトナム中部', ko: '베트남 중부', zh: '越南中部' },
+  'Miền Nam': { en: 'Southern Vietnam', fr: 'Sud du Vietnam', ja: 'ベトナム南部', ko: '베트남 남부', zh: '越南南部' },
+  'Tất cả': { en: 'All', fr: 'Tous', ja: 'すべて', ko: '전체', zh: '全部' },
+
+  // Provinces & Cities of Vietnam
+  'Hà Nội': { en: 'Hanoi', fr: 'Hanoï', ja: 'ハノイ', ko: '하노이', zh: '河内' },
+  'TP. Hồ Chí Minh': { en: 'Ho Chi Minh City', fr: 'Hô Chi Minh-Ville', ja: 'ホーチミン市', ko: '호치민시', zh: '胡志明市' },
+  'Hồ Chí Minh': { en: 'Ho Chi Minh City', fr: 'Hô Chi Minh-Ville', ja: 'ホーチミン市', ko: '호치민시', zh: '胡志明市' },
+  'Thừa Thiên Huế': { en: 'Thua Thien Hue', fr: 'Thua Thien Hue', ja: 'トゥアティエン・フエ', ko: '트어티엔후에', zh: '承天顺化' },
+  'Huế': { en: 'Hue', fr: 'Hué', ja: 'フエ', ko: '후에', zh: '顺化' },
+  'Đà Nẵng': { en: 'Da Nang', fr: 'Da Nang', ja: 'ダナン', ko: '다낭', zh: '岘港' },
+  'Quảng Nam': { en: 'Quang Nam', fr: 'Quang Nam', ja: 'クアンナム', ko: '꽝남', zh: '广南' },
+  'Quảng Ninh': { en: 'Quang Ninh', fr: 'Quang Ninh', ja: 'クアンニン', ko: '꽝닌', zh: '广宁' },
+  'Ninh Bình': { en: 'Ninh Binh', fr: 'Ninh Binh', ja: 'ニンビン', ko: '닌빈', zh: '宁平' },
+  'Khánh Hòa': { en: 'Khanh Hoa', fr: 'Khanh Hoa', ja: 'カインホア', ko: '카인호아', zh: '庆和' },
+  'Lâm Đồng': { en: 'Lam Dong', fr: 'Lam Dong', ja: 'ラムドン', ko: '람동', zh: '林同' },
+  'Bắc Ninh': { en: 'Bac Ninh', fr: 'Bac Ninh', ja: 'バクニン', ko: '박닌', zh: '北宁' },
+  'Bắc Giang': { en: 'Bac Giang', fr: 'Bac Giang', ja: 'バクザン', ko: '박장', zh: '北江' },
+  'Cần Thơ': { en: 'Can Tho', fr: 'Can Tho', ja: 'カントー', ko: '깐토', zh: '芹苴' },
+  'Hải Phòng': { en: 'Hai Phong', fr: 'Haiphong', ja: 'ハイフォン', ko: '하이퐁', zh: '海防' },
+  'Cao Bằng': { en: 'Cao Bang', fr: 'Cao Bang', ja: 'カオバン', ko: '까오방', zh: '高平' },
+  'Hà Giang': { en: 'Ha Giang', fr: 'Ha Giang', ja: 'ハザン', ko: '하장', zh: '河江' },
+  'Lào Cai': { en: 'Lao Cai', fr: 'Lao Cai', ja: 'ラオカイ', ko: '라오까이', zh: '老街' },
+  'Điện Biên': { en: 'Dien Bien', fr: 'Dien Bien', ja: 'ディエンビエン', ko: '디엔비엔', zh: '奠边' },
+  'Kiên Giang': { en: 'Kien Giang', fr: 'Kien Giang', ja: 'キエンザン', ko: '끼엔장', zh: '坚江' },
+  'Tây Ninh': { en: 'Tay Ninh', fr: 'Tay Ninh', ja: 'タイニン', ko: '떠이닌', zh: '西宁' },
+  'Bình Thuận': { en: 'Binh Thuan', fr: 'Binh Thuan', ja: 'ビントゥアン', ko: '빈투언', zh: '平顺' },
+  'Bà Rịa - Vũng Tàu': { en: 'Ba Ria - Vung Tau', fr: 'Ba Ria - Vung Tau', ja: 'バリア＝ブンタウ', ko: '바리어붕따우', zh: '巴地头顿' },
+  'Đồng Nai': { en: 'Dong Nai', fr: 'Dong Nai', ja: 'ドンナイ', ko: '동나이', zh: '同奈' },
+  'Bình Dương': { en: 'Binh Duong', fr: 'Binh Duong', ja: 'ビンズオン', ko: '빈즈엉', zh: '平阳' },
+  'Nghệ An': { en: 'Nghe An', fr: 'Nghe An', ja: 'ゲアン', ko: '응에안', zh: '乂安' },
+  'Thanh Hóa': { en: 'Thanh Hoa', fr: 'Thanh Hoa', ja: 'タインホア', ko: '타인호아', zh: '清化' },
+  'Hà Tĩnh': { en: 'Ha Tinh', fr: 'Ha Tinh', ja: 'ハティン', ko: '하띤', zh: '河静' },
+  'Quảng Bình': { en: 'Quang Binh', fr: 'Quang Binh', ja: 'クアンビン', ko: '꽝빈', zh: '广平' },
+  'Quảng Trị': { en: 'Quang Tri', fr: 'Quang Tri', ja: 'クアンチ', ko: '꽝찌', zh: '广治' },
+  'Bình Định': { en: 'Binh Dinh', fr: 'Binh Dinh', ja: 'ビンディン', ko: '빈딘', zh: '平定' },
+  'Phú Yên': { en: 'Phu Yen', fr: 'Phu Yen', ja: 'フーイエン', ko: '푸옌', zh: '富安' },
+  'Gia Lai': { en: 'Gia Lai', fr: 'Gia Lai', ja: 'ザライ', ko: '잘라이', zh: '嘉莱' },
+  'Đắk Lắk': { en: 'Dak Lak', fr: 'Dak Lak', ja: 'ダクラク', ko: '닥락', zh: '多乐' },
+  'An Giang': { en: 'An Giang', fr: 'An Giang', ja: 'アンザン', ko: '안장', zh: '安江' },
+  'Cà Mau': { en: 'Ca Mau', fr: 'Ca Mau', ja: 'カマウ', ko: '까마우', zh: '金瓯' },
+  'Bến Tre': { en: 'Ben Tre', fr: 'Ben Tre', ja: 'ベンチェ', ko: '벤째', zh: '槟椥' },
+
+  // Iconic Landmarks & Cultural Relics
+  'Văn Miếu - Quốc Tử Giám & Hồ Gươm': { en: 'Temple of Literature & Sword Lake', fr: 'Temple de la Littérature & Lac de l\'Épée', ja: '文廟・ホアンキエム湖', ko: '문묘 & 호안끼엠 호수', zh: '文庙·国子监与还剑湖' },
+  'Văn Miếu - Quốc Tử Giám': { en: 'Temple of Literature', fr: 'Temple de la Littérature', ja: '文廟・国子監', ko: '문묘 - 국자감', zh: '文庙·国子监' },
+  'Hồ Gươm': { en: 'Sword Lake (Hoan Kiem Lake)', fr: 'Lac de l\'Épée Restituée', ja: 'ホアンキエム湖', ko: '호안끼엠 호수', zh: '还剑湖' },
+  'Đền Ngọc Sơn & Cầu Thê Húc': { en: 'Ngoc Son Temple & The Huc Bridge', fr: 'Temple Ngoc Son & Pont The Huc', ja: '玉山祠・棲旭橋', ko: '응옥선 사당 & 테훅 다리', zh: '玉山祠与栖旭桥' },
+  'Đền Ngọc Sơn': { en: 'Ngoc Son Temple', fr: 'Temple Ngoc Son', ja: '玉山祠', ko: '응옥선 사당', zh: '玉山祠' },
+  'Cầu Thê Húc': { en: 'The Huc Bridge', fr: 'Pont The Huc', ja: '棲旭橋', ko: '테훅 다리', zh: '栖旭桥' },
+  'Hoàng thành Thăng Long': { en: 'Imperial Citadel of Thang Long', fr: 'Cité impériale de Thang Long', ja: 'タンロン遺跡', ko: '탕롱 황성', zh: '升龙皇城' },
+  'Chùa Một Cột': { en: 'One Pillar Pagoda', fr: 'Pagode au Pilier Unique', ja: '一柱寺', ko: '일주사', zh: '一柱寺' },
+  'Quần thể di tích Cố đô Huế': { en: 'Complex of Hue Monuments', fr: 'Ensemble de monuments de Hué', ja: 'フエの建造物群', ko: '후에 기념물 복합 지구', zh: '顺化古迹建筑群' },
+  'Đại Nội Cung Đình Huế & Sông Hương': { en: 'Hue Imperial Citadel & Perfume River', fr: 'Cité Impériale de Hué & Rivière des Parfums', ja: 'フエ王宮・香江', ko: '후에 황궁 & 흐엉강', zh: '顺化皇城与香江' },
+  'Đại Nội Huế': { en: 'Hue Imperial Citadel', fr: 'Cité Impériale de Hué', ja: 'フエ王宮', ko: '후에 황궁', zh: '顺化皇城' },
+  'Vịnh Hạ Long': { en: 'Ha Long Bay', fr: 'Baie d\'Ha Long', ja: 'ハロン湾', ko: '하롱베이', zh: '下龙湾' },
+  'Phố cổ Hội An': { en: 'Hoi An Ancient Town', fr: 'Vieille ville de Hoi An', ja: '古都ホイアン', ko: '호이안 고대 도시', zh: '会安古镇' },
+  'Quần thể danh thắng Tràng An': { en: 'Trang An Scenic Landscape Complex', fr: 'Complexe paysager de Trang An', ja: 'チャンアンの景観複合体', ko: '짱안 경관 단지', zh: '长安名胜群' },
+  'Thánh địa Mỹ Sơn': { en: 'My Son Sanctuary', fr: 'Sanctuaire de My Son', ja: 'ミーソン聖域', ko: '미선 성지', zh: '美山圣地' },
+  'Chùa Hương': { en: 'Perfume Pagoda', fr: 'Pagode des Parfums', ja: '香寺', ko: '흐엉 사원', zh: '香寺' },
+  'Địa đạo Củ Chi': { en: 'Cu Chi Tunnels', fr: 'Tunnels de Cu Chi', ja: 'クチの地下道', ko: '구찌 터널', zh: '古芝地道' },
+  'Dinh Độc Lập & Bến Bạch Đằng': { en: 'Independence Palace & Bach Dang Wharf', fr: 'Palais de la Réunification & Quai Bach Dang', ja: '統一会堂・バクダン埠頭', ko: '독립궁 & 바익당 부두', zh: '独立宫与白藤码头' },
+  'Dinh Độc Lập': { en: 'Independence Palace', fr: 'Palais de la Réunification', ja: '統一会堂', ko: '독립궁', zh: '独立宫' },
+  'Chợ Bến Thành': { en: 'Ben Thanh Market', fr: 'Marché Ben Thanh', ja: 'ベンタイン市場', ko: '벤탄 시장', zh: '滨城市场' },
+  'Núi Bà Đen': { en: 'Ba Den Mountain', fr: 'Montagne Ba Den', ja: 'バーデン山', ko: '바덴 산', zh: '黑婆山' },
+  'Thác Bản Giốc': { en: 'Ban Gioc Waterfall', fr: 'Chutes de Ban Gioc', ja: 'バンゾック滝', ko: '반족 폭포', zh: '板约瀑布' },
+  'Hồ Ba Bể': { en: 'Ba Be Lake', fr: 'Lac Ba Be', ja: 'バーベー湖', ko: '바베 호수', zh: '巴卑湖' },
+  'Động Phong Nha': { en: 'Phong Nha Cave', fr: 'Grotte de Phong Nha', ja: 'フォンニャ洞窟', ko: '퐁냐 동굴', zh: '风牙洞' },
+  'Gốm Bát Tràng': { en: 'Bat Trang Pottery', fr: 'Poterie de Bat Trang', ja: 'バッチャン焼き', ko: '밧짱 도자기', zh: '钵场陶瓷' },
+  'Tranh Đông Hồ': { en: 'Dong Ho Folk Painting', fr: 'Estampes de Dong Ho', ja: 'ドンホー版画', ko: '동호 민화', zh: '东湖民画' },
+  'Lụa Vạn Phúc': { en: 'Van Phuc Silk', fr: 'Soie de Van Phuc', ja: 'ヴァンフックシルク', ko: '반푹 비단', zh: '万福丝绸' },
+  'Nón lá Tây Hồ': { en: 'Tay Ho Conical Hat', fr: 'Chapeau conique de Tay Ho', ja: 'ノンラー（西湖）', ko: '논라 (떠이호)', zh: '西湖斗笠' },
+  'Nhã nhạc Cung đình Huế': { en: 'Hue Court Music (Nha Nhac)', fr: 'Nha Nhac, musique de cour', ja: 'フエの雅楽', ko: '후에 궁중음악', zh: '顺化宫廷雅乐' },
+  'Dân ca Quan họ Bắc Ninh': { en: 'Bac Ninh Quan Ho Folk Songs', fr: 'Chants Quan Ho de Bac Ninh', ja: 'バクニン民謡クアンホ', ko: '박닌 꽌호 민요', zh: '北宁官贺民歌' },
+  'Đờn ca tài tử Nam Bộ': { en: 'Don Ca Tai Tu Southern Folk Music', fr: 'Musique Don Ca Tai Tu', ja: 'ドンカータイトゥー', ko: '돈까따이뜨', zh: '南部才子弹唱' },
+  'Tháp Bà Ponagar': { en: 'Po Nagar Cham Towers', fr: 'Tours de Po Nagar', ja: 'ポーナガル塔', ko: '포나가르 탑', zh: '婆那加占婆塔' },
+  'Mũi Né - Tháp Poshanư': { en: 'Mui Ne - Poshanu Cham Towers', fr: 'Mui Ne - Tours Poshanu', ja: 'ムイネー・ポシャヌ塔', ko: '무이네 - 포샤누 탑', zh: '美奈 - 波沙努占婆塔' },
+  'Dinh Cậu - Phú Quốc': { en: 'Dinh Cau - Phu Quoc', fr: 'Dinh Cau - Phu Quoc', ja: 'ディンカウ（フーコック）', ko: '딘꺼우 - 푸꾸옥', zh: '舅府 (富国岛)' },
+
+  // Landmark Taglines
+  'Thủ đô ngàn năm văn hiến, lắng đọng hào khí Thăng Long': {
+    en: 'Thousand-year-old capital of culture, embodying the spirit of Thang Long',
+    fr: 'Capitale millénaire de culture, berceau de l\'esprit de Thang Long',
+    ja: '千年の歴史と文化が息づく首都・タンロンの誇り',
+    ko: '천년의 역사를 품은 수도, 탕롱의 유구한 기개',
+    zh: '千年文献古都，沉淀升龙豪气'
+  },
+  'Đô thị phương Nam phồn hoa, giao thoa truyền thống và hiện đại': {
+    en: 'Vibrant southern metropolis, blending tradition and modernity',
+    fr: 'Métropole dynamique du Sud, carrefour de tradition et modernité',
+    ja: '伝統と現代が交差する活気あふれる南部のメガシティ',
+    ko: '전통과 현대가 공존하는 남부의 번화한 대도시',
+    zh: '繁华南方都会，交融传统与现代'
+  },
+  'Cố đô vàng son triều Nguyễn - Di sản Văn hóa Thế giới': {
+    en: 'Golden capital of the Nguyen Dynasty - UNESCO World Cultural Heritage',
+    fr: 'Capitale impériale de la dynastie Nguyen - Patrimoine mondial',
+    ja: 'グエン朝の黄金期を伝える古都・ユネスコ世界文化遺産',
+    ko: '응우옌 왕조의 황금빛 고도 - 유네스코 세계문화유산',
+    zh: '阮朝黄金古都 - 联合国教科文组织世界文化遗产'
+  },
+  'Thành phố đáng sống bên sông Hàn và biển Mỹ Khê': {
+    en: 'Livable coastal city by Han River and My Khe Beach',
+    fr: 'Ville côtière agréable au bord du fleuve Han et plage My Khe',
+    ja: 'ハン川とミーケビーチに抱かれた美しい沿岸都市',
+    ko: '한강과 미케 해변이 어우러진 살기 좋은 도시',
+    zh: '倚傍瀚江与美溪沙滩的宜居之城'
+  },
+  'Di sản văn hóa thế giới bên dòng sông Hoài thơ mộng': {
+    en: 'World cultural heritage along the poetic Hoai River',
+    fr: 'Patrimoine mondial bordant la rivière poétique Hoai',
+    ja: 'ホアイ川のほとりに佇むノスタルジックな世界文化遺産',
+    ko: '서정적인 호아이 강변의 유네스코 세계문화유산',
+    zh: '悠悠怀江畔的诗意世界文化遗产'
+  },
+  'Kỳ quan thiên nhiên thế giới nghìn năm với hàng ngàn đảo đá vôi': {
+    en: 'World natural wonder with thousands of limestone karst islands',
+    fr: 'Merveille naturelle mondiale aux milliers d\'îles calcaires',
+    ja: '幾千もの奇岩が織りなすユネスコ世界自然遺産',
+    ko: '수천 개의 석회암 섬이 빚어낸 세계 자연 불가사의',
+    zh: '千百座奇峰突兀的世界级自然奇观'
+  },
+  'Tuyệt sắc non nước Tràng An & Cố đô Hoa Lư ngàn năm': {
+    en: 'Magnificent landscape of Trang An & thousand-year-old Hoa Lu ancient capital',
+    fr: 'Splendeur des paysages de Trang An & ancienne capitale Hoa Lu',
+    ja: '壮麗なチャンアンの山水と千年の古都ホアルー',
+    ko: '찬란한 짱안 산수와 천년 고도 호아루',
+    zh: '长安绝色山水与千年华闾古都'
+  },
+  'Thành phố ngàn hoa và cao nguyên sương mờ thơ mộng': {
+    en: 'City of a thousand flowers and romantic misty highlands',
+    fr: 'Cité des mille fleurs et hauts plateaux brumeux romantiques',
+    ja: '千の花が咲き誇る霧深きロマンチックな高原都市',
+    ko: '천 개의 꽃이 피어나는 낭만적인 안개 고원 도시',
+    zh: '千花盛开的浪漫迷雾高原之城'
+  },
+  'Viên ngọc xanh của Biển Đông với bờ vịnh tuyệt mỹ': {
+    en: 'Green gem of the East Sea with a stunning bay',
+    fr: 'Joyau vert de la mer de l\'Est avec une baie magnifique',
+    ja: '美しい湾が広がる東海の緑の宝石',
+    ko: '동해의 푸른 보석과 눈부신 해변 만',
+    zh: '东海绿宝石与绝美海湾'
+  },
+  'Đảo Ngọc thiên đường nhiệt đới và di tích lịch sử Phú Quốc': {
+    en: 'Pearl Island tropical paradise and historic sites of Phu Quoc',
+    fr: 'Île d\'émeraude, paradis tropical et sites historiques de Phu Quoc',
+    ja: '熱帯の楽園・真珠の島フーコックの歴史遺産',
+    ko: '열대 낙원 진주 섬과 푸꾸옥 역사 유적지',
+    zh: '热带天堂珍珠岛与富国岛历史名胜'
+  },
+
+  // CulturalMap and Interactive UI Phrases
+  'Bản Đồ Chuyên Biệt Việt Nam (Hình Chữ S Toàn Vẹn)': {
+    en: 'Dedicated Vietnam Map (Complete S-Shape Territory)',
+    fr: 'Carte Exclusive du Vietnam (Territoire Intégral en S)',
+    ja: 'ベトナム専用地図（完全なS字型の国土）',
+    ko: '베트남 전용 지도 (완전한 S자 국토)',
+    zh: '越南专属全景地图 (完整的S形锦绣河山)'
+  },
+  'Dải Đất Hình Chữ S Việt Nam': {
+    en: 'The S-Shaped Land of Vietnam',
+    fr: 'La Terre en Forme de S du Vietnam',
+    ja: 'ベトナムのS字型の国土',
+    ko: '베트남 S자형 국토',
+    zh: '越南S形壮丽山河'
+  },
+  'Bản Đồ Di Sản:': { en: 'Heritage Map:', fr: 'Carte du Patrimoine:', ja: '遺産マップ：', ko: '문화유산 지도:', zh: '文化遗产地图：' },
+  'Di Sản:': { en: 'Heritage:', fr: 'Patrimoine:', ja: '遺産：', ko: '문화유산:', zh: '文化遗产：' },
+  'Toàn cảnh Việt Nam': { en: 'Full Vietnam View', fr: 'Vue d\'ensemble du Vietnam', ja: 'ベトナム全図', ko: '베트남 전체보기', zh: '全景越南' },
+  'Toàn cảnh chữ S': { en: 'S-Shape View', fr: 'Vue en S', ja: 'S字全景', ko: 'S자형 전체보기', zh: 'S形全景' },
+  'Toàn quốc': { en: 'Nationwide', fr: 'National', ja: '全国', ko: '전국', zh: '全国' },
+  'Chỉ Bản Đồ VN': { en: 'Vietnam Only', fr: 'Vietnam Seul', ja: 'ベトナムのみ', ko: '베트남 전용', zh: '仅越南地图' },
+  'Vệ Tinh': { en: 'Satellite', fr: 'Satellite', ja: '衛星写真', ko: '위성', zh: '卫星图' },
+  'Đường Phố': { en: 'Streets', fr: 'Rues', ja: '市街図', ko: '도로', zh: '街道图' },
+  'Địa Hình': { en: 'Terrain', fr: 'Relief', ja: '地形図', ko: '지형', zh: '地形图' },
+  'Ranh giới': { en: 'Borders', fr: 'Frontières', ja: '境界線', ko: '경계선', zh: '省界' },
+  'Tên tỉnh': { en: 'Labels', fr: 'Noms', ja: '省名ラベル', ko: '지명 표시', zh: '省名标注' },
+  'Tìm di tích, tỉnh thành...': { en: 'Search monuments, provinces...', fr: 'Rechercher monuments, provinces...', ja: '史跡・省名を検索...', ko: '유적지, 성/시 검색...', zh: '搜索名胜古迹、省市...' },
+  'Phóng to': { en: 'Zoom In', fr: 'Zoom avant', ja: '拡大', ko: '확대', zh: '放大' },
+  'Thu nhỏ': { en: 'Zoom Out', fr: 'Zoom arrière', ja: '縮小', ko: '축소', zh: '缩小' },
+  'Về lại toàn cảnh chữ S': { en: 'Reset to S-Shape View', fr: 'Réinitialiser la vue', ja: '全体表示に戻す', ko: '전체화면 초기화', zh: '重置全景' },
+  'Định vị tọa độ GPS của bạn': { en: 'Locate your GPS position', fr: 'Localiser votre GPS', ja: '現在地を測位', ko: '내 GPS 위치 찾기', zh: '定位您的当前位置' },
+  'Xem chi tiết đầy đủ': { en: 'View Full Details', fr: 'Voir tous les détails', ja: '詳細をすべて見る', ko: '전체 상세정보 보기', zh: '查看完整详情' },
+  'Điểm Đến Di Sản Việt Nam': { en: 'Vietnam Heritage Destinations', fr: 'Destinations du Patrimoine', ja: 'ベトナムの世界遺産目的地', ko: '베트남 문화유산 목적지', zh: '越南文化遗产胜地' },
+  'Xem toàn quốc': { en: 'View Nationwide', fr: 'Voir tout le pays', ja: '全国を見る', ko: '전국 보기', zh: '浏览全国' },
+  'Chưa có di sản nào khớp với bộ lọc này.': { en: 'No heritage matches this filter.', fr: 'Aucun patrimoine ne correspond à ce filtre.', ja: '条件に一致する遺産はありません。', ko: '이 필터에 맞는 문화유산이 없습니다.', zh: '暂无符合此筛选条件的文化遗迹。' },
+  'Dữ liệu văn hóa đang được liên tục bổ sung và cập nhật.': { en: 'Cultural data is continually being enriched and updated.', fr: 'Les données culturelles sont continuellement mises à jour.', ja: '文化データは継続的に追加・更新されています。', ko: '문화 데이터는 지속적으로 보완 및 업데이트됩니다.', zh: '文化数据库正在持续补充与完善更新。' },
+  'Tất cả di sản': { en: 'All Heritages', fr: 'Tous les patrimoines', ja: 'すべての遺産', ko: '모든 문화유산', zh: '全部文化名胜' },
+  '📜 Di tích lịch sử': { en: '📜 Historic Monuments', fr: '📜 Monuments Historiques', ja: '📜 歴史的史跡', ko: '📜 역사 유적지', zh: '📜 历史古迹' },
+  '🏛 Hoàng thành & Cung điện': { en: '🏛 Citadels & Palaces', fr: '🏛 Citadelles & Palais', ja: '🏛 皇城・宮殿', ko: '🏛 황성 및 궁궐', zh: '🏛 皇城与宫殿' },
+  '⛩ Đền chùa & Tháp cổ': { en: '⛩ Temples & Pagodas', fr: '⛩ 寺院 & 古塔', ja: '⛩ 寺院・古塔', ko: '⛩ 사찰 및 고탑', zh: '⛩ 寺庙与古塔' },
+  '🏘 Đô thị cổ': { en: '🏘 Ancient Towns', fr: '🏘 Villes Anciennes', ja: '🏘 古代都市・旧市街', ko: '🏘 고대 도시', zh: '🏘 古城与古镇' },
+  '🏺 Làng nghề truyền thống': { en: '🏺 Craft Villages', fr: '🏺 Villages Artisanaux', ja: '🏺 伝統工芸村', ko: '🏺 전통 공예 마을', zh: '🏺 传统手工艺村' },
+  'Ảnh nền GPS:': { en: 'GPS Landmark:', fr: 'Fond GPS:', ja: 'GPS壁紙：', ko: 'GPS 배경 명소:', zh: 'GPS 地标壁纸：' },
+  'Ảnh nền GPS': { en: 'GPS Landmark', fr: 'Fond GPS', ja: 'GPS壁紙', ko: 'GPS 배경 명소', zh: 'GPS 地标壁纸' },
+  'Chạm để quay lại giao diện': { en: 'Tap to return to interface', fr: 'Appuyez pour revenir', ja: 'タップしてUIに戻る', ko: '탭하여 화면으로 복귀', zh: '点击返回主界面' },
+  'Tìm thấy': { en: 'Found', fr: 'Trouvé', ja: '発見', ko: '발견', zh: '找到' },
+  'Tổng cộng': { en: 'Total', fr: 'Total', ja: '合計', ko: '총', zh: '共计' },
+  'địa điểm': { en: 'places', fr: 'lieux', ja: '箇所', ko: '곳', zh: '处地点' },
+  'Tỉnh thành:': { en: 'Province:', fr: 'Province:', ja: '省・市：', ko: '성/시:', zh: '省市：' },
+  'Khám phá': { en: 'Explore', fr: 'Explorer', ja: '探索', ko: '탐험', zh: '探索' },
+  'Đổi cảnh': { en: 'Change View', fr: 'Changer la vue', ja: '景色変更', ko: '배경 변경', zh: '更换背景' },
+  'Ngắm ảnh': { en: 'View Image', fr: 'Voir l\'image', ja: '壁紙鑑賞', ko: '사진 감상', zh: '欣赏图片' }
 };
 
 class LanguageService {
@@ -1949,23 +1970,7 @@ class LanguageService {
       'Ẩm thực truyền thống': { en: 'Traditional Cuisine', fr: 'Cuisine traditionnelle', ja: '郷土料理', ko: '전통 요리', zh: '传统美食' },
       'Miền Bắc': { en: 'Northern Vietnam', fr: 'Nord du Vietnam', ja: 'ベトナム北部', ko: '베트남 북부', zh: '越南北部' },
       'Miền Trung': { en: 'Central Vietnam', fr: 'Centre du Vietnam', ja: 'ベトナム中部', ko: '베트남 중부', zh: '越南中部' },
-      'Miền Nam': { en: 'Southern Vietnam', fr: 'Sud du Vietnam', ja: 'ベトナム南部', ko: '베트남 남부', zh: '越南南部' },
-      'Điểm Đến Di Sản Việt Nam': { en: 'Vietnam Heritage Destinations', fr: 'Destinations du Patrimoine du Vietnam', ja: 'ベトナム文化遺産・名勝目的地', ko: '베트남 문화유산 명소', zh: '越南文化遗产名胜目的地' },
-      'Điểm đến di sản': { en: 'Heritage destinations', fr: 'Destinations patrimoniales', ja: '遺産目的地', ko: '문화유산 명소', zh: '文化遗产目的地' },
-      'Xem toàn quốc': { en: 'View nationwide', fr: 'Vue nationale', ja: '全国を表示', ko: '전국 보기', zh: '查看全国' },
-      'Chỉ Bản Đồ VN': { en: 'Vietnam Map', fr: 'Carte Vietnam', ja: 'ベトナム単独', ko: '베트남 단독', zh: '专属越南全图' },
-      'Vệ Tinh': { en: 'Satellite', fr: 'Satellite', ja: '衛星写真', ko: '위성', zh: '卫星影像' },
-      'Du Lịch': { en: 'Travel Map', fr: 'Tourisme', ja: '観光街道', ko: '관광 도로', zh: '旅游街道' },
-      'Ranh giới': { en: 'Borders', fr: 'Frontières', ja: '境界線', ko: '경계선', zh: '省界' },
-      'Tên tỉnh': { en: 'Provinces', fr: 'Provinces', ja: '省名', ko: '성명', zh: '省名' },
-      'Toàn cảnh chữ S': { en: 'S-Shape Overview', fr: 'Vue en S', ja: 'S字全景', ko: 'S자형 전경', zh: 'S形全景' },
-      'Toàn cảnh Việt Nam': { en: 'Overview Vietnam', fr: 'Vue du Vietnam', ja: 'ベトナム全景', ko: '베트남 전경', zh: '全景越南' },
-      'Giờ mở cửa': { en: 'Opening hours', fr: 'Horaires d ouverture', ja: '開館時間', ko: '관람 시간', zh: '开放时间' },
-      'Giá vé tham khảo': { en: 'Admission price', fr: 'Tarif indicatif', ja: '参考拝観料', ko: '참고 요금', zh: '门票参考价格' },
-      'Nghe AI Kể Chuyện': { en: 'Listen to AI Story', fr: 'Écouter le récit IA', ja: 'AI物語を聴く', ko: 'AI 이야기 듣기', zh: '收听AI讲述故事' },
-      'Ẩm Thực Gần Đây': { en: 'Nearby Food', fr: 'Gastronomie proche', ja: '周辺グルメ', ko: '주변 음식점', zh: '周边特色美食' },
-      'Chỉ đường Maps': { en: 'Directions', fr: 'Itinéraire', ja: 'ルート案内', ko: '길찾기', zh: '地图导航' },
-
+      'Miền Nam': { en: 'Southern Vietnam', fr: 'Sud du Vietnam', ja: 'ベトナム南部', ko: '베트남 남부', zh: '越南南部' }
     };
 
     const runPass = () => {
@@ -2032,16 +2037,39 @@ class LanguageService {
   }
 
   /**
-   * Translate a given key
+   * Translate a given key or phrase
    */
   public t(key: string, lang?: string, fallback?: string): string {
     const activeLang = lang || this.currentLanguage;
+    if (activeLang === 'vi') {
+      if (DICTIONARY[key]?.['vi']) return DICTIONARY[key]['vi'];
+      if (PHRASE_TRANSLATIONS[key]?.['vi']) return PHRASE_TRANSLATIONS[key]['vi'];
+      return fallback !== undefined ? fallback : key;
+    }
+
+    // 1. Check DICTIONARY by key
     const entry = DICTIONARY[key];
     if (entry) {
       if (entry[activeLang]) return entry[activeLang];
-      if (entry['vi']) return entry['vi'];
       if (entry['en']) return entry['en'];
+      if (entry['vi']) return entry['vi'];
     }
+
+    // 2. Check PHRASE_TRANSLATIONS by key/phrase
+    const phraseEntry = PHRASE_TRANSLATIONS[key];
+    if (phraseEntry) {
+      if (phraseEntry[activeLang]) return phraseEntry[activeLang];
+      if (phraseEntry['en']) return phraseEntry['en'];
+    }
+
+    // 3. Check fallback in PHRASE_TRANSLATIONS
+    if (fallback && PHRASE_TRANSLATIONS[fallback]) {
+      const fbEntry = PHRASE_TRANSLATIONS[fallback];
+      if (fbEntry[activeLang]) return fbEntry[activeLang];
+      if (fbEntry['en']) return fbEntry['en'];
+    }
+
+    // 4. Return fallback or key
     return fallback !== undefined ? fallback : key;
   }
 

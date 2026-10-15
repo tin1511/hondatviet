@@ -37,11 +37,15 @@ import { HeritageItem, UserProfile, UserLocation } from '../types';
 import { storageService } from '../services/storageService';
 import { handleImageError, getSafeHeritageImageUrl } from '../utils/imageUtils';
 import { geolocationService, calculateDistanceKm } from '../services/geolocationService';
+import { VIETNAM_63_ADMINISTRATIVE_UNITS, getAdministrativeUnitByName } from '../data/administrativeUnits';
+import { languageService } from '../services/languageService';
 
 interface CulturalMapProps {
   currentUser?: UserProfile;
+  language?: string;
   onNavigateToStory: (heritageName: string, history?: string, period?: string) => void;
   onNavigateToFood: (heritageId: string) => void;
+  onSelectHeritage?: (heritage: HeritageItem) => void;
 }
 
 interface ProvinceProperties {
@@ -160,8 +164,10 @@ const getProvinceHashIndex = (name: string, modulo: number): number => {
 
 export const CulturalMap: React.FC<CulturalMapProps> = ({
   currentUser,
+  language = 'vi',
   onNavigateToStory,
   onNavigateToFood,
+  onSelectHeritage
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -591,16 +597,19 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
     labelsGroup.clearLayers();
 
-    if (!showProvinceLabels || !geoData) return;
+    if (!showProvinceLabels) return;
 
-    geoData.features.forEach((feature: any) => {
-      const props = feature.properties as ProvinceProperties;
-      const displayName = props.vietnameseName || props.Name;
-      const center = props.center;
+    VIETNAM_63_ADMINISTRATIVE_UNITS.forEach((unit) => {
+      const displayName = unit.shortName;
+      const center = unit.center;
 
       if (!center || !center[0] || !center[1]) return;
 
-      const isSelected = selectedProvinceName && displayName.toLowerCase() === selectedProvinceName.toLowerCase();
+      const isSelected = selectedProvinceName && (
+        displayName.toLowerCase() === selectedProvinceName.toLowerCase() ||
+        unit.name.toLowerCase().includes(selectedProvinceName.toLowerCase()) ||
+        selectedProvinceName.toLowerCase().includes(displayName.toLowerCase())
+      );
 
       const labelIcon = L.divIcon({
         className: 'custom-province-label',
@@ -627,7 +636,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
       labelsGroup.addLayer(labelMarker);
     });
 
-  }, [showProvinceLabels, geoData, selectedProvinceName]);
+  }, [showProvinceLabels, selectedProvinceName]);
 
   // 6. Update Heritage Pins on the Map
   useEffect(() => {
@@ -694,6 +703,9 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
       const marker = L.marker([item.lat, item.lng], { icon: pinIcon });
       marker.on('click', () => {
         setActiveHeritage(item);
+        if (onSelectHeritage) {
+          onSelectHeritage(item);
+        }
       });
 
       markersGroup.addLayer(marker);
@@ -721,6 +733,11 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
         );
         if (matched?.properties && (matched.properties as any).center) {
           map.setView((matched.properties as any).center, 9, { animate: true });
+        } else {
+          const adminUnit = getAdministrativeUnitByName(name);
+          if (adminUnit?.center) {
+            map.setView(adminUnit.center, 9, { animate: true });
+          }
         }
       }
     }
@@ -1137,6 +1154,65 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
         ))}
       </div>
 
+      {/* 🏛️ Top Quick Heritage Card: Hiện ngay trên đầu bản đồ, không cần cuộn */}
+      {activeHeritage && (
+        <div className="mb-4 p-3.5 sm:p-4 rounded-3xl bg-stone-900/95 border-2 border-amber-500/80 shadow-2xl backdrop-blur flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fadeIn">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-amber-500/50 bg-stone-950 shadow">
+              <img 
+                src={getSafeHeritageImageUrl(activeHeritage.imageUrl)} 
+                alt={activeHeritage.name} 
+                className="w-full h-full object-cover" 
+                onError={handleImageError} 
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  {activeHeritage.categoryLabel}
+                </span>
+                <span className="text-[11px] font-semibold text-red-400 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  <span>{activeHeritage.province}</span>
+                </span>
+                {activeHeritage.period && (
+                  <span className="text-[10px] text-stone-400 hidden sm:inline">
+                    • {activeHeritage.period}
+                  </span>
+                )}
+              </div>
+              <h3 className="font-serif font-bold text-sm sm:text-base text-stone-100 truncate mt-0.5">
+                {activeHeritage.name}
+              </h3>
+              <p className="text-[11px] text-stone-300 line-clamp-1 font-light">
+                {activeHeritage.culturalSignificance}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button
+              onClick={() => {
+                if (onSelectHeritage) {
+                  onSelectHeritage(activeHeritage);
+                }
+              }}
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Xem chi tiết đầy đủ</span>
+            </button>
+            <button
+              onClick={() => setActiveHeritage(null)}
+              className="p-2 rounded-xl text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors cursor-pointer shrink-0"
+              title="Đóng thông tin nhanh"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Map & Interactive Layout: Ô Di Sản Nằm Bên Cạnh Ô Bản Đồ ("ô di sản nằm bên cạnh ô bản đồ") */}
       {(() => {
         const heritageBoxContent = (
@@ -1205,6 +1281,9 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                         key={item.id}
                         onClick={() => {
                           setActiveHeritage(item);
+                          if (onSelectHeritage) {
+                            onSelectHeritage(item);
+                          }
                           if (mapInstanceRef.current && item.lat && item.lng) {
                             mapInstanceRef.current.setView([item.lat, item.lng], 12, { animate: true });
                           }
@@ -1215,7 +1294,16 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                             : 'bg-stone-950/70 hover:bg-stone-800/80 border-stone-800/80 hover:border-amber-500/40'
                         }`}
                       >
-
+                        {/* Thumbnail Image */}
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden shrink-0 bg-stone-900 border border-stone-800">
+                          <img
+                            src={getSafeHeritageImageUrl(item.imageUrl, item.id)}
+                            alt={item.name}
+                            loading="lazy"
+                            onError={handleImageError}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 text-[10px] text-amber-400 font-semibold mb-0.5">
@@ -1323,10 +1411,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
         );
       })()}
 
-      {/* HERITAGE DETAIL MODAL / BOTTOM SHEET */}
-      {activeHeritage && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="bg-stone-900 border border-stone-800 rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden relative">
+      {/* HERITAGE DETAIL MODAL / FALLBACK DIALOG */}
+      {!onSelectHeritage && activeHeritage && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center p-2 sm:p-4 pt-2 sm:pt-4 bg-stone-950/90 backdrop-blur-md overflow-y-auto animate-fadeIn">
+          <div className="bg-stone-900 border-2 border-amber-500/60 rounded-3xl max-w-2xl w-full my-0 max-h-[95vh] flex flex-col shadow-2xl overflow-hidden relative">
             
             {/* Modal Header */}
             <div className="p-4 sm:p-5 border-b border-stone-800 bg-stone-950/80 flex items-center justify-between">

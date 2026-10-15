@@ -30,6 +30,7 @@ import {
 import { UserProfile } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 import { storageService, DEFAULT_SITE_LOGO } from '../services/storageService';
+import { languageService } from '../services/languageService';
 
 interface NavbarProps {
   currentTab: string;
@@ -73,44 +74,44 @@ export const Navbar: React.FC<NavbarProps> = ({
   }, []);
 
   const navItems = [
-    { id: 'home', label: 'Trang chủ', icon: Compass },
-    { id: 'map', label: 'Bản đồ Việt Nam', icon: Globe, badge: 'Chữ S 🇻🇳' },
-    { id: 'recognizer', label: 'Nhận diện AI', icon: Camera, badge: 'Vision' },
-    { id: 'storyteller', label: 'Kể chuyện AI', icon: Sparkles },
-    { id: 'chat', label: 'Hướng Dẫn Viên AI', icon: Compass, badge: 'HDV 3D' },
-    { id: 'itinerary', label: 'Lịch trình', icon: CalendarDays },
-    { id: 'learning', label: 'Quiz & Lịch sử', icon: Award },
-    { id: 'profile', label: 'Hồ sơ & Danh hiệu', icon: Award, badge: 'XP' },
-    { id: 'community', label: 'Cộng đồng', icon: Users },
+    { id: 'home', label: languageService.t('nav.home', language, 'Trang chủ'), icon: Compass },
+    { id: 'map', label: languageService.t('nav.map', language, 'Bản đồ Việt Nam'), icon: Globe, badge: 'Chữ S 🇻🇳' },
+    { id: 'recognizer', label: languageService.t('nav.recognizer', language, 'Nhận diện AI'), icon: Camera, badge: 'Vision' },
+    { id: 'storyteller', label: languageService.t('nav.storyteller', language, 'Kể chuyện AI'), icon: Sparkles },
+    { id: 'chat', label: languageService.t('nav.chat', language, 'Hướng Dẫn Viên AI'), icon: Compass, badge: 'HDV 3D' },
+    { id: 'itinerary', label: languageService.t('nav.itinerary', language, 'Lịch trình'), icon: CalendarDays },
+    { id: 'learning', label: languageService.t('nav.learning', language, 'Quiz & Lịch sử'), icon: Award },
+    { id: 'profile', label: languageService.t('nav.profile', language, 'Hồ sơ & Danh hiệu'), icon: Award, badge: 'XP' },
+    { id: 'community', label: languageService.t('nav.community', language, 'Cộng đồng'), icon: Users },
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-stone-950/95 backdrop-blur-md border-b border-amber-900/30 text-stone-100 shadow-xl">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        {/* Row 1: Brand & Top Action Buttons */}
-        <div className="flex items-center justify-between h-14 sm:h-16 gap-1 sm:gap-2 min-w-0">
+    <header className="sticky top-0 z-40 bg-stone-950/90 backdrop-blur-md border-b border-amber-900/30 text-stone-100 shadow-xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Row 1: Brand & Right Actions */}
+        <div className="flex items-center justify-between h-16 overflow-x-auto scrollbar-none gap-2 shrink-0 pr-6 sm:pr-8">
           
           {/* Logo & Brand & Back Button */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {currentTab !== 'home' && (
               <button
                 id="btn-nav-back-to-home"
                 type="button"
                 onClick={() => onSelectTab('home')}
-                className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all group shrink-0 active:scale-95 shadow-sm whitespace-nowrap"
-                title="Quay về Trang chủ"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all group shrink-0 active:scale-95 shadow-sm whitespace-nowrap"
+                title={languageService.t('nav.backToHome', language, 'Quay về Trang chủ')}
               >
-                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 group-hover:-translate-x-1 transition-transform shrink-0" />
-                <span className="hidden sm:inline">Trang chủ</span>
+                <ArrowLeft className="w-4 h-4 text-amber-400 group-hover:-translate-x-1 transition-transform shrink-0" />
+                <span className="hidden sm:inline">{languageService.t('nav.home', language, 'Trang chủ')}</span>
               </button>
             )}
 
             <div 
               id="brand-logo"
               onClick={() => onSelectTab('home')}
-              className="flex items-center gap-1.5 sm:gap-2.5 cursor-pointer group select-none shrink-0"
+              className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none shrink-0"
             >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg shadow-amber-900/40 border border-amber-400/30 group-hover:scale-105 transition-transform duration-200 shrink-0 bg-stone-900 flex items-center justify-center">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden shadow-lg shadow-amber-900/40 border border-amber-400/30 group-hover:scale-105 transition-transform duration-200 shrink-0 bg-stone-900 flex items-center justify-center">
                 <img 
                   src={siteLogo || DEFAULT_SITE_LOGO} 
                   alt="Hồn Đất Việt" 
@@ -119,9 +120,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     e.currentTarget.style.display = 'none';
                     const parent = e.currentTarget.parentElement;
                     if (parent) {
-                      parent.className = "w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-red-600 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-900/40 border border-amber-400/40 group-hover:scale-105 transition-transform duration-200 shrink-0";
+                      parent.className = "w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-red-600 to-amber-500 flex items-center justify-center shadow-lg shadow-amber-900/40 border border-amber-400/40 group-hover:scale-105 transition-transform duration-200 shrink-0";
                       const textSpan = document.createElement('span');
-                      textSpan.className = "text-base sm:text-lg font-serif font-bold text-amber-100";
+                      textSpan.className = "text-lg sm:text-xl font-serif font-bold text-amber-100";
                       textSpan.innerText = "H";
                       parent.appendChild(textSpan);
                     }
@@ -129,75 +130,74 @@ export const Navbar: React.FC<NavbarProps> = ({
                 />
               </div>
               <div className="shrink-0 whitespace-nowrap">
-                <div className="flex items-center gap-1 sm:gap-1.5 whitespace-nowrap">
-                  <span className="font-serif font-bold tracking-wide text-xs sm:text-base text-amber-100 group-hover:text-amber-300 transition-colors whitespace-nowrap">
+                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                  <span className="font-serif font-bold tracking-wide text-base sm:text-lg text-amber-100 group-hover:text-amber-300 transition-colors whitespace-nowrap">
                     HỒN ĐẤT <span className="text-amber-400">VIỆT</span>
                   </span>
-                  <span className="text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium whitespace-nowrap hidden sm:inline-block">
+                  <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-medium whitespace-nowrap">
                     VN 4.0
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-stone-400 hidden md:block font-normal whitespace-nowrap">
-                  Hiểu di sản. Khám phá Việt Nam.
+                <p className="text-[10px] sm:text-[11px] text-stone-400 hidden sm:block font-normal whitespace-nowrap">
+                  {languageService.t('nav.brandTagline', language, 'Hiểu di sản. Khám phá Việt Nam.')}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Right actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             
             {/* 1. Authentication / Profile Status Button */}
             {userProfile.isLoggedIn ? (
               <button
                 id="btn-profile"
                 onClick={() => onSelectTab('profile')}
-                className="flex items-center gap-1 p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700/90 border border-amber-500/40 transition-all shrink-0 cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700/90 border border-amber-500/40 transition-all shrink-0 cursor-pointer"
                 title={`Tài khoản: ${userProfile.displayName}`}
               >
                 <User className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="text-xs font-semibold text-stone-200 truncate max-w-[80px] sm:max-w-[140px] hidden sm:inline">
+                <span className="text-xs font-semibold text-stone-200 truncate max-w-[140px] sm:max-w-[185px]">
                   {userProfile.displayName}
                 </span>
               </button>
             ) : (
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                 <button
                   id="btn-login"
                   onClick={() => onOpenAuthModal('login')}
-                  className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition-all shrink-0 shadow-sm cursor-pointer whitespace-nowrap"
+                  className="flex items-center gap-1 p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition-all shrink-0 shadow-sm cursor-pointer whitespace-nowrap"
                   title="Đăng nhập tài khoản"
                 >
-                  <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
-                  <span className="hidden sm:inline">Đăng nhập</span>
+                  <LogIn className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+                  <span className="hidden md:inline">{languageService.t('nav.login', language, 'Đăng nhập')}</span>
                 </button>
                 <button
                   id="btn-register"
                   onClick={() => onOpenAuthModal('register')}
-                  className="hidden sm:flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300 whitespace-nowrap"
+                  className="flex items-center gap-1 p-2 sm:px-3 sm:py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 text-xs font-extrabold shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300 whitespace-nowrap"
                   title="Tạo tài khoản mới"
                 >
-                  <User className="w-4 h-4 text-stone-950 shrink-0" />
-                  <span>Đăng ký</span>
+                  <User className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-stone-950 shrink-0" />
+                  <span className="hidden md:inline">{languageService.t('nav.register', language, 'Đăng ký')}</span>
                 </button>
               </div>
             )}
 
-            {/* 2. "ĐỀ XUẤT MỚI" BUTTON */}
+            {/* 2. "ĐỀ XUẤT MỚI" BUTTON (Hidden on very small mobile to prevent clutter) */}
             {onOpenAddHeritage && (
               <button
                 id="btn-nav-add-heritage"
                 onClick={onOpenAddHeritage}
-                className="flex items-center gap-1 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300"
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs shadow-md shadow-amber-950/40 transition-all shrink-0 active:scale-95 cursor-pointer border border-amber-300"
                 title="Đề xuất thêm di sản hoặc địa điểm mới ngay lập tức"
               >
-                <Plus className="w-3.5 h-3.5 text-stone-950 sm:hidden shrink-0" />
                 <img 
                   src={siteLogo || DEFAULT_SITE_LOGO} 
                   alt="Logo Hồn Đất Việt" 
-                  className="w-4 h-4 rounded-full object-cover border border-amber-950/40 shrink-0 hidden sm:inline" 
+                  className="w-4 h-4 rounded-full object-cover border border-amber-950/40 shrink-0" 
                 />
-                <span className="hidden sm:inline">Đề Xuất</span>
+                <span className="hidden md:inline">{languageService.t('nav.addHeritage', language, 'Đề Xuất Mới')}</span>
               </button>
             )}
 
@@ -205,43 +205,55 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="btn-favorites"
               onClick={() => onSelectTab('favorites')}
-              className="relative p-1.5 sm:p-2 rounded-xl text-stone-300 hover:text-red-400 hover:bg-stone-800/80 transition-colors shrink-0"
+              className="relative p-2 rounded-xl text-stone-300 hover:text-red-400 hover:bg-stone-800/80 transition-colors shrink-0"
               title="Danh sách di sản đã lưu"
             >
               <Heart className="w-4 h-4 text-red-400 fill-red-500/30" />
               {favoritesCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-red-500 text-white text-[8px] sm:text-[9px] font-bold flex items-center justify-center shadow">
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
                   {favoritesCount}
                 </span>
               )}
             </button>
 
-            {/* Quick Peek Background Icon (Desktop only) */}
+            {/* Quick Peek Background Icon */}
             {onPeekBackground && (
               <button
                 id="btn-peek-background-nav"
                 onClick={onPeekBackground}
-                className="p-1.5 sm:p-2 rounded-xl text-stone-300 hover:text-emerald-400 hover:bg-stone-800/80 transition-colors shrink-0 hidden md:flex"
-                title="Ngắm trọn vẹn bức ảnh nền danh thắng"
+                className="p-2 rounded-xl text-stone-300 hover:text-emerald-400 hover:bg-stone-800/80 transition-colors shrink-0 hidden sm:flex"
+                title={languageService.t('floating.peekBackground', language, 'Ngắm trọn vẹn bức ảnh nền danh thắng')}
               >
                 <Eye className="w-4 h-4 text-emerald-400" />
               </button>
             )}
 
-            {/* Language Selector (Sole global language control on top right) */}
-            <div className="relative flex items-center shrink-0">
-              <button
-                id="btn-language-selector"
-                type="button"
-                onClick={() => onLanguageChange(language === 'vi' ? 'en' : 'vi')}
-                className="flex items-center justify-center gap-1 px-1.5 py-1.5 sm:px-2 sm:py-1.5 rounded-xl bg-stone-800/90 hover:bg-stone-700/90 text-amber-300 border border-stone-700/80 hover:border-amber-500/50 text-[11px] sm:text-xs font-bold transition-all shadow-sm cursor-pointer shrink-0 active:scale-95"
-                title={language === 'vi' ? 'Đang là Tiếng Việt - Bấm để chuyển sang English' : 'Currently English - Click to switch to Vietnamese'}
-              >
-                <span>{language === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}</span>
-              </button>
+            {/* Single Primary Language Selector (Góc trên bên phải thanh điều hướng) */}
+            <div className="relative flex items-center">
+              <label htmlFor="nav-primary-language-select" className="sr-only">
+                {languageService.t('lang.selectInterface', language, 'Chọn ngôn ngữ')}
+              </label>
+              <div className="relative flex items-center">
+                <Globe className="absolute left-2.5 w-3.5 h-3.5 text-amber-400 pointer-events-none" />
+                <select
+                  id="nav-primary-language-select"
+                  value={language}
+                  onChange={(e) => onLanguageChange(e.target.value)}
+                  className="bg-stone-900/90 hover:bg-stone-850 text-stone-100 text-xs font-bold rounded-xl pl-7 pr-3 py-1.5 border border-amber-500/40 hover:border-amber-400/70 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 cursor-pointer shadow-md shadow-stone-950/40 transition-all select-none"
+                  title="Chọn ngôn ngữ toàn website / Choose website language"
+                  aria-label="Chọn ngôn ngữ website"
+                >
+                  <option value="vi" className="bg-stone-900 text-stone-100 font-semibold py-1">🇻🇳 Tiếng Việt (VI)</option>
+                  <option value="en" className="bg-stone-900 text-stone-100 font-semibold py-1">🇬🇧 English (EN)</option>
+                  <option value="fr" className="bg-stone-900 text-stone-100 font-semibold py-1">🇫🇷 Français (FR)</option>
+                  <option value="ja" className="bg-stone-900 text-stone-100 font-semibold py-1">🇯🇵 日本語 (JA)</option>
+                  <option value="ko" className="bg-stone-900 text-stone-100 font-semibold py-1">🇰🇷 한국어 (KO)</option>
+                  <option value="zh" className="bg-stone-900 text-stone-100 font-semibold py-1">🇨🇳 中文 (ZH)</option>
+                </select>
+              </div>
             </div>
 
-            {/* Offline Manager Button (Desktop only) */}
+            {/* Offline Manager Button */}
             {onOpenOfflineManager && (
               <button
                 id="btn-offline-mode"
@@ -250,105 +262,56 @@ export const Navbar: React.FC<NavbarProps> = ({
                 title="Quản lý Chế độ Ngoại tuyến & Service Worker"
               >
                 <Database className="w-3.5 h-3.5 text-amber-400" />
-                <span>Ngoại tuyến</span>
+                <span>{languageService.t('nav.offline', language, 'Ngoại tuyến')}</span>
               </button>
             )}
 
-            {/* PWA In-App Install Button (Desktop only) */}
+            {/* PWA In-App Install Button */}
             <div className="hidden 2xl:block shrink-0">
               <PWAInstallButton variant="button" />
             </div>
 
             {/* Mobile Hamburger Toggle */}
             <button
-              id="btn-mobile-menu"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-1.5 sm:p-2 rounded-xl text-stone-300 hover:text-stone-100 hover:bg-stone-800 transition-colors shrink-0"
+              className="xl:hidden p-2 rounded-xl text-stone-300 hover:text-stone-100 hover:bg-stone-800 transition-colors shrink-0"
               aria-label="Menu"
             >
-              {mobileMenuOpen ? <X className="w-4 h-4 text-amber-400" /> : <Menu className="w-4 h-4" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 text-amber-400" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
-        {/* Row 2: Taskbar Navigation Items (Visible & Horizontally Swipeable on ALL devices) */}
-        <div className="relative w-full border-t border-amber-900/30 bg-stone-950/70">
-          <nav 
-            id="main-taskbar-nav"
-            className="flex items-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 overflow-x-auto no-scrollbar scrollbar-none scroll-smooth overscroll-x-contain touch-pan-x"
-          >
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  id={`nav-link-${item.id}`}
-                  onClick={() => onSelectTab(item.id)}
-                  className={`relative px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-medium transition-all duration-150 flex items-center gap-1 sm:gap-1.5 whitespace-nowrap cursor-pointer shrink-0 active:scale-95 ${
-                    isActive 
-                      ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 shadow-sm font-bold ring-1 ring-amber-500/20' 
-                      : 'text-stone-300 hover:text-amber-200 hover:bg-stone-800/80'
-                  }`}
-                  title={item.label}
-                >
-                  <Icon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.2 bg-amber-500 text-stone-950 font-bold rounded shrink-0">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Mobile Drawer Menu (When Hamburger is clicked) */}
-        {mobileMenuOpen && (
-          <div className="xl:hidden bg-stone-950/95 backdrop-blur-xl border-t border-amber-900/30 px-3 py-3 space-y-2 animate-fadeIn max-h-[calc(100vh-6rem)] overflow-y-auto pb-safe shadow-2xl">
-            <div className="grid grid-cols-2 gap-2 pb-2 border-b border-stone-800/80">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onSelectTab(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl text-xs font-semibold transition-all text-left ${
-                      isActive 
-                        ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 shadow-sm' 
-                        : 'bg-stone-900/80 text-stone-300 hover:bg-stone-800 hover:text-amber-200 border border-stone-800'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {onOpenOfflineManager && (
+        {/* Row 2: Desktop Primary Nav (All Items Visible in dedicated taskbar row) */}
+        <nav className="hidden xl:flex items-center gap-1.5 py-2 px-1 overflow-x-auto scrollbar-none border-t border-amber-900/20">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentTab === item.id;
+            return (
               <button
-                onClick={() => {
-                  onOpenOfflineManager();
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold"
+                key={item.id}
+                id={`nav-link-${item.id}`}
+                onClick={() => onSelectTab(item.id)}
+                className={`relative px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                  isActive 
+                    ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 shadow-sm font-bold' 
+                    : 'text-stone-300 hover:text-amber-200 hover:bg-stone-800/80'
+                }`}
+                title={item.label}
               >
-                <Database className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Quản lý chế độ ngoại tuyến & Cache</span>
+                <Icon className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span className="text-[9px] px-1.5 py-0.2 bg-amber-500 text-stone-950 font-bold rounded shrink-0">
+                    {item.badge}
+                  </span>
+                )}
               </button>
-            )}
-            <div className="pt-1">
-              <PWAInstallButton variant="button" />
-            </div>
-          </div>
-        )}
+            );
+          })}
+        </nav>
       </div>
     </header>
+
   );
 };

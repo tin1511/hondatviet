@@ -8,8 +8,10 @@ import {
   PastAndPresentItem,
   FamilyStoryMemory
 } from '../types';
+import { ALL_63_PROVINCES_HERITAGES } from './all63ProvincesHeritages';
+import { deduplicateHeritages } from '../services/deduplicationService';
 
-export const HERITAGE_DATABASE: HeritageItem[] = [
+const BASE_HERITAGES: HeritageItem[] = [
   {
     id: 'dai-noi-hue',
     name: 'Đại Nội Huế (Hoàng Thành & Tử Cấm Thành)',
@@ -790,6 +792,12 @@ export const HERITAGE_DATABASE: HeritageItem[] = [
     ]
   }
 ];
+
+// Deduplicate & merge with highest fidelity fields preserved
+export const HERITAGE_DATABASE: HeritageItem[] = deduplicateHeritages([
+  ...BASE_HERITAGES,
+  ...ALL_63_PROVINCES_HERITAGES
+]).dedupedItems;
 
 export const PLACES_NEAR_HERITAGE: Record<string, PlaceItem[]> = {
   'dai-noi-hue': [

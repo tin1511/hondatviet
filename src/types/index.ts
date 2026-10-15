@@ -11,7 +11,13 @@ export type HeritageCategory =
   | 'instrument'
   | 'architecture'
   | 'folk_art'
-  | 'culinary';
+  | 'culinary'
+  | 'museum'
+  | 'scenic_landscape'
+  | 'ecotourism'
+  | 'island_beach'
+  | 'community_tourism'
+  | 'cultural_site';
 
 export type VerificationStatus = 'verified' | 'folk_legend' | 'unverified';
 

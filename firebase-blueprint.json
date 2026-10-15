@@ -28,7 +28,7 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "category": { "type": "string", "enum": ["monument", "temple", "citadel", "palace", "tomb", "ancient_house", "craft_village", "artifact", "costume", "instrument", "architecture", "folk_art", "culinary"] },
+        "category": { "type": "string", "enum": ["monument", "temple", "citadel", "palace", "tomb", "ancient_house", "craft_village", "artifact", "costume", "instrument", "architecture", "folk_art", "culinary", "museum", "scenic_landscape", "ecotourism", "island_beach", "community_tourism", "cultural_site"] },
         "region": { "type": "string", "enum": ["north", "central", "south"] },
         "province": { "type": "string" },
         "period": { "type": "string" },

@@ -70,10 +70,10 @@
 }
 
 /* Hide scrollbar for clean horizontal mobile categories */
-.no-scrollbar::-webkit-scrollbar, .scrollbar-none::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-.no-scrollbar, .scrollbar-none {
+.no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

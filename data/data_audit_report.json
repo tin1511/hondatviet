@@ -1,0 +1,662 @@
+{
+  "generatedAt": "2026-10-13T01:15:48.290Z",
+  "totalAdministrativeUnits": 63,
+  "totalRecords": 132,
+  "coverageByProvince": [
+    {
+      "provinceCode": "01",
+      "provinceName": "Thành phố Hà Nội",
+      "region": "Đồng bằng sông Hồng",
+      "count": 5,
+      "categories": {
+        "monument": 1,
+        "cultural_site": 1,
+        "craft_village": 1,
+        "community_tourism": 1,
+        "museum": 1
+      }
+    },
+    {
+      "provinceCode": "02",
+      "provinceName": "Tỉnh Hà Giang",
+      "region": "Đông Bắc Bộ",
+      "count": 3,
+      "categories": {
+        "scenic_landscape": 1,
+        "monument": 1,
+        "cultural_site": 1
+      }
+    },
+    {
+      "provinceCode": "04",
+      "provinceName": "Tỉnh Cao Bằng",
+      "region": "Đông Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "06",
+      "provinceName": "Tỉnh Bắc Kạn",
+      "region": "Đông Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "ecotourism": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "08",
+      "provinceName": "Tỉnh Tuyên Quang",
+      "region": "Đông Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "scenic_landscape": 1
+      }
+    },
+    {
+      "provinceCode": "10",
+      "provinceName": "Tỉnh Lào Cai",
+      "region": "Tây Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "community_tourism": 1
+      }
+    },
+    {
+      "provinceCode": "11",
+      "provinceName": "Tỉnh Điện Biên",
+      "region": "Tây Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "museum": 1
+      }
+    },
+    {
+      "provinceCode": "12",
+      "provinceName": "Tỉnh Lai Châu",
+      "region": "Tây Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "community_tourism": 1
+      }
+    },
+    {
+      "provinceCode": "14",
+      "provinceName": "Tỉnh Sơn La",
+      "region": "Tây Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "scenic_landscape": 1
+      }
+    },
+    {
+      "provinceCode": "15",
+      "provinceName": "Tỉnh Yên Bái",
+      "region": "Tây Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 2
+      }
+    },
+    {
+      "provinceCode": "17",
+      "provinceName": "Tỉnh Hòa Bình",
+      "region": "Tây Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "community_tourism": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "19",
+      "provinceName": "Tỉnh Thái Nguyên",
+      "region": "Đông Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "craft_village": 1
+      }
+    },
+    {
+      "provinceCode": "20",
+      "provinceName": "Tỉnh Lạng Sơn",
+      "region": "Đông Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "22",
+      "provinceName": "Tỉnh Quảng Ninh",
+      "region": "Đông Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "cultural_site": 1
+      }
+    },
+    {
+      "provinceCode": "24",
+      "provinceName": "Tỉnh Bắc Giang",
+      "region": "Đông Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "25",
+      "provinceName": "Tỉnh Phú Thọ",
+      "region": "Đông Bắc Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "ecotourism": 1
+      }
+    },
+    {
+      "provinceCode": "26",
+      "provinceName": "Tỉnh Vĩnh Phúc",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "scenic_landscape": 1
+      }
+    },
+    {
+      "provinceCode": "27",
+      "provinceName": "Tỉnh Bắc Ninh",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "craft_village": 1
+      }
+    },
+    {
+      "provinceCode": "30",
+      "provinceName": "Tỉnh Hải Dương",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "craft_village": 1
+      }
+    },
+    {
+      "provinceCode": "31",
+      "provinceName": "Thành phố Hải Phòng",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "33",
+      "provinceName": "Tỉnh Hưng Yên",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "craft_village": 1
+      }
+    },
+    {
+      "provinceCode": "34",
+      "provinceName": "Tỉnh Thái Bình",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "35",
+      "provinceName": "Tỉnh Hà Nam",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "cultural_site": 2
+      }
+    },
+    {
+      "provinceCode": "36",
+      "provinceName": "Tỉnh Nam Định",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "ecotourism": 1
+      }
+    },
+    {
+      "provinceCode": "37",
+      "provinceName": "Tỉnh Ninh Bình",
+      "region": "Đồng bằng sông Hồng",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "38",
+      "provinceName": "Tỉnh Thanh Hóa",
+      "region": "Bắc Trung Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 2
+      }
+    },
+    {
+      "provinceCode": "40",
+      "provinceName": "Tỉnh Nghệ An",
+      "region": "Bắc Trung Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "ecotourism": 1
+      }
+    },
+    {
+      "provinceCode": "42",
+      "provinceName": "Tỉnh Hà Tĩnh",
+      "region": "Bắc Trung Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "cultural_site": 1
+      }
+    },
+    {
+      "provinceCode": "44",
+      "provinceName": "Tỉnh Quảng Bình",
+      "region": "Bắc Trung Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 2
+      }
+    },
+    {
+      "provinceCode": "45",
+      "provinceName": "Tỉnh Quảng Trị",
+      "region": "Bắc Trung Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 2
+      }
+    },
+    {
+      "provinceCode": "46",
+      "provinceName": "Tỉnh Thừa Thiên Huế",
+      "region": "Bắc Trung Bộ",
+      "count": 2,
+      "categories": {
+        "cultural_site": 2
+      }
+    },
+    {
+      "provinceCode": "48",
+      "provinceName": "Thành phố Đà Nẵng",
+      "region": "Duyên hải Nam Trung Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "museum": 1
+      }
+    },
+    {
+      "provinceCode": "49",
+      "provinceName": "Tỉnh Quảng Nam",
+      "region": "Duyên hải Nam Trung Bộ",
+      "count": 2,
+      "categories": {
+        "cultural_site": 2
+      }
+    },
+    {
+      "provinceCode": "51",
+      "provinceName": "Tỉnh Quảng Ngãi",
+      "region": "Duyên hải Nam Trung Bộ",
+      "count": 2,
+      "categories": {
+        "island_beach": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "52",
+      "provinceName": "Tỉnh Bình Định",
+      "region": "Duyên hải Nam Trung Bộ",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "54",
+      "provinceName": "Tỉnh Phú Yên",
+      "region": "Duyên hải Nam Trung Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 2
+      }
+    },
+    {
+      "provinceCode": "56",
+      "provinceName": "Tỉnh Khánh Hòa",
+      "region": "Duyên hải Nam Trung Bộ",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "island_beach": 1
+      }
+    },
+    {
+      "provinceCode": "58",
+      "provinceName": "Tỉnh Ninh Thuận",
+      "region": "Duyên hải Nam Trung Bộ",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "craft_village": 1
+      }
+    },
+    {
+      "provinceCode": "60",
+      "provinceName": "Tỉnh Bình Thuận",
+      "region": "Duyên hải Nam Trung Bộ",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "cultural_site": 1
+      }
+    },
+    {
+      "provinceCode": "62",
+      "provinceName": "Tỉnh Kon Tum",
+      "region": "Tây Nguyên",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "64",
+      "provinceName": "Tỉnh Gia Lai",
+      "region": "Tây Nguyên",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "66",
+      "provinceName": "Tỉnh Đắk Lắk",
+      "region": "Tây Nguyên",
+      "count": 2,
+      "categories": {
+        "museum": 1,
+        "community_tourism": 1
+      }
+    },
+    {
+      "provinceCode": "67",
+      "provinceName": "Tỉnh Đắk Nông",
+      "region": "Tây Nguyên",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 2
+      }
+    },
+    {
+      "provinceCode": "68",
+      "provinceName": "Tỉnh Lâm Đồng",
+      "region": "Tây Nguyên",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "scenic_landscape": 1
+      }
+    },
+    {
+      "provinceCode": "70",
+      "provinceName": "Tỉnh Bình Phước",
+      "region": "Đông Nam Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "ecotourism": 1
+      }
+    },
+    {
+      "provinceCode": "72",
+      "provinceName": "Tỉnh Tây Ninh",
+      "region": "Đông Nam Bộ",
+      "count": 2,
+      "categories": {
+        "cultural_site": 2
+      }
+    },
+    {
+      "provinceCode": "74",
+      "provinceName": "Tỉnh Bình Dương",
+      "region": "Đông Nam Bộ",
+      "count": 2,
+      "categories": {
+        "craft_village": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "75",
+      "provinceName": "Tỉnh Đồng Nai",
+      "region": "Đông Nam Bộ",
+      "count": 2,
+      "categories": {
+        "ecotourism": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "77",
+      "provinceName": "Tỉnh Bà Rịa - Vũng Tàu",
+      "region": "Đông Nam Bộ",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "cultural_site": 1
+      }
+    },
+    {
+      "provinceCode": "79",
+      "provinceName": "Thành phố Hồ Chí Minh",
+      "region": "Đông Nam Bộ",
+      "count": 4,
+      "categories": {
+        "monument": 2,
+        "museum": 1,
+        "community_tourism": 1
+      }
+    },
+    {
+      "provinceCode": "80",
+      "provinceName": "Tỉnh Long An",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "ecotourism": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "82",
+      "provinceName": "Tỉnh Tiền Giang",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "community_tourism": 1
+      }
+    },
+    {
+      "provinceCode": "83",
+      "provinceName": "Tỉnh Bến Tre",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "monument": 2
+      }
+    },
+    {
+      "provinceCode": "84",
+      "provinceName": "Tỉnh Trà Vinh",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "cultural_site": 2
+      }
+    },
+    {
+      "provinceCode": "86",
+      "provinceName": "Tỉnh Vĩnh Long",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "craft_village": 1,
+        "community_tourism": 1
+      }
+    },
+    {
+      "provinceCode": "87",
+      "provinceName": "Tỉnh Đồng Tháp",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "ecotourism": 1
+      }
+    },
+    {
+      "provinceCode": "89",
+      "provinceName": "Tỉnh An Giang",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "monument": 1,
+        "cultural_site": 1
+      }
+    },
+    {
+      "provinceCode": "91",
+      "provinceName": "Tỉnh Kiên Giang",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "island_beach": 1,
+        "cultural_site": 1
+      }
+    },
+    {
+      "provinceCode": "92",
+      "provinceName": "Thành phố Cần Thơ",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "community_tourism": 1,
+        "cultural_site": 1
+      }
+    },
+    {
+      "provinceCode": "93",
+      "provinceName": "Tỉnh Hậu Giang",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "ecotourism": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "94",
+      "provinceName": "Tỉnh Sóc Trăng",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "cultural_site": 2
+      }
+    },
+    {
+      "provinceCode": "95",
+      "provinceName": "Tỉnh Bạc Liêu",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "cultural_site": 1,
+        "monument": 1
+      }
+    },
+    {
+      "provinceCode": "96",
+      "provinceName": "Tỉnh Cà Mau",
+      "region": "Đồng bằng sông Cửu Long",
+      "count": 2,
+      "categories": {
+        "scenic_landscape": 1,
+        "ecotourism": 1
+      }
+    }
+  ],
+  "categoryDistribution": {
+    "monument": 38,
+    "cultural_site": 36,
+    "craft_village": 8,
+    "community_tourism": 9,
+    "museum": 5,
+    "scenic_landscape": 23,
+    "ecotourism": 10,
+    "island_beach": 3
+  },
+  "rankingDistribution": {
+    "Di sản Thế giới UNESCO": 17,
+    "Quốc gia đặc biệt": 47,
+    "Điểm du lịch tiêu biểu": 14,
+    "Quốc gia": 43,
+    "Khu du lịch Quốc gia": 11
+  },
+  "verifiedRatio": 1,
+  "withCoordinatesRatio": 1,
+  "dataSourcesUsed": [
+    "UNESCO World Heritage Center & UNESCO Memory of the World",
+    "Cục Di sản Văn hóa - Bộ Văn hóa, Thể thao và Du lịch",
+    "Cục Du lịch Quốc gia Việt Nam (Vietnam National Authority of Tourism)",
+    "Hệ thống Quyết định xếp hạng Di tích Quốc gia & Quốc gia đặc biệt của Thủ tướng Chính phủ",
+    "Tổng cục Thống kê (GSO) - Danh mục chuẩn 63 đơn vị hành chính Việt Nam",
+    "Bảo tàng Lịch sử Quốc gia & Viện Sử học Việt Nam",
+    "OpenStreetMap (OSM) WGS84 Geolocation Services"
+  ],
+  "notes": [
+    "Toàn bộ 63/63 tỉnh thành phố trực thuộc Trung ương đều đã có đại diện danh lam di tích tiêu biểu được xác minh.",
+    "Tọa độ vĩ độ và kinh độ được chuẩn hóa hệ WGS84 phục vụ trực tiếp cho Leaflet và Google Maps.",
+    "Dữ liệu thiếu được ghi nhận minh bạch theo từng bản ghi để tiếp tục điều tra thực địa theo quy trình chuyên môn."
+  ]
+}

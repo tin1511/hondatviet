@@ -8,13 +8,15 @@ import nodemailer from 'nodemailer';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { HERITAGE_DATABASE } from './src/data/vietnamHeritageData';
-import { getLocalizedHeritage } from './src/services/heritageLocalizationService';
 import { VIETNAM_LANDMARK_PHOTOS } from './src/data/landmarkImagesDatabase';
 
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const args = process.argv.slice(2);
+const portFlagIndex = args.indexOf('--port');
+const cliPort = portFlagIndex !== -1 && args[portFlagIndex + 1] ? parseInt(args[portFlagIndex + 1], 10) : undefined;
+const PORT = cliPort || (process.env.PORT ? parseInt(process.env.PORT, 10) : 3000);
 
 app.use(express.json({ limit: '25mb' }));
 
@@ -294,41 +296,12 @@ function buildFallbackStory(params: {
 }) {
   const { heritageName, period, history, mode = 'student', language = 'vi' } = params;
 
-  const isEn = language === 'en' || mode === 'foreigner';
-
   // Find matching heritage in database
   const match = HERITAGE_DATABASE.find((h) =>
     h.name.toLowerCase().includes(heritageName.toLowerCase()) ||
     heritageName.toLowerCase().includes(h.name.toLowerCase()) ||
-    (h.vietnameseName && h.vietnameseName.toLowerCase().includes(heritageName.toLowerCase())) ||
-    (h.englishName && h.englishName.toLowerCase().includes(heritageName.toLowerCase()))
+    (h.vietnameseName && h.vietnameseName.toLowerCase().includes(heritageName.toLowerCase()))
   );
-
-  if (isEn) {
-    const localized = match ? getLocalizedHeritage(match, 'en') : null;
-    const enName = localized?.name || match?.englishName || heritageName;
-    const enHistory = localized?.history || (history || 'An essential chapter of Vietnamese cultural civilization and architectural brilliance.');
-    const enEra = localized?.period || period || 'Vietnam Dynastic Eras';
-    const enSignificance = localized?.culturalSignificance || 'A premier national landmark symbolizing millennia of cultural devotion and creative craftsmanship.';
-
-    const storyText = `Welcome to the timeless story of ${enName}, a cherished cultural treasure from ${enEra}.\n\nThroughout centuries of history, ${enName} has stood as an enduring symbol of resilience, heritage, and artistic mastery. According to verified historical archives: ${enHistory}\n\nToday, ${enName} remains not only a breathtaking architectural marvel (${enSignificance}), but also an immortal testament to the soul and traditions of the Vietnamese people. Explorers from across the world are warmly invited to discover its enduring echoes and sacred legacy.`;
-
-    return {
-      heritageId: match?.id || heritageName.toLowerCase().replace(/\s+/g, '-'),
-      heritageName: enName,
-      mode: mode as any,
-      title: `The Timeless Legacy of ${enName}`,
-      storyText: storyText,
-      historicalContext: `${enEra}: ${enHistory}`,
-      distinctionNote: 'Verified History: Dynastic chronicles, archaeological excavations, and UNESCO heritage dossiers. Folklore & Legends: Local oral memories honoring the deep spiritual devotion of ancestors.',
-      sourceReferences: [
-        'UNESCO World Heritage Documentation',
-        'National Archives of Vietnam',
-        'The Complete Annals of Dai Viet (Đại Việt Sử Ký Toàn Thư)'
-      ],
-      isFallback: true
-    };
-  }
 
   const hist = history || match?.history || 'Di sản văn hóa tiêu biểu của dân tộc Việt Nam, kết tinh giá trị lịch sử và nghệ thuật ngàn năm qua nhiều thế hệ tiền nhân.';
   const era = period || match?.period || 'Lịch sử Việt Nam';
@@ -337,7 +310,10 @@ function buildFallbackStory(params: {
   let storyText = '';
   let distinctionNote = '';
 
-  if (mode === 'children') {
+  if (language === 'en' || mode === 'foreigner') {
+    storyText = `Welcome to the timeless story of ${heritageName}, a monumental cultural treasure from ${era}.\n\nThroughout centuries, ${heritageName} has stood as a beacon of Vietnam's profound heritage. According to historical records: ${hist}\n\nToday, ${heritageName} remains not only an architectural marvel (${sig}) but also a living testament to the resilience, spirituality, and artistic mastery of the Vietnamese people.`;
+    distinctionNote = `Verified History: Construction dates, architectural frameworks, and dynastic events are cross-referenced with national archives and UNESCO dossiers. Folklore & Legends: Local oral memories capture the spiritual devotion and poetic legends of the ancestors.`;
+  } else if (mode === 'children') {
     storyText = `Ngày xửa ngày xưa, giữa dải đất gấm vóc Việt Nam tươi đẹp, có một nơi chốn vô cùng kỳ diệu mang tên ${heritageName}.\n\nCác bé có biết không, từ thời ${era}, các bác thợ tài hoa và ông cha ta đã cùng nhau đắp từng viên gạch, dựng từng cột gỗ để tạo nên một công trình tuyệt đẹp. ${hist}\n\nĐến nay, ${heritageName} vẫn đứng sừng sững như một người ông hiền từ mỉm cười đón chào mọi người, nhắc nhở các bạn nhỏ chúng mình phải luôn yêu quý quê hương đất nước và tự hào giữ gìn báu vật của dân tộc!`;
     distinctionNote = `Chính sử: Thời kỳ lịch sử và các mốc xây dựng được ghi chép trong sử thư. Truyền thuyết: Những câu chuyện dân gian mang màu sắc thần thoại giúp các em nhỏ nuôi dưỡng trí tưởng tượng và lòng nhân ái.`;
   } else if (mode === 'university') {
@@ -544,7 +520,7 @@ Yêu cầu:
 2. Phải phân biệt rạch ròi giữa sự kiện lịch sử đã xác minh và truyền thuyết dân gian.
 3. Tuyệt đối không xuyên tạc lịch sử, không tự bịa nguồn tư liệu.
 4. Ngôn từ truyền cảm, giàu hình tượng, nhịp điệu mượt mà thích hợp đọc to bằng Text-to-Speech.
-5. Ngôn ngữ: ${language === 'en' || mode === 'foreigner' ? 'English (CRITICAL: Every field including title, storyText, historicalContext, distinctionNote, and sourceReferences MUST be written entirely in fluent, captivating English)' : 'Tiếng Việt'}.`;
+5. Ngôn ngữ: ${language === 'en' || mode === 'foreigner' ? 'English' : 'Tiếng Việt'}.`;
 
     const response = await generateContentWithResilience(ai, {
       contents: `Hãy sáng tác câu chuyện di sản cho: ${heritageName}. Bối cảnh: ${history || ''}`,
@@ -1616,10 +1592,14 @@ function writeServerPlaces(places: Record<string, any[]>) {
 }
 
 let serverHeritages = readServerHeritages();
+if (!serverHeritages || !Array.isArray(serverHeritages) || serverHeritages.length === 0) {
+  serverHeritages = HERITAGE_DATABASE;
+  writeServerHeritages(HERITAGE_DATABASE);
+}
 let serverPlaces = readServerPlaces();
 
 app.get('/api/heritages', (req: Request, res: Response) => {
-  return res.json({ success: true, heritages: serverHeritages });
+  return res.json({ success: true, heritages: (serverHeritages && serverHeritages.length > 0) ? serverHeritages : HERITAGE_DATABASE });
 });
 
 app.post('/api/heritages', (req: Request, res: Response) => {
@@ -1649,6 +1629,87 @@ app.post('/api/places', (req: Request, res: Response) => {
       return res.json({ success: true });
     }
     return res.status(400).json({ success: false, error: 'Dữ liệu địa điểm không hợp lệ.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =========================================================================
+// TOÀN VIỆN DỮ LIỆU DU LỊCH & DI SẢN VIỆT NAM (63 TỈNH THÀNH - HỒN ĐẤT VIỆT)
+// =========================================================================
+const ADMIN_UNITS_FILE = path.join(DATA_DIR, 'vietnam_administrative_units_63.json');
+const COMPREHENSIVE_DATASET_FILE = path.join(DATA_DIR, 'vietnam_comprehensive_tourism_dataset.json');
+const CSV_DATASET_FILE = path.join(DATA_DIR, 'vietnam_comprehensive_tourism_dataset.csv');
+const AUDIT_REPORT_FILE = path.join(DATA_DIR, 'data_audit_report.json');
+
+app.get('/api/tourism/administrative-units', (req: Request, res: Response) => {
+  try {
+    if (fs.existsSync(ADMIN_UNITS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(ADMIN_UNITS_FILE, 'utf-8'));
+      return res.json({ success: true, count: data.length, units: data });
+    }
+    return res.status(404).json({ success: false, error: 'Chưa khởi tạo danh mục 63 đơn vị hành chính.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/tourism/comprehensive-dataset', (req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(COMPREHENSIVE_DATASET_FILE)) {
+      return res.status(404).json({ success: false, error: 'Cơ sở dữ liệu toàn diện chưa được khởi tạo.' });
+    }
+    const raw = fs.readFileSync(COMPREHENSIVE_DATASET_FILE, 'utf-8');
+    let list = JSON.parse(raw);
+
+    const { provinceCode, category, region, rankingLevel, search } = req.query;
+    if (provinceCode) {
+      list = list.filter((item: any) => item.provinceCode === String(provinceCode));
+    }
+    if (category) {
+      list = list.filter((item: any) => item.category === String(category));
+    }
+    if (region) {
+      list = list.filter((item: any) => item.region === String(region));
+    }
+    if (rankingLevel) {
+      list = list.filter((item: any) => item.rankingLevel === String(rankingLevel));
+    }
+    if (search) {
+      const q = String(search).toLowerCase();
+      list = list.filter((item: any) => 
+        item.name.toLowerCase().includes(q) || 
+        item.province.toLowerCase().includes(q) ||
+        (item.description && item.description.toLowerCase().includes(q))
+      );
+    }
+
+    return res.json({ success: true, total: list.length, items: list });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/tourism/audit-report', (req: Request, res: Response) => {
+  try {
+    if (fs.existsSync(AUDIT_REPORT_FILE)) {
+      const report = JSON.parse(fs.readFileSync(AUDIT_REPORT_FILE, 'utf-8'));
+      return res.json({ success: true, report });
+    }
+    return res.status(404).json({ success: false, error: 'Chưa có báo cáo kiểm toán dữ liệu.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/tourism/export-csv', (req: Request, res: Response) => {
+  try {
+    if (fs.existsSync(CSV_DATASET_FILE)) {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="vietnam_comprehensive_tourism_dataset.csv"');
+      return res.sendFile(CSV_DATASET_FILE);
+    }
+    return res.status(404).json({ success: false, error: 'Tệp CSV chưa được sinh.' });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
   }
@@ -2814,9 +2875,15 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`Hồn Đất Việt Server is actively running on http://0.0.0.0:${PORT}`);
+  });
+
+  server.on('error', (err: any) => {
+    console.error(`[Server Error] Listen on port ${PORT} failed:`, err);
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('[Server Error] Startup failed:', err);
+});

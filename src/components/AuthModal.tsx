@@ -36,11 +36,14 @@ import {
   Send,
   ArrowLeft,
   Copy,
+  Globe,
+  ChevronDown,
   Languages
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { UserProfile, UserActivityLog, UserActionType } from '../types';
 import { cleanVietnameseText } from '../utils/textUtils';
+import { languageService, SUPPORTED_LANGUAGES } from '../services/languageService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -49,6 +52,8 @@ interface AuthModalProps {
   initialTab?: 'login' | 'register' | 'profile' | 'activity' | 'security';
   onNavigateTab?: (tab: string) => void;
   language?: string;
+  onLanguageChange?: (lang: string) => void;
+  onOpenLanguageModal?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -57,10 +62,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onUserChange,
   initialTab = 'login',
   onNavigateTab,
-  language = 'vi'
+  language = 'vi',
+  onLanguageChange,
+  onOpenLanguageModal
 }) => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'profile' | 'activity' | 'security'>(initialTab);
+  const currentLang = language || languageService.getCurrentLanguage();
 
   // Body scroll lock to prevent underlying content scroll on mobile
   useEffect(() => {
