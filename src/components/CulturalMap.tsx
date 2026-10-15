@@ -818,12 +818,12 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
   });
 
   const categories = [
-    { id: 'all', label: 'Tất cả di sản' },
-    { id: 'monument', label: '📜 Di tích lịch sử' },
-    { id: 'palace', label: '🏛 Hoàng thành & Cung điện' },
-    { id: 'temple', label: '⛩ Đền chùa & Tháp cổ' },
-    { id: 'ancient_house', label: '🏘 Đô thị cổ' },
-    { id: 'craft_village', label: '🏺 Làng nghề truyền thống' }
+    { id: 'all', label: languageService.t('Tất cả di sản', language, 'Tất cả di sản') },
+    { id: 'monument', label: languageService.t('📜 Di tích lịch sử', language, '📜 Di tích lịch sử') },
+    { id: 'palace', label: languageService.t('🏛 Hoàng thành & Cung điện', language, '🏛 Hoàng thành & Cung điện') },
+    { id: 'temple', label: languageService.t('⛩ Đền chùa & Tháp cổ', language, '⛩ Đền chùa & Tháp cổ') },
+    { id: 'ancient_house', label: languageService.t('🏘 Đô thị cổ', language, '🏘 Đô thị cổ') },
+    { id: 'craft_village', label: languageService.t('🏺 Làng nghề truyền thống', language, '🏺 Làng nghề truyền thống') }
   ];
 
   return (
@@ -833,15 +833,15 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
       <div className="text-center max-w-3xl mx-auto mb-4 sm:mb-6">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-semibold mb-2 backdrop-blur shadow-sm">
           <Globe className="w-4 h-4 text-amber-400" />
-          <span>Bản Đồ Chuyên Biệt Việt Nam (Hình Chữ S Toàn Vẹn)</span>
+          <span>{languageService.t('Bản Đồ Chuyên Biệt Việt Nam (Hình Chữ S Toàn Vẹn)', language, 'Bản Đồ Chuyên Biệt Việt Nam (Hình Chữ S Toàn Vẹn)')}</span>
         </div>
         <h2 className="text-2xl sm:text-4xl font-serif font-bold text-stone-100 tracking-tight">
-          {selectedProvinceName ? `Bản Đồ Di Sản: ${selectedProvinceName}` : 'Dải Đất Hình Chữ S Việt Nam'}
+          {selectedProvinceName ? `${languageService.t('Bản Đồ Di Sản:', language, 'Bản Đồ Di Sản:')} ${selectedProvinceName}` : languageService.t('Dải Đất Hình Chữ S Việt Nam', language, 'Dải Đất Hình Chữ S Việt Nam')}
         </h2>
         <p className="text-stone-300 text-xs sm:text-sm mt-1 font-light">
           {selectedProvinceName 
-            ? `Đang tập trung vào khu vực ${selectedProvinceName}. Nhấn vào các điểm sáng để mở thông tin di sản.`
-            : 'Khám phá trọn vẹn lãnh thổ 34 đơn vị hành chính cấp tỉnh mới của Việt Nam, Biển Đông cùng hai quần đảo Hoàng Sa & Trường Sa thiêng liêng.'}
+            ? `${languageService.t('Đang tập trung vào khu vực', language, 'Đang tập trung vào khu vực')} ${selectedProvinceName}. ${languageService.t('Nhấn vào các điểm sáng để mở thông tin di sản.', language, 'Nhấn vào các điểm sáng để mở thông tin di sản.')}`
+            : languageService.t('Khám phá trọn vẹn lãnh thổ 34 đơn vị hành chính cấp tỉnh mới của Việt Nam, Biển Đông cùng hai quần đảo Hoàng Sa & Trường Sa thiêng liêng.', language, 'Khám phá trọn vẹn lãnh thổ 34 đơn vị hành chính cấp tỉnh mới của Việt Nam, Biển Đông cùng hai quần đảo Hoàng Sa & Trường Sa thiêng liêng.')}
         </p>
       </div>
 
@@ -856,18 +856,18 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs transition-all active:scale-95 cursor-pointer shadow-md border border-amber-300"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Toàn cảnh Việt Nam</span>
+              <span>{languageService.t('Toàn cảnh Việt Nam', language, 'Toàn cảnh Việt Nam')}</span>
             </button>
           ) : (
             <div className="flex items-center gap-2 text-xs text-amber-300 font-semibold px-2 py-1">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Toàn cảnh chữ S</span>
+              <span>{languageService.t('Toàn cảnh chữ S', language, 'Toàn cảnh chữ S')}</span>
             </div>
           )}
 
           {selectedProvinceName && (
             <span className="text-xs text-stone-300 bg-stone-950/80 px-3 py-1.5 rounded-xl border border-stone-800 hidden sm:inline-block">
-              Tỉnh thành: <strong className="text-amber-300">{selectedProvinceName}</strong> ({heritagesInView.length} điểm)
+              {languageService.t('Tỉnh thành:', language, 'Tỉnh thành:')} <strong className="text-amber-300">{selectedProvinceName}</strong> ({heritagesInView.length} {languageService.t('địa điểm', language, 'điểm')})
             </span>
           )}
 
@@ -879,7 +879,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 selectedRegion === 'all' ? 'bg-amber-500 text-stone-950 font-bold' : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              Toàn quốc
+              {languageService.t('Toàn quốc', language, 'Toàn quốc')}
             </button>
             <button
               onClick={() => handleSelectRegion('north')}
@@ -887,7 +887,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 selectedRegion === 'north' ? 'bg-amber-500 text-stone-950 font-bold' : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              Miền Bắc
+              {languageService.t('Miền Bắc', language, 'Miền Bắc')}
             </button>
             <button
               onClick={() => handleSelectRegion('central')}
@@ -895,7 +895,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 selectedRegion === 'central' ? 'bg-amber-500 text-stone-950 font-bold' : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              Miền Trung
+              {languageService.t('Miền Trung', language, 'Miền Trung')}
             </button>
             <button
               onClick={() => handleSelectRegion('south')}
@@ -903,7 +903,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 selectedRegion === 'south' ? 'bg-amber-500 text-stone-950 font-bold' : 'text-stone-400 hover:text-stone-200'
               }`}
             >
-              Miền Nam
+              {languageService.t('Miền Nam', language, 'Miền Nam')}
             </button>
           </div>
         </div>
@@ -920,10 +920,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                   ? 'bg-gradient-to-r from-red-600 to-amber-600 text-white shadow-md shadow-red-950/40 ring-1 ring-amber-300'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
-              title="Chỉ hiển thị độc quyền bản đồ Việt Nam, không có quốc gia bên ngoài"
+              title={languageService.t('Chỉ hiển thị độc quyền bản đồ Việt Nam, không có quốc gia bên ngoài', language, 'Chỉ hiển thị độc quyền bản đồ Việt Nam, không có quốc gia bên ngoài')}
             >
               <span>🇻🇳</span>
-              <span>Chỉ Bản Đồ VN</span>
+              <span>{languageService.t('Chỉ Bản Đồ VN', language, 'Chỉ Bản Đồ VN')}</span>
             </button>
 
             <button
@@ -933,10 +933,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                   ? 'bg-amber-500 text-stone-950 font-bold shadow'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
-              title="Bản đồ ảnh vệ tinh Esri World Imagery"
+              title={languageService.t('Bản đồ ảnh vệ tinh Esri World Imagery', language, 'Bản đồ ảnh vệ tinh Esri World Imagery')}
             >
               <span>🛰️</span>
-              <span className="hidden sm:inline">Vệ Tinh</span>
+              <span className="hidden sm:inline">{languageService.t('Vệ Tinh', language, 'Vệ Tinh')}</span>
             </button>
 
             <button
@@ -946,10 +946,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                   ? 'bg-amber-500 text-stone-950 font-bold shadow'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
-              title="Bản đồ giao thông du lịch Esri World Street Map"
+              title={languageService.t('Bản đồ giao thông du lịch Esri World Street Map', language, 'Bản đồ giao thông du lịch Esri World Street Map')}
             >
               <span>🌟</span>
-              <span className="hidden sm:inline">Du Lịch</span>
+              <span className="hidden sm:inline">{languageService.t('Du Lịch', language, 'Du Lịch')}</span>
             </button>
           </div>
 
@@ -958,7 +958,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
             <button
               onClick={() => setShowColorMenu(prev => !prev)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-950 hover:bg-stone-800/80 border border-amber-500/40 text-amber-300 font-semibold text-xs transition-all cursor-pointer shadow-sm"
-              title="Đổi màu sắc bản đồ Việt Nam"
+              title={languageService.t('Đổi màu sắc bản đồ Việt Nam', language, 'Đổi màu sắc bản đồ Việt Nam')}
             >
               <Palette className="w-3.5 h-3.5 text-amber-400" />
               <span>{COLOR_THEMES[colorTheme].icon} {COLOR_THEMES[colorTheme].name}</span>
@@ -971,7 +971,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 <div className="text-[11px] font-bold text-amber-400 font-serif flex items-center justify-between pb-1.5 border-b border-stone-800">
                   <span className="flex items-center gap-1.5">
                     <Palette className="w-3.5 h-3.5" />
-                    <span>Chọn tông màu bản đồ:</span>
+                    <span>{languageService.t('Chọn tông màu bản đồ:', language, 'Chọn tông màu bản đồ:')}</span>
                   </span>
                   <button 
                     onClick={() => setShowColorMenu(false)}
@@ -1059,10 +1059,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40' 
                 : 'bg-stone-900 text-stone-400 border-stone-800'
             }`}
-            title="Bật/Tắt đường ranh giới 63 tỉnh thành"
+            title={languageService.t('Bật/Tắt đường ranh giới 63 tỉnh thành', language, 'Bật/Tắt đường ranh giới 63 tỉnh thành')}
           >
             {showProvinceBorders ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5 text-stone-500" />}
-            <span className="hidden sm:inline">Ranh giới</span>
+            <span className="hidden sm:inline">{languageService.t('Ranh giới', language, 'Ranh giới')}</span>
           </button>
 
           {/* Toggle Province Labels */}
@@ -1073,10 +1073,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40' 
                 : 'bg-stone-900 text-stone-400 border-stone-800'
             }`}
-            title="Bật/Tắt nhãn tên 63 tỉnh thành"
+            title={languageService.t('Bật/Tắt nhãn tên 63 tỉnh thành', language, 'Bật/Tắt nhãn tên 63 tỉnh thành')}
           >
             <Tag className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Tên tỉnh</span>
+            <span className="hidden sm:inline">{languageService.t('Tên tỉnh', language, 'Tên tỉnh')}</span>
           </button>
 
         </div>
@@ -1089,7 +1089,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm di tích, tỉnh thành..."
+              placeholder={languageService.t('Tìm di tích, tỉnh thành...', language, 'Tìm di tích, tỉnh thành...')}
               className="w-full pl-8 pr-3 py-1.5 bg-stone-950 text-stone-100 placeholder-stone-500 text-xs rounded-xl border border-stone-700 focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -1098,7 +1098,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
             onClick={handleRequestGPS}
             disabled={isLocating}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-stone-950 font-bold text-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 shrink-0"
-            title="Định vị tọa độ GPS của bạn"
+            title={languageService.t('Định vị tọa độ GPS của bạn', language, 'Định vị tọa độ GPS của bạn')}
           >
             <LocateFixed className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">GPS</span>
@@ -1107,7 +1107,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
           <button
             onClick={() => mapInstanceRef.current?.zoomIn()}
             className="p-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 cursor-pointer"
-            title="Phóng to"
+            title={languageService.t('Phóng to', language, 'Phóng to')}
           >
             <ZoomIn className="w-4 h-4 text-amber-400" />
           </button>
@@ -1115,7 +1115,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
           <button
             onClick={() => mapInstanceRef.current?.zoomOut()}
             className="p-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 cursor-pointer"
-            title="Thu nhỏ"
+            title={languageService.t('Thu nhỏ', language, 'Thu nhỏ')}
           >
             <ZoomOut className="w-4 h-4 text-amber-400" />
           </button>
@@ -1123,7 +1123,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
           <button
             onClick={handleResetVietnamView}
             className="p-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 cursor-pointer"
-            title="Về lại toàn cảnh chữ S"
+            title={languageService.t('Về lại toàn cảnh chữ S', language, 'Về lại toàn cảnh chữ S')}
           >
             <RotateCcw className="w-4 h-4 text-amber-400" />
           </button>
@@ -1224,10 +1224,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 <div className="min-w-0">
                   <h3 className="font-serif font-bold text-stone-100 text-sm sm:text-base flex items-center gap-1.5 truncate">
                     <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span className="truncate">{selectedProvinceName ? `Di Sản: ${selectedProvinceName}` : 'Điểm Đến Di Sản Việt Nam'}</span>
+                    <span className="truncate">{selectedProvinceName ? `${languageService.t('Di Sản:', language, 'Di Sản:')} ${selectedProvinceName}` : languageService.t('Điểm Đến Di Sản Việt Nam', language, 'Điểm Đến Di Sản Việt Nam')}</span>
                   </h3>
                   <p className="text-[11px] text-stone-400 mt-0.5">
-                    {selectedProvinceName ? `Tìm thấy ${heritagesInView.length} địa điểm` : `Tổng cộng ${heritagesInView.length} địa điểm`}
+                    {selectedProvinceName ? `${languageService.t('Tìm thấy', language, 'Tìm thấy')} ${heritagesInView.length} ${languageService.t('địa điểm', language, 'địa điểm')}` : `${languageService.t('Tổng cộng', language, 'Tổng cộng')} ${heritagesInView.length} ${languageService.t('địa điểm', language, 'địa điểm')}`}
                   </p>
                 </div>
 
@@ -1236,16 +1236,16 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                     <button
                       onClick={handleResetVietnamView}
                       className="text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-lg transition-colors cursor-pointer"
-                      title="Quay về toàn cảnh bản đồ Việt Nam"
+                      title={languageService.t('Quay về toàn cảnh bản đồ Việt Nam', language, 'Quay về toàn cảnh bản đồ Việt Nam')}
                     >
-                      Xem toàn quốc
+                      {languageService.t('Xem toàn quốc', language, 'Xem toàn quốc')}
                     </button>
                   )}
 
                   <button
                     onClick={() => setIsBoxCollapsed(prev => !prev)}
                     className="p-1.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors cursor-pointer"
-                    title={isBoxCollapsed ? "Mở rộng ô thông tin" : "Thu gọn ô thông tin"}
+                    title={isBoxCollapsed ? languageService.t('Mở rộng ô thông tin', language, 'Mở rộng ô thông tin') : languageService.t('Thu gọn ô thông tin', language, 'Thu gọn ô thông tin')}
                   >
                     {isBoxCollapsed ? <Maximize2 className="w-3.5 h-3.5 text-amber-400" /> : <Minimize2 className="w-3.5 h-3.5" />}
                   </button>
@@ -1259,15 +1259,15 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 {heritagesInView.length === 0 ? (
                   <div className="py-10 text-center text-stone-400 space-y-2">
                     <Compass className="w-8 h-8 text-stone-600 mx-auto" />
-                    <p className="text-xs">Chưa có di sản nào khớp với bộ lọc này.</p>
-                    <p className="text-[10px] text-stone-500">Dữ liệu văn hóa đang được liên tục bổ sung và cập nhật.</p>
+                    <p className="text-xs">{languageService.t('Chưa có di sản nào khớp với bộ lọc này.', language, 'Chưa có di sản nào khớp với bộ lọc này.')}</p>
+                    <p className="text-[10px] text-stone-500">{languageService.t('Dữ liệu văn hóa đang được liên tục bổ sung và cập nhật.', language, 'Dữ liệu văn hóa đang được liên tục bổ sung và cập nhật.')}</p>
                     {selectedProvinceName && (
                       <button
                         onClick={handleResetVietnamView}
                         className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-semibold hover:bg-amber-500/30 transition-all cursor-pointer"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Xem toàn quốc</span>
+                        <span>{languageService.t('Xem toàn quốc', language, 'Xem toàn quốc')}</span>
                       </button>
                     )}
                   </div>
@@ -1447,26 +1447,26 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-stone-950 border border-stone-800">
-                  <span className="text-stone-400 block mb-1">Địa phương</span>
+                  <span className="text-stone-400 block mb-1">{languageService.t('Địa phương', language, 'Địa phương')}</span>
                   <span className="font-semibold text-amber-200">{activeHeritage.province}</span>
                 </div>
                 <div className="p-3 rounded-xl bg-stone-950 border border-stone-800">
-                  <span className="text-stone-400 block mb-1">Thời kỳ / Triều đại</span>
-                  <span className="font-semibold text-amber-200">{activeHeritage.period || 'Đang cập nhật'}</span>
+                  <span className="text-stone-400 block mb-1">{languageService.t('Thời kỳ / Triều đại', language, 'Thời kỳ / Triều đại')}</span>
+                  <span className="font-semibold text-amber-200">{activeHeritage.period || languageService.t('Đang cập nhật', language, 'Đang cập nhật')}</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <h4 className="font-serif font-bold text-amber-300 text-sm">Ý nghĩa Lịch sử & Văn hóa</h4>
+                <h4 className="font-serif font-bold text-amber-300 text-sm">{languageService.t('Ý nghĩa Lịch sử & Văn hóa', language, 'Ý nghĩa Lịch sử & Văn hóa')}</h4>
                 <p className="text-xs sm:text-sm text-stone-300 leading-relaxed font-light">
                   {activeHeritage.culturalSignificance}
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <h4 className="font-serif font-bold text-amber-300 text-sm">Lịch sử Hình thành</h4>
+                <h4 className="font-serif font-bold text-amber-300 text-sm">{languageService.t('Lịch sử Hình thành', language, 'Lịch sử Hình thành')}</h4>
                 <p className="text-xs sm:text-sm text-stone-300 leading-relaxed font-light">
-                  {activeHeritage.history || 'Đang cập nhật thêm tư liệu lịch sử từ chuyên gia.'}
+                  {activeHeritage.history || languageService.t('Đang cập nhật thêm tư liệu lịch sử từ chuyên gia.', language, 'Đang cập nhật thêm tư liệu lịch sử từ chuyên gia.')}
                 </p>
               </div>
 
@@ -1475,16 +1475,16 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-stone-950 border border-stone-800 text-xs">
                   <Clock className="w-4 h-4 text-amber-400 shrink-0" />
                   <div>
-                    <span className="text-stone-400 block">Giờ mở cửa</span>
-                    <span className="text-stone-200 font-medium">{activeHeritage.visitingHours || 'Chưa có dữ liệu xác nhận'}</span>
+                    <span className="text-stone-400 block">{languageService.t('Giờ mở cửa', language, 'Giờ mở cửa')}</span>
+                    <span className="text-stone-200 font-medium">{activeHeritage.visitingHours || languageService.t('Chưa có dữ liệu xác nhận', language, 'Chưa có dữ liệu xác nhận')}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-stone-950 border border-stone-800 text-xs">
                   <Ticket className="w-4 h-4 text-emerald-400 shrink-0" />
                   <div>
-                    <span className="text-stone-400 block">Giá vé tham khảo</span>
-                    <span className="text-stone-200 font-medium">{activeHeritage.ticketPrice || 'Chưa có dữ liệu xác nhận'}</span>
+                    <span className="text-stone-400 block">{languageService.t('Giá vé tham khảo', language, 'Giá vé tham khảo')}</span>
+                    <span className="text-stone-200 font-medium">{activeHeritage.ticketPrice || languageService.t('Chưa có dữ liệu xác nhận', language, 'Chưa có dữ liệu xác nhận')}</span>
                   </div>
                 </div>
               </div>
@@ -1503,7 +1503,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95 cursor-pointer"
               >
                 <Volume2 className="w-4 h-4" />
-                <span>Nghe AI Kể Chuyện</span>
+                <span>{languageService.t('nav.storyteller', language, 'Nghe AI Kể Chuyện')}</span>
               </button>
 
               <button
@@ -1515,7 +1515,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
                 className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95 cursor-pointer"
               >
                 <Utensils className="w-4 h-4" />
-                <span>Ẩm Thực Gần Đây</span>
+                <span>{languageService.t('btn.food', language, 'Ẩm Thực Gần Đây')}</span>
               </button>
             </div>
           </div>

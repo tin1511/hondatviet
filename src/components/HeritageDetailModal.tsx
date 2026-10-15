@@ -96,6 +96,8 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
 
   if (!heritage) return null;
 
+  const displayHeritage = languageService.translateHeritageItem(heritage, language);
+
   // Distance calculation from current user location
   const userLoc = geolocationService.getLastKnownLocation();
   let distanceInfo: { km: number; drivingTime: string } | null = null;
@@ -122,9 +124,27 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
       ttsService.stop();
       setTtsStatus('idle');
     } else {
-      const speechText = `${heritage.name}. Vị trí tại ${heritage.address}. ${heritage.culturalSignificance}. Lịch sử hình thành: ${heritage.history}`;
+      const langInfo = languageService.getLanguageInfo(language);
+      let speechText = '';
+      if (language === 'vi') {
+        speechText = `${heritage.name}. Vị trí tại ${heritage.address || heritage.province}. ${heritage.culturalSignificance}. Lịch sử hình thành: ${heritage.history}`;
+      } else if (language === 'en') {
+        speechText = `${heritage.name}. Located in ${heritage.address || heritage.province}. ${heritage.culturalSignificance}. Historical background: ${heritage.history}`;
+      } else if (language === 'fr') {
+        speechText = `${heritage.name}. Situé à ${heritage.address || heritage.province}. ${heritage.culturalSignificance}. Histoire: ${heritage.history}`;
+      } else if (language === 'ja') {
+        speechText = `${heritage.name}。所在地：${heritage.address || heritage.province}。${heritage.culturalSignificance}。歴史的背景：${heritage.history}`;
+      } else if (language === 'ko') {
+        speechText = `${heritage.name}. 위치: ${heritage.address || heritage.province}. ${heritage.culturalSignificance}. 역사: ${heritage.history}`;
+      } else if (language === 'zh') {
+        speechText = `${heritage.name}。位于${heritage.address || heritage.province}。${heritage.culturalSignificance}。历史沿革：${heritage.history}`;
+      } else {
+        speechText = `${heritage.name}. ${heritage.culturalSignificance}. ${heritage.history}`;
+      }
+
       setTtsStatus('loading');
       ttsService.speak(speechText, {
+        lang: langInfo.bcp47,
         onStatusChange: (status) => setTtsStatus(status),
         onEnd: () => setTtsStatus('idle'),
         onError: () => setTtsStatus('idle')
@@ -174,8 +194,8 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
         {/* Top Header / Image Banner */}
         <div className="relative h-40 sm:h-64 w-full overflow-hidden bg-stone-950 shrink-0">
           <img
-            src={getSafeHeritageImageUrl(showHistoricImage && heritage.historicImageUrl ? heritage.historicImageUrl : heritage.imageUrl, heritage.id)}
-            alt={heritage.name}
+            src={getSafeHeritageImageUrl(showHistoricImage && displayHeritage.historicImageUrl ? displayHeritage.historicImageUrl : displayHeritage.imageUrl, displayHeritage.id)}
+            alt={displayHeritage.name}
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={(e) => handleImageError(e)}
@@ -187,12 +207,12 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
           <div className="absolute top-3 sm:top-4 left-3 sm:left-4 right-3 sm:right-4 flex items-center justify-between gap-2 z-10">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-amber-500/90 text-stone-950 shadow-md backdrop-blur">
-                {heritage.categoryLabel}
+                {displayHeritage.categoryLabel}
               </span>
               <span className="text-[11px] px-2.5 py-1 rounded-full bg-stone-950/80 text-amber-200 border border-amber-500/30 backdrop-blur">
-                {heritage.period || heritage.dynasty || 'Di tích lịch sử'}
+                {displayHeritage.period || displayHeritage.dynasty || 'Di tích lịch sử'}
               </span>
-              {heritage.verifiedStatus === 'verified' && (
+              {displayHeritage.verifiedStatus === 'verified' && (
                 <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 backdrop-blur font-semibold">
                   <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                   Di sản Quốc gia
@@ -232,7 +252,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
           </div>
 
           {/* Historic Photo Toggle if available */}
-          {heritage.historicImageUrl && (
+          {displayHeritage.historicImageUrl && (
             <div className="absolute top-16 right-3 sm:right-4 z-10">
               <button
                 onClick={() => setShowHistoricImage(!showHistoricImage)}
@@ -243,7 +263,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
                 }`}
               >
                 <History className="w-3.5 h-3.5" />
-                <span>{showHistoricImage ? 'Xem ảnh hiện tại' : `Xem ảnh tư liệu (${heritage.historicImageYear || 'Xưa'})`}</span>
+                <span>{showHistoricImage ? 'Xem ảnh hiện tại' : `Xem ảnh tư liệu (${displayHeritage.historicImageYear || 'Xưa'})`}</span>
               </button>
             </div>
           )}
@@ -251,12 +271,12 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
           {/* Bottom title info over banner */}
           <div className="absolute bottom-3 sm:bottom-4 left-4 sm:left-6 right-4 sm:right-6">
             <h2 className="text-xl sm:text-3xl font-serif font-extrabold text-stone-100 tracking-tight drop-shadow-md">
-              {heritage.name}
+              {displayHeritage.name}
             </h2>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-stone-300 drop-shadow">
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                <span>{heritage.address || heritage.province}</span>
+                <span>{displayHeritage.address || displayHeritage.province}</span>
               </span>
 
               {distanceInfo && (
@@ -304,7 +324,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
                 <p className="text-xs font-bold text-amber-200 flex items-center gap-1.5">
                   <span>{ttsStatus === 'playing' ? `🔊 ${languageService.t('detail.audioNarration', language, 'Đang thuyết minh...')}` : languageService.t('detail.audioNarration', language, 'Thuyết minh giọng nói Di sản')}</span>
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
-                    🎙️ VieNeu AI
+                    {language === 'vi' ? '🎙️ VieNeu AI' : '🎙️ AI Voice'}
                   </span>
                 </p>
                 <p className="text-[11px] text-stone-400">
@@ -338,7 +358,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
                 <Ticket className="w-3.5 h-3.5 text-amber-400" />
                 {languageService.t('detail.ticketPrice', language, 'Giá vé tham khảo:')}
               </span>
-              <span className="text-stone-200 font-semibold">{heritage.ticketPrice || languageService.t('detail.free', language, 'Miễn phí')}</span>
+              <span className="text-stone-200 font-semibold">{displayHeritage.ticketPrice || languageService.t('detail.free', language, 'Miễn phí')}</span>
             </div>
 
             <div className="col-span-2 sm:col-span-1 bg-stone-950/80 p-3 rounded-2xl border border-stone-800">
@@ -347,7 +367,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
                 {languageService.t('Bản đồ', language, 'Tỉnh / Vùng miền:')}
               </span>
               <span className="text-stone-200 font-semibold">
-                {heritage.province} • {heritage.region === 'north' ? languageService.t('Miền Bắc', language) : heritage.region === 'central' ? languageService.t('Miền Trung', language) : languageService.t('Miền Nam', language)}
+                {displayHeritage.province} • {displayHeritage.region === 'north' ? languageService.t('Miền Bắc', language) : displayHeritage.region === 'central' ? languageService.t('Miền Trung', language) : languageService.t('Miền Nam', language)}
               </span>
             </div>
           </div>
@@ -359,7 +379,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
               {languageService.t('detail.significance', language, 'Giá Trị Văn Hóa & Nghệ Thuật')}
             </h3>
             <p className="text-stone-200 text-sm sm:text-base leading-relaxed font-serif bg-stone-950/40 p-4 rounded-2xl border border-stone-800/80">
-              {heritage.culturalSignificance}
+              {displayHeritage.culturalSignificance}
             </p>
           </div>
 
@@ -370,24 +390,24 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
               {languageService.t('detail.history', language, 'Lịch Sử Hình Thành & Niên Đại')}
             </h3>
             <div className="text-stone-300 text-xs sm:text-sm leading-relaxed space-y-2 bg-stone-950/30 p-4 rounded-2xl border border-stone-800">
-              <p>{heritage.history}</p>
-              {heritage.overview && (
+              <p>{displayHeritage.history}</p>
+              {displayHeritage.overview && (
                 <p className="text-stone-400 italic text-xs pt-2 border-t border-stone-800">
-                  {heritage.overview}
+                  {displayHeritage.overview}
                 </p>
               )}
             </div>
           </div>
 
           {/* Interesting Facts */}
-          {heritage.interestingFacts && heritage.interestingFacts.length > 0 && (
+          {displayHeritage.interestingFacts && displayHeritage.interestingFacts.length > 0 && (
             <div className="pt-4 space-y-3">
               <h3 className="text-sm font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2 font-mono">
                 <Lightbulb className="w-4 h-4 text-amber-400" />
                 {languageService.t('Có Thể Bạn Chưa Biết', language, 'Có Thể Bạn Chưa Biết (Kỳ Tích & Bí Ẩn)')}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {heritage.interestingFacts.map((fact, index) => (
+                {displayHeritage.interestingFacts.map((fact: string, index: number) => (
                   <div 
                     key={index}
                     className="p-3 bg-stone-950/80 border border-stone-800/90 rounded-xl text-xs text-stone-300 flex items-start gap-2.5"
@@ -403,19 +423,19 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
           )}
 
           {/* Suggested AI Tour Guide Questions */}
-          {heritage.suggestedQuestions && heritage.suggestedQuestions.length > 0 && (
+          {displayHeritage.suggestedQuestions && displayHeritage.suggestedQuestions.length > 0 && (
             <div className="pt-4 space-y-2.5">
               <h3 className="text-sm font-bold text-amber-300 uppercase tracking-wider flex items-center gap-2 font-mono">
                 <MessageSquare className="w-4 h-4 text-amber-400" />
                 {languageService.t('detail.askAI', language, 'Hỏi Nhanh Hướng Dẫn Viên Du Lịch AI')}
               </h3>
               <div className="flex flex-wrap gap-2">
-                {heritage.suggestedQuestions.map((q, idx) => (
+                {displayHeritage.suggestedQuestions.map((q: string, idx: number) => (
                   <button
                     key={idx}
                     onClick={() => {
                       onClose();
-                      onAskAI?.(heritage, q);
+                      onAskAI?.(displayHeritage, q);
                     }}
                     className="px-3 py-1.5 rounded-xl bg-stone-950 hover:bg-amber-950/60 border border-stone-700 hover:border-amber-500/50 text-xs text-stone-300 hover:text-amber-200 text-left transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
@@ -450,7 +470,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
               <button
                 onClick={() => {
                   onClose();
-                  onNavigateToStory(heritage.name, heritage.history, heritage.period);
+                  onNavigateToStory(displayHeritage.name, displayHeritage.history, displayHeritage.period);
                 }}
                 className="px-3.5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
               >
@@ -463,7 +483,7 @@ export const HeritageDetailModal: React.FC<HeritageDetailModalProps> = ({
               <button
                 onClick={() => {
                   onClose();
-                  onNavigateToFood(heritage.id);
+                  onNavigateToFood(displayHeritage.id);
                 }}
                 className="px-3.5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
               >

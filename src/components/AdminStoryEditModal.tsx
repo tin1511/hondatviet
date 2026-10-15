@@ -97,11 +97,19 @@ export const AdminStoryEditModal: React.FC<AdminStoryEditModalProps> = ({
       setSourcesText((currentStory.sourceReferences || []).join('\n'));
     } else {
       // Auto-populate default template or trigger AI
-      setTitle(`Hành trình văn hóa ${heritage.name}`);
-      setStoryText(`${heritage.name} thuộc vùng đất ${heritage.province}, nơi ghi dấu ấn ${heritage.history || 'lịch sử lâu đời'}.`);
-      setHistoricalContext(`Xác minh niên đại: ${heritage.period || 'Đang cập nhật'}. Di sản có giá trị văn hóa lịch sử quốc gia.`);
-      setDistinctionNote(`Chính sử xác nhận nền tảng kiến trúc ${heritage.period}. Các truyền thuyết dân gian bổ sung vẻ đẹp linh thiêng.`);
-      setSourcesText('Sử ký Toàn thư\nTư liệu Cục Di sản Văn hóa Việt Nam');
+      if (selectedMode === 'foreigner') {
+        setTitle(`The Cultural Legacy of ${heritage.name}`);
+        setStoryText(`Welcome to ${heritage.name}, situated in ${heritage.province}. ${heritage.history || 'This sacred monument has stood as an architectural marvel and spiritual beacon of Vietnamese culture.'}`);
+        setHistoricalContext(`Period: ${heritage.period || 'Vietnamese history'}. Nationally and globally recognized heritage.`);
+        setDistinctionNote(`Verified History: Architectural foundations from ${heritage.period || 'ancient eras'}. Folklore: Sacred ancestral legends.`);
+        setSourcesText('Complete Annals of Dai Viet\nVietnam Cultural Heritage Department Records');
+      } else {
+        setTitle(`Hành trình văn hóa ${heritage.name}`);
+        setStoryText(`${heritage.name} thuộc vùng đất ${heritage.province}, nơi ghi dấu ấn ${heritage.history || 'lịch sử lâu đời'}.`);
+        setHistoricalContext(`Xác minh niên đại: ${heritage.period || 'Đang cập nhật'}. Di sản có giá trị văn hóa lịch sử quốc gia.`);
+        setDistinctionNote(`Chính sử xác nhận nền tảng kiến trúc ${heritage.period}. Các truyền thuyết dân gian bổ sung vẻ đẹp linh thiêng.`);
+        setSourcesText('Sử ký Toàn thư\nTư liệu Cục Di sản Văn hóa Việt Nam');
+      }
     }
   }, [isOpen, heritage, selectedMode, currentStory]);
 

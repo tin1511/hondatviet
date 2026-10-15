@@ -22,6 +22,7 @@ interface FavoritesViewProps {
   onNavigateToMap: () => void;
   onNavigateToTab: (tab: string) => void;
   onSelectHeritage?: (heritage: HeritageItem) => void;
+  language?: string;
 }
 
 export const FavoritesView: React.FC<FavoritesViewProps> = ({

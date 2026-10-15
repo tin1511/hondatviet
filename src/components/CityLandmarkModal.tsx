@@ -19,6 +19,7 @@ import { CityLandmarkBackground } from '../types';
 import { LandmarkEditModal } from './LandmarkEditModal';
 import { AILandmarkImagePickerModal } from './AILandmarkImagePickerModal';
 import { LandmarkPhotoItem } from '../data/landmarkImagesDatabase';
+import { languageService } from '../services/languageService';
 
 interface CityLandmarkModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface CityLandmarkModalProps {
   onSelectLandmark: (landmark: CityLandmarkBackground) => void;
   onDetectGps: () => void;
   isDetectingGps: boolean;
+  language?: string;
 }
 
 export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
@@ -35,7 +37,8 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
   currentLandmark,
   onSelectLandmark,
   onDetectGps,
-  isDetectingGps
+  isDetectingGps,
+  language = 'vi'
 }) => {
   const [landmarks, setLandmarks] = useState<CityLandmarkBackground[]>([]);
   const [editingLandmark, setEditingLandmark] = useState<CityLandmarkBackground | null>(null);
@@ -103,17 +106,17 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-serif font-bold text-stone-100 text-base sm:text-lg">
-                    Ảnh Nền Danh Thắng Việt Nam
+                    {languageService.t('Ảnh Nền Danh Thắng Việt Nam', language, 'Ảnh Nền Danh Thắng Việt Nam')}
                   </h3>
                   {isAdmin && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-semibold flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3" />
-                      Admin Quyền Quản Lý
+                      {languageService.t('Admin Quyền Quản Lý', language, 'Admin Quyền Quản Lý')}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-stone-400">
-                  Ảnh nền toàn bộ trang web tự động khớp với thành phố theo định vị GPS của bạn
+                  {languageService.t('Ảnh nền toàn bộ trang web tự động khớp với thành phố theo định vị GPS của bạn', language, 'Ảnh nền toàn bộ trang web tự động khớp với thành phố theo định vị GPS của bạn')}
                 </p>
               </div>
             </div>
@@ -126,10 +129,10 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
                   setIsAIPickerOpen(true);
                 }}
                 className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-stone-950 font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
-                title="Dùng AI tìm kiếm ảnh danh lam thắng cảnh Việt Nam"
+                title={languageService.t('Dùng AI tìm kiếm ảnh danh lam thắng cảnh Việt Nam', language, 'Dùng AI tìm kiếm ảnh danh lam thắng cảnh Việt Nam')}
               >
                 <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                <span>AI Tìm ảnh</span>
+                <span>{languageService.t('AI Tìm ảnh', language, 'AI Tìm ảnh')}</span>
               </button>
 
               {isAdmin && (
@@ -137,10 +140,10 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
                   type="button"
                   onClick={handleAddNew}
                   className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-700 font-bold text-xs flex items-center gap-1 shadow-md transition-all cursor-pointer"
-                  title="Thêm ảnh nền danh thắng mới"
+                  title={languageService.t('Thêm ảnh nền danh thắng mới', language, 'Thêm ảnh nền danh thắng mới')}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Thêm thủ công</span>
+                  <span className="hidden sm:inline">{languageService.t('Thêm thủ công', language, 'Thêm thủ công')}</span>
                 </button>
               )}
 
@@ -158,7 +161,7 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
           <div className="p-4 bg-stone-950/40 border-b border-stone-800/80 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-stone-300">
               <Navigation className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Dùng cảm biến GPS thực tế trên thiết bị của bạn:</span>
+              <span>{languageService.t('Dùng cảm biến GPS thực tế trên thiết bị của bạn:', language, 'Dùng cảm biến GPS thực tế trên thiết bị của bạn:')}</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -167,10 +170,10 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
                   type="button"
                   onClick={handleResetDefaults}
                   className="px-2.5 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer"
-                  title="Khôi phục mặc định"
+                  title={languageService.t('Khôi phục mặc định', language, 'Khôi phục mặc định')}
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-stone-400" />
-                  <span className="hidden sm:inline">Mặc định</span>
+                  <span className="hidden sm:inline">{languageService.t('Mặc định', language, 'Mặc định')}</span>
                 </button>
               )}
 
@@ -184,7 +187,7 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-stone-950 font-bold text-xs hover:from-amber-500 hover:to-amber-400 transition-all cursor-pointer shadow-md disabled:opacity-50 shrink-0"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isDetectingGps ? 'animate-spin' : ''}`} />
-                <span>{isDetectingGps ? 'Đang định vị...' : 'Bật GPS của tôi'}</span>
+                <span>{isDetectingGps ? languageService.t('Đang định vị...', language, 'Đang định vị...') : languageService.t('Bật GPS của tôi', language, 'Bật GPS của tôi')}</span>
               </button>
             </div>
           </div>
@@ -233,7 +236,7 @@ export const CityLandmarkModal: React.FC<CityLandmarkModalProps> = ({
                         <div className="flex items-center gap-1">
                           {isSelected && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                              Đang dùng
+                              {languageService.t('Đang dùng', language, 'Đang dùng')}
                             </span>
                           )}
 

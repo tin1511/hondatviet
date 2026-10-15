@@ -28,20 +28,31 @@ import { aiService, RecognizeHeritageResult } from '../services/aiService';
 import { storageService } from '../services/storageService';
 import { HeritageItem, RecognitionSectionConfig, RecognitionSampleItem } from '../types';
 import { AdminRecognitionModal } from './AdminRecognitionModal';
+import { languageService } from '../services/languageService';
 
 interface ImageRecognizerProps {
   onNavigateToStory: (heritageName: string, history?: string, period?: string) => void;
   onNavigateToFood: (heritageId: string) => void;
   onNavigateToMap: (heritageId: string) => void;
   onAskChatbot: (question: string, context?: any) => void;
+  language?: string;
 }
 
 export const ImageRecognizer: React.FC<ImageRecognizerProps> = ({
   onNavigateToStory,
   onNavigateToFood,
   onNavigateToMap,
-  onAskChatbot
+  onAskChatbot,
+  language = 'vi'
 }) => {
+  useEffect(() => {
+    if (language) {
+      languageService.translateDOM(language);
+      if (result) {
+        setResult(prev => prev ? languageService.translateHeritageItem(prev, language) : null);
+      }
+    }
+  }, [language]);
   // Dynamic Section Config & Admin State
   const [sectionConfig, setSectionConfig] = useState<RecognitionSectionConfig>(() => storageService.getRecognitionSectionConfig());
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
@@ -202,7 +213,8 @@ export const ImageRecognizer: React.FC<ImageRecognizerProps> = ({
 
       const promptNote = note !== undefined ? note : userNote;
       const aiResult = await aiService.recognizeHeritage(base64, promptNote);
-      setResult(aiResult);
+      const translatedResult = languageService.translateHeritageItem(aiResult, language);
+      setResult(translatedResult);
 
       storageService.logActivity({
         actionType: 'recognize',

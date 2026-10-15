@@ -18,7 +18,11 @@ import { QUIZ_TOPICS, TIMELINE_MILESTONES, PAST_AND_PRESENT } from '../data/viet
 import { storageService } from '../services/storageService';
 import { QuizTopic, QuizQuestion, TimelineMilestone, PastAndPresentItem } from '../types';
 
-export const HeritageLearning: React.FC = () => {
+interface HeritageLearningProps {
+  language?: string;
+}
+
+export const HeritageLearning: React.FC<HeritageLearningProps> = () => {
   const [activeTab, setActiveTab] = useState<'quiz' | 'timeline' | 'past_present'>('quiz');
 
   // Quiz State

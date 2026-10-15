@@ -42,54 +42,6 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
     description: 'Global international language with full AI tour guide and storytelling support.',
     aiVoiceAccent: 'Natural International English',
     googleTranslateCode: 'en'
-  },
-  {
-    code: 'fr',
-    name: 'Tiếng Pháp',
-    nativeName: 'Français',
-    flag: '🇫🇷',
-    bcp47: 'fr-FR',
-    greeting: 'Bienvenue au patrimoine du Vietnam!',
-    sampleGreeting: 'Bonjour et bienvenue! Je suis votre guide virtuel pour explorer les trésors culturels et historiques du Vietnam.',
-    description: 'Langue officielle pour les voyageurs francophones et historiens du monde.',
-    aiVoiceAccent: 'Français métropolitain fluide',
-    googleTranslateCode: 'fr'
-  },
-  {
-    code: 'ja',
-    name: 'Tiếng Nhật',
-    nativeName: '日本語',
-    flag: '🇯🇵',
-    bcp47: 'ja-JP',
-    greeting: 'ベトナムの遺産へようこそ！',
-    sampleGreeting: 'こんにちは！ベトナムの歴史と世界遺産をご案内するAIツアーガイドです。素晴らしい旅をお楽しみください。',
-    description: '日本の旅行者や研究者向けの丁寧で正確な文化案内。',
-    aiVoiceAccent: '丁寧な標準日本語案内',
-    googleTranslateCode: 'ja'
-  },
-  {
-    code: 'ko',
-    name: 'Tiếng Hàn',
-    nativeName: '한국어',
-    flag: '🇰🇷',
-    bcp47: 'ko-KR',
-    greeting: '베트남 문화유산에 오신 것을 환영합니다!',
-    sampleGreeting: '안녕하세요! 베트남의 유구한 역사와 찬란한 문화유산을 안내해 드릴 AI 문화유산 가이드입니다.',
-    description: '한국인 관광객과 문화 애호가를 위한 친절한 맞춤형 안내.',
-    aiVoiceAccent: '친절하고 정확한 표준 한국어',
-    googleTranslateCode: 'ko'
-  },
-  {
-    code: 'zh',
-    name: 'Tiếng Trung',
-    nativeName: '中文 (简体)',
-    flag: '🇨🇳',
-    bcp47: 'zh-CN',
-    greeting: '欢迎探索越南文化遗产！',
-    sampleGreeting: '您好！我是您的AI文化遗产导游，带您领略越南千年的历史风华与名胜古迹。',
-    description: '深入诠释汉喃文化渊源与东亚文明交流的典故.',
-    aiVoiceAccent: '标准普通话导游解说',
-    googleTranslateCode: 'zh-CN'
   }
 ];
 
@@ -1521,6 +1473,279 @@ export const PHRASE_TRANSLATIONS: Record<string, Record<string, string>> = {
     ko: '베트남의 문화유산과 역사, 생생한 여행 경험을 발견하고 보존하며 널리 알리는 AI 플랫폼입니다.',
     zh: '致力于探索、保护与传承越南璀璨历史遗产与真实旅游体验的人工智能综合平台。'
   },
+  'Ống Kính AI Di Sản': {
+    en: 'Heritage AI Vision Lens',
+    fr: 'Objectif Vision IA',
+    ja: 'AI遺産ビジョンレンズ',
+    ko: '헤리티지 AI 비전 렌즈',
+    zh: '文化遗产 AI 视觉镜'
+  },
+  'Chụp ảnh trực tiếp từ thiết bị': {
+    en: 'Capture photo directly from device',
+    fr: 'Capturer depuis l\'appareil',
+    ja: 'デバイスから直接撮影',
+    ko: '기기에서 직접 촬영',
+    zh: '直接从设备拍摄'
+  },
+  'Tải ảnh từ thư viện': {
+    en: 'Upload image from library',
+    fr: 'Importer depuis la bibliothèque',
+    ja: 'ライブラリから画像をアップロード',
+    ko: '라이브러리에서 이미지 업로드',
+    zh: '从相册上传图片'
+  },
+  'Chụp trực tiếp': {
+    en: 'Live Capture',
+    fr: 'Capture en direct',
+    ja: 'ライブ撮影',
+    ko: '라이브 촬영',
+    zh: '实时拍摄'
+  },
+  'Tải tệp': {
+    en: 'Upload File',
+    fr: 'Importer Fichier',
+    ja: 'ファイルアップロード',
+    ko: '파일 업로드',
+    zh: '上传文件'
+  },
+  'Ảnh vừa chụp từ Camera': {
+    en: 'Captured from Camera',
+    fr: 'Capturé par la Caméra',
+    ja: 'カメラで撮影した写真',
+    ko: '카메라로 촬영한 사진',
+    zh: '相机拍摄照片'
+  },
+  'Ảnh mẫu thử nghiệm': {
+    en: 'Preset Test Image',
+    fr: 'Image Test Prédéfinie',
+    ja: 'プリセットテスト画像',
+    ko: '프리셋 테스트 이미지',
+    zh: '预设测试图片'
+  },
+  'Ảnh từ thiết bị': {
+    en: 'Uploaded from Device',
+    fr: 'Importé de l\'appareil',
+    ja: 'デバイスからアップロード',
+    ko: '기기에서 업로드',
+    zh: '自设备上传'
+  },
+  'Chụp lại': {
+    en: 'Retake',
+    fr: 'Reprendre',
+    ja: '再撮影',
+    ko: '다시 촬영',
+    zh: '重拍'
+  },
+  'LIVE • Căn góc di sản': {
+    en: 'LIVE • Align Heritage',
+    fr: 'DIRECT • Centrer le site',
+    ja: 'LIVE • 遺産を合わせる',
+    ko: 'LIVE • 문화유산 맞추기',
+    zh: 'LIVE • 对准遗迹'
+  },
+  'Hướng camera vào di tích, hoa văn, hiện vật hoặc cổ phục': {
+    en: 'Point camera at monuments, patterns, artifacts or historic costumes',
+    fr: 'Pointez la caméra vers des monuments, motifs ou costumes',
+    ja: 'カメラを記念碑、模様、古美術品、伝統衣装に向けてください',
+    ko: '카메라를 기념비, 문양, 유물 또는 전통 의상에 맞추세요',
+    zh: '将相机对准古迹、纹样、文物或传统服饰'
+  },
+  'Kích hoạt Máy Ảnh Chụp Trực Tiếp': {
+    en: 'Activate Live Camera',
+    fr: 'Activer la Caméra en Direct',
+    ja: 'ライブカメラを起動',
+    ko: '라이브 카메라 활성화',
+    zh: '激活实时相机'
+  },
+  'Thử lại Camera': {
+    en: 'Retry Camera',
+    fr: 'Réessayer la Caméra',
+    ja: 'カメラ再試行',
+    ko: 'カメラ 다시 시도',
+    zh: '重试相机'
+  },
+  'Mở Camera máy': {
+    en: 'Open Device Camera',
+    fr: 'Ouvrir l\'Appareil Photo',
+    ja: '端末のカメラを開く',
+    ko: '기기 카메라 열기',
+    zh: '打开手机相机'
+  },
+  'Camera máy': {
+    en: 'Device Cam',
+    fr: 'Caméra Appareil',
+    ja: '端末カメラ',
+    ko: '기기 카메라',
+    zh: '手机相机'
+  },
+  'Chụp & Nhận Diện Ngay': {
+    en: 'Capture & Recognize Now',
+    fr: 'Capturer & Reconnaître',
+    ja: '撮影して今すぐ認識',
+    ko: '촬영 및 즉시 인식',
+    zh: '拍摄并立即识别'
+  },
+  'Đổi chiều': {
+    en: 'Flip',
+    fr: 'Inverser',
+    ja: '切り替え',
+    ko: '전환',
+    zh: '翻转'
+  },
+  'Tự động nhận diện AI ngay khi bấm chụp (Tối ưu 1 chạm)': {
+    en: 'Auto-recognize AI immediately on shutter (1-tap optimized)',
+    fr: 'Reconnaissance auto immédiate (optimisé 1-clic)',
+    ja: 'シャッター時に自動AI認識（ワンタップ最適化）',
+    ko: '촬영 시 즉시 자동 AI 인식 (원탭 최적화)',
+    zh: '按下快门时自动AI识别（一键优化）'
+  },
+  'Ghi chú bổ sung cho AI (tùy chọn):': {
+    en: 'Additional note for AI (optional):',
+    fr: 'Note additionnelle pour l\'IA (optionnel) :',
+    ja: 'AIへの追加メモ（任意）：',
+    ko: 'AI를 위한 추가 메모 (선택사항):',
+    zh: '给AI的补充说明（可选）：'
+  },
+  'Ví dụ: Hiện vật này tôi thấy tại chùa ở Bắc Ninh...': {
+    en: 'Example: I found this artifact at a pagoda in Bac Ninh...',
+    fr: 'Exemple : J\'ai trouvé cet objet dans une pagode...',
+    ja: '例：バクニン省の寺院でこの遺物を見つけました...',
+    ko: '예: 박닌의 사원에서 이 유물을 보았습니다...',
+    zh: '例如：我在北宁省的一座寺庙里看到了这件文物...'
+  },
+  'AI đang phân tích thị giác di sản...': {
+    en: 'AI is analyzing heritage vision...',
+    fr: 'L\'IA analyse la vision du patrimoine...',
+    ja: 'AIが遺産のビジュアルを分析中...',
+    ko: 'AI가 문화유산 시각 정보를 분석 중...',
+    zh: 'AI正在分析遗产视觉图像...'
+  },
+  'Bắt đầu Nhận diện Di sản AI': {
+    en: 'Start AI Heritage Recognition',
+    fr: 'Démarrer la Reconnaissance IA',
+    ja: 'AI遺産認識を開始',
+    ko: 'AI 문화유산 인식 시작',
+    zh: '开始AI遗产识别'
+  },
+  'Phân tích lại hình ảnh này': {
+    en: 'Re-analyze this image',
+    fr: 'Réanalyser cette image',
+    ja: 'この画像を再分析',
+    ko: '이 이미지 다시 분석',
+    zh: '重新分析此图像'
+  },
+  'Đang đối chiếu dữ liệu di sản Việt Nam': {
+    en: 'Matching Vietnamese heritage database',
+    fr: 'Correspondance avec la base du patrimoine vietnamien',
+    ja: 'ベトナム文化遺産データベースと照合中',
+    ko: '베트남 문화유산 데이터베이스 대조 중',
+    zh: '正在比对越南文化遗产数据库'
+  },
+  'Mô hình Gemini 3.8 Flash Vision đang phân tích đặc trưng kiến trúc, hoa văn, niên đại và độ tin cậy lịch sử...': {
+    en: 'Gemini 3.8 Flash Vision is analyzing architectural features, patterns, periods and historical reliability...',
+    fr: 'Gemini 3.8 Flash Vision analyse l\'architecture, les motifs et la fiabilité historique...',
+    ja: 'Gemini 3.8 Flash Visionが建築の特徴、模様、時代、歴史的信頼性を分析しています...',
+    ko: 'Gemini 3.8 Flash Vision이 건축적 특징, 문양, 연대 및 역사적 신뢰성을 분석 중입니다...',
+    zh: 'Gemini 3.8 Flash Vision 正在分析建筑特征、纹样、历史年代与考证可信度...'
+  },
+  'Chưa có kết quả nhận diện': {
+    en: 'No recognition result yet',
+    fr: 'Aucun résultat de reconnaissance',
+    ja: '認識結果はまだありません',
+    ko: '아직 인식 결과가 없습니다',
+    zh: '暂无识别结果'
+  },
+  'Chỉ cần hướng camera vào di tích, hoa văn, hiện vật hoặc cổ phục': {
+    en: 'Simply point your camera at a monument, pattern, artifact or historic costume',
+    fr: 'Pointez simplement la caméra vers un monument, un motif ou un artefact',
+    ja: '記念碑、模様、古美術品、伝統衣装にカメラを向けてください',
+    ko: '기념비, 문양, 유물 또는 전통 의상에 카메라를 향하세요',
+    zh: '只需将相机对准古迹、纹样、文物或传统服饰'
+  },
+  '[THÔNG TIN ĐÃ XÁC MINH]': {
+    en: '[VERIFIED INFORMATION]',
+    fr: '[INFORMATION VÉRIFIÉE]',
+    ja: '[検証済み情報]',
+    ko: '[검증된 정보]',
+    zh: '[已核实信息]'
+  },
+  '[TRUYỀN THUYẾT / DÂN GIAN]': {
+    en: '[FOLK LEGEND / MYTH]',
+    fr: '[LÉGENDE / MYTHE]',
+    ja: '[民俗伝承・伝説]',
+    ko: '[전설 / 민속]',
+    zh: '[民间传说]'
+  },
+  '[THÔNG TIN CHƯA XÁC MINH]': {
+    en: '[UNVERIFIED INFORMATION]',
+    fr: '[INFORMATION NON VÉRIFIÉE]',
+    ja: '[未検証の情報]',
+    ko: '[미검증 정보]',
+    zh: '[未核实信息]'
+  },
+  'Lịch sử & Nguồn gốc:': {
+    en: 'History & Origin:',
+    fr: 'Histoire & Origine :',
+    ja: '歴史と起源：',
+    ko: '역사 및 기원:',
+    zh: '历史与起源：'
+  },
+  'Ý nghĩa Văn hóa & Kiến trúc:': {
+    en: 'Cultural & Architectural Significance:',
+    fr: 'Signification Culturelle & Architecturale :',
+    ja: '文化・建築的意義：',
+    ko: '문화 및 건축적 의의:',
+    zh: '文化与建筑意义：'
+  },
+  'Thông tin thú vị ít người biết:': {
+    en: 'Little-known interesting facts:',
+    fr: 'Faits insolites peu connus :',
+    ja: 'あまり知られていない興味深い事実：',
+    ko: '잘 알려지지 않은 흥미로운 사실:',
+    zh: '鲜为人知的趣闻轶事：'
+  },
+  'Câu hỏi gợi ý để tìm hiểu sâu hơn:': {
+    en: 'Suggested questions to explore deeper:',
+    fr: 'Questions suggérées pour explorer plus en profondeur :',
+    ja: 'さらに深く探求するためのおすすめの質問：',
+    ko: '더 깊이 탐구하기 위한 추천 질문:',
+    zh: '深入探索的建议提问：'
+  },
+  'Nghe AI kể chuyện': {
+    en: 'Listen AI Story',
+    fr: 'Écouter l\'histoire IA',
+    ja: 'AIストーリーを聴く',
+    ko: 'AI 스토리 듣기',
+    zh: '聆听AI故事'
+  },
+  'Ăn uống & Vui chơi gần đây': {
+    en: 'Nearby Food & Leisure',
+    fr: 'Gastronomie & Loisirs Proches',
+    ja: '周辺のグルメ＆レジャー',
+    ko: '주변 음식 & 즐길거리',
+    zh: '周边美食与休闲'
+  },
+  'Xem vị trí trên bản đồ': {
+    en: 'View location on map',
+    fr: 'Voir l\'emplacement sur la carte',
+    ja: '地図で場所を見る',
+    ko: '지도에서 위치 보기',
+    zh: '在地图上查看位置'
+  },
+  'Admin: Tùy chỉnh nội dung & ảnh mẫu nhận diện': {
+    en: 'Admin: Customize content & recognition sample images',
+    fr: 'Admin : Personnaliser le contenu & les images d\'échantillon',
+    ja: '管理者：コンテンツと認識サンプル画像をカスタマイズ',
+    ko: '관리자: 콘텐츠 및 인식 샘플 이미지 사용자 지정',
+    zh: '管理员：自定义内容与识别样本图片'
+  },
+  'Đang ở Chế độ Nhận Diện AI Ngoại Tuyến (Offline Visual Engine)': {
+    en: 'Offline Visual AI Recognition Mode Active',
+    fr: 'Mode de reconnaissance visuelle IA hors ligne actif',
+    ja: 'オフラインビジュアルAI認識モード有効',
+    ko: '오프라인 비주얼 AI 인식 모드 활성화됨',
+    zh: '离线视觉AI识别模式已激活'
+  },
 
   // Categories and Regions
   'Di tích lịch sử': { en: 'Historical Monument', fr: 'Monument historique', ja: '歴史史跡', ko: '역사 유적', zh: '历史遗迹' },
@@ -1734,7 +1959,259 @@ export const PHRASE_TRANSLATIONS: Record<string, Record<string, string>> = {
   'Tỉnh thành:': { en: 'Province:', fr: 'Province:', ja: '省・市：', ko: '성/시:', zh: '省市：' },
   'Khám phá': { en: 'Explore', fr: 'Explorer', ja: '探索', ko: '탐험', zh: '探索' },
   'Đổi cảnh': { en: 'Change View', fr: 'Changer la vue', ja: '景色変更', ko: '배경 변경', zh: '更换背景' },
-  'Ngắm ảnh': { en: 'View Image', fr: 'Voir l\'image', ja: '壁紙鑑賞', ko: '사진 감상', zh: '欣赏图片' }
+  'Ngắm ảnh': { en: 'View Image', fr: 'Voir l\'image', ja: '壁紙鑑賞', ko: '사진 감상', zh: '欣赏图片' },
+  'Ảnh Nền Danh Thắng Việt Nam': {
+    en: 'Vietnam Scenic Landmarks Background',
+    fr: 'Arrière-plan des Sites Pittoresques du Vietnam',
+    ja: 'ベトナム名勝の背景画像',
+    ko: '베트남 명승지 배경 이미지',
+    zh: '越南名胜风景壁纸'
+  },
+  'Ảnh nền toàn bộ trang web tự động khớp với thành phố theo định vị GPS của bạn': {
+    en: 'The website background automatically matches your city based on GPS positioning',
+    fr: 'L\'arrière-plan s\'adapte automatiquement à votre ville selon la position GPS',
+    ja: 'ウェブサイトの背景画像がGPS位置情報に基づいて滞在都市に自動同期されます',
+    ko: '웹사이트 배경이 GPS 위치에 따라 방문 중인 도시의 명소로 자동 동기화됩니다',
+    zh: '全站背景将根据您的GPS定位自动匹配当前所在城市的代表性名胜'
+  },
+  'Dùng cảm biến GPS thực tế trên thiết bị của bạn:': {
+    en: 'Use real-time GPS sensor from your device:',
+    fr: 'Utiliser le capteur GPS réel de votre appareil:',
+    ja: '端末の実機GPSセンサーを使用：',
+    ko: '기기의 실시간 GPS 센서 사용:',
+    zh: '使用您设备的实时GPS传感器：'
+  },
+  'Bật GPS của tôi': {
+    en: 'Enable My GPS',
+    fr: 'Activer mon GPS',
+    ja: 'マイGPSを有効化',
+    ko: '내 GPS 켜기',
+    zh: '启用我的GPS'
+  },
+  'Đang định vị...': {
+    en: 'Locating...',
+    fr: 'Localisation...',
+    ja: '測位中...',
+    ko: '위치 확인 중...',
+    zh: '正在定位...'
+  },
+  'AI Tìm ảnh': {
+    en: 'AI Photo Search',
+    fr: 'Recherche Photo IA',
+    ja: 'AI画像検索',
+    ko: 'AI 사진 검색',
+    zh: 'AI 寻找图片'
+  },
+  'Mặc định': {
+    en: 'Defaults',
+    fr: 'Par défaut',
+    ja: '初期値',
+    ko: '기본값',
+    zh: '恢复默认'
+  },
+  'Đang dùng': {
+    en: 'Active',
+    fr: 'Actif',
+    ja: '適用中',
+    ko: '사용 중',
+    zh: '当前应用'
+  },
+  'Quay về toàn cảnh bản đồ Việt Nam': {
+    en: 'Return to full Vietnam view',
+    fr: 'Revenir à la vue d\'ensemble du Vietnam',
+    ja: 'ベトナム全図表示に戻る',
+    ko: '베트남 전체 지도로 복귀',
+    zh: '返回越南全景地图'
+  },
+  'Thu gọn ô thông tin': {
+    en: 'Collapse info panel',
+    fr: 'Réduire le panneau d\'info',
+    ja: '情報パネルを折りたたむ',
+    ko: '정보 패널 접기',
+    zh: '折叠信息面板'
+  },
+  'Mở rộng ô thông tin': {
+    en: 'Expand info panel',
+    fr: 'Agrandir le panneau d\'info',
+    ja: '情報パネルを展開',
+    ko: '정보 패널 펼치기',
+    zh: '展开信息面板'
+  },
+  'Chỉ hiển thị độc quyền bản đồ Việt Nam, không có quốc gia bên ngoài': {
+    en: 'Exclusively displays Vietnam territory without foreign borders',
+    fr: 'Affiche exclusivement le territoire du Vietnam sans frontières extérieures',
+    ja: '国外領域を含まないベトナム領土のみを限定表示',
+    ko: '외국 영토 없이 베트남 영토만 독점 표시',
+    zh: '专属完整展示越南本土疆域'
+  },
+  'Bản đồ ảnh vệ tinh Esri World Imagery': {
+    en: 'Esri World Imagery satellite view',
+    fr: 'Vue satellite Esri World Imagery',
+    ja: 'Esri World Imagery 衛星写真マップ',
+    ko: 'Esri World Imagery 위성 사진 지도',
+    zh: 'Esri 全球卫星影像图'
+  },
+  'Bản đồ giao thông du lịch Esri World Street Map': {
+    en: 'Esri World Street Map travel navigation',
+    fr: 'Carte routière et touristique Esri',
+    ja: 'Esri 観光交通ストリートマップ',
+    ko: 'Esri 관광 교통 도로 지도',
+    zh: 'Esri 旅游交通街道图'
+  },
+  'Đổi màu sắc bản đồ Việt Nam': {
+    en: 'Change Vietnam map color theme',
+    fr: 'Changer le thème de couleur de la carte',
+    ja: 'ベトナム地図の配色テーマを変更',
+    ko: '베트남 지도 색상 테마 변경',
+    zh: '切换越南地图配色主题'
+  },
+  'Chọn tông màu bản đồ:': {
+    en: 'Select map color theme:',
+    fr: 'Choisir le thème de couleur:',
+    ja: '地図の配色テーマを選択：',
+    ko: '지도 색상 테마 선택:',
+    zh: '选择地图色彩风格：'
+  },
+  'Khám phá trọn vẹn lãnh thổ 34 đơn vị hành chính cấp tỉnh mới của Việt Nam, Biển Đông cùng hai quần đảo Hoàng Sa & Trường Sa thiêng liêng.': {
+    en: 'Explore the complete territory of Vietnam\'s provincial units, the East Sea, and the sacred Hoang Sa & Truong Sa archipelagos.',
+    fr: 'Explorez l\'intégralité du territoire du Vietnam, la mer de l\'Est et les archipels sacrés de Hoang Sa et Truong Sa.',
+    ja: 'ベトナム全土の行政区画、東海、そして神聖なホアンサ・チュオンサ両諸島を包括的に探訪。',
+    ko: '베트남의 지방 행정 단위, 동해, 그리고 신성한 호앙사·쯔엉사 군도를 아우르는 완전한 영토 탐험.',
+    zh: '全面探索越南各省市行政区、东海以及神圣的黄沙与长沙群岛。'
+  },
+  'Đang tập trung vào khu vực': {
+    en: 'Focusing on the region of',
+    fr: 'Zoom sur la région de',
+    ja: '選択中のエリア：',
+    ko: '집중 탐색 중인 지역:',
+    zh: '正在浏览地区：'
+  },
+  'Nhấn vào các điểm sáng để mở thông tin di sản.': {
+    en: 'Click on highlighted markers to open heritage details.',
+    fr: 'Cliquez sur les points lumineux pour afficher les détails du patrimoine.',
+    ja: '輝くマーカーをクリックして遺産詳細を開きます。',
+    ko: '빛나는 마커를 클릭하여 문화유산 상세 정보를 확인하세요.',
+    zh: '点击地图上的亮点标志即可开启该文化遗产详细导览。'
+  },
+  'Địa phương': {
+    en: 'Location',
+    fr: 'Localité',
+    ja: '所在地',
+    ko: '지역',
+    zh: '所属地区'
+  },
+  'Thời kỳ / Triều đại': {
+    en: 'Period / Dynasty',
+    fr: 'Période / Dynastie',
+    ja: '時代・王朝',
+    ko: '시대 / 왕조',
+    zh: '历史时期 / 朝代'
+  },
+  'Lịch sử Hình thành': {
+    en: 'Historical Origins',
+    fr: 'Histoire & Origines',
+    ja: '歴史的背景と成り立ち',
+    ko: '역사적 배경 및 기원',
+    zh: '历史渊源与形成'
+  },
+  'Ý nghĩa Lịch sử & Văn hóa': {
+    en: 'Cultural & Historical Significance',
+    fr: 'Signification Culturelle & Historique',
+    ja: '歴史的・文化的意義',
+    ko: '역사 및 문화적 가치',
+    zh: '历史与文化内涵'
+  },
+  'Giờ mở cửa': {
+    en: 'Opening Hours',
+    fr: 'Horaires d\'ouverture',
+    ja: '開館時間',
+    ko: '개장 시간',
+    zh: '开放时间'
+  },
+  'Giá vé tham khảo': {
+    en: 'Admission Fee',
+    fr: 'Tarif d\'entrée',
+    ja: '入場料',
+    ko: '입장료 안내',
+    zh: '门票参考'
+  },
+  'Giá vé': {
+    en: 'Ticket Price',
+    fr: 'Prix du billet',
+    ja: 'チケット料金',
+    ko: '티켓 가격',
+    zh: '门票'
+  },
+  'Chưa có dữ liệu xác nhận': {
+    en: 'No verified hours available',
+    fr: 'Non confirmé',
+    ja: '未確認',
+    ko: '확인된 정보 없음',
+    zh: '暂未确认'
+  },
+  'Đang cập nhật': {
+    en: 'Updating',
+    fr: 'Mise à jour',
+    ja: '更新中',
+    ko: '업데이트 중',
+    zh: '正在更新'
+  },
+  'Đang cập nhật thêm tư liệu lịch sử từ chuyên gia.': {
+    en: 'Historical documentation is currently being compiled from experts.',
+    fr: 'Les archives historiques sont en cours d\'enrichissement par des experts.',
+    ja: '専門家による歴史資料の拡充を行っています。',
+    ko: '전문가 자문을 거친 역사 사료를 지속적으로 보완하고 있습니다.',
+    zh: '历史档案资料正由专家学者持续完善补充。'
+  },
+  'Bật/Tắt đường ranh giới 63 tỉnh thành': {
+    en: 'Toggle provincial borderlines',
+    fr: 'Afficher/Masquer les frontières provinciales',
+    ja: '省界線の表示/非表示',
+    ko: '성/시 경계선 켜기/끄기',
+    zh: '切换省界显示'
+  },
+  'Bật/Tắt nhãn tên 63 tỉnh thành': {
+    en: 'Toggle province labels',
+    fr: 'Afficher/Masquer les noms de provinces',
+    ja: '省名ラベルの表示/非表示',
+    ko: '성/시 명칭 라벨 켜기/끄기',
+    zh: '切换省名标注'
+  },
+  'Dùng AI tìm kiếm ảnh danh lam thắng cảnh Việt Nam': {
+    en: 'Use AI to search Vietnamese scenic landmark photos',
+    fr: 'Utiliser l\'IA pour chercher des photos de sites vietnamiens',
+    ja: 'AIでベトナムの名勝写真を検索',
+    ko: 'AI로 베트남 명승지 사진 검색',
+    zh: '使用AI智能检索越南风景名胜图片'
+  },
+  'Thêm ảnh nền danh thắng mới': {
+    en: 'Add new scenic landmark background',
+    fr: 'Ajouter un nouvel arrière-plan de site',
+    ja: '新しい名勝壁紙を追加',
+    ko: '새 명승지 배경 추가',
+    zh: '添加新名胜壁纸'
+  },
+  'Thêm thủ công': {
+    en: 'Add Manual',
+    fr: 'Ajout Manuel',
+    ja: '手動追加',
+    ko: '직접 추가',
+    zh: '手动添加'
+  },
+  'Khôi phục mặc định': {
+    en: 'Restore Defaults',
+    fr: 'Restaurer défauts',
+    ja: '初期値に戻す',
+    ko: '기본값 복원',
+    zh: '恢复默认'
+  },
+  'Admin Quyền Quản Lý': {
+    en: 'Admin Manager',
+    fr: 'Gestion Admin',
+    ja: '管理者権限',
+    ko: '관리자 권한',
+    zh: '管理员权限'
+  }
 };
 
 class LanguageService {
@@ -1911,6 +2388,7 @@ class LanguageService {
 
     // Known common UI phrases to translate across all text nodes
     const phraseMap: Record<string, Record<string, string>> = {
+      ...PHRASE_TRANSLATIONS,
       'Khám phá Di sản': { en: 'Explore Heritage', fr: 'Explorer le Patrimoine', ja: '遺産を探索', ko: '문화유산 탐험', zh: '探索文化遗产' },
       'Khám phá di sản': { en: 'Explore heritage', fr: 'Explorer le site', ja: '遺産を探索', ko: '문화유산 탐험', zh: '探索名胜' },
       'Nhận diện bằng AI': { en: 'AI Vision Recognition', fr: 'Reconnaissance IA', ja: 'AI画像認識', ko: 'AI 사진 인식', zh: 'AI 视觉识别' },
@@ -2071,6 +2549,42 @@ class LanguageService {
 
     // 4. Return fallback or key
     return fallback !== undefined ? fallback : key;
+  }
+
+  /**
+   * Translate or return English/foreign version of heritage item if lang === 'en'
+   */
+  public translateHeritageItem(item: any, lang?: string): any {
+    const activeLang = lang || this.currentLanguage;
+    if (activeLang === 'vi' || !item) return item;
+
+    const translated = { ...item };
+    if (translated.englishName) {
+      translated.name = translated.englishName;
+    }
+    if (translated.categoryLabel) {
+      translated.categoryLabel = this.t(translated.categoryLabel, activeLang, translated.categoryLabel);
+    }
+    if (activeLang === 'en') {
+      if (translated.id === 'dai-noi-hue') {
+        translated.history = "Construction began in 1804 under Emperor Gia Long and was completed in 1833 under Emperor Minh Mang. The Imperial Citadel served as the administrative center and royal residence for 13 Nguyen Dynasty emperors over 143 years.";
+        translated.culturalSignificance = "Recognized as a UNESCO World Cultural Heritage site in 1993. It is a pinnacle of Vietnamese imperial architecture, harmoniously combining Eastern feng shui philosophy with Western Vauban military architecture.";
+        translated.conservationStatus = "Preserved and extensively restored by the Hue Monuments Conservation Center and international partners.";
+      } else if (translated.id === 'van-mieu-quoc-tu-giam') {
+        translated.history = "Built in 1070 during the reign of Emperor Ly Thanh Tong to worship Confucius and sages. In 1076, Emperor Ly Nhan Tong established Quoc Tu Giam next to it, becoming Vietnam's first national university.";
+        translated.culturalSignificance = "Home to 82 Doctor's stelae inscribed by UNESCO as a Memory of the World documentary heritage, symbolizing the studious tradition of the Vietnamese nation.";
+        translated.conservationStatus = "Special National Monument preserved intact through centuries.";
+      } else if (translated.id === 'pho-co-hoi-an') {
+        translated.history = "An exceptionally well-preserved example of a Southeast Asian trading port dating from the 15th to the 19th century. Its buildings and its street plan reflect the influences, both indigenous and foreign.";
+        translated.culturalSignificance = "UNESCO World Cultural Heritage site recognized in 1999, famous for its lantern-lit streets, historic merchant houses, and Japanese Covered Bridge.";
+        translated.conservationStatus = "Protected under national heritage preservation laws and UNESCO guidelines.";
+      } else {
+        if (translated.history && translated.history.includes('Được')) {
+          translated.history = translated.history.replace('Được khởi công xây dựng', 'Construction began').replace('Di sản', 'Heritage').replace('Xây dựng', 'Built');
+        }
+      }
+    }
+    return translated;
   }
 
   /**

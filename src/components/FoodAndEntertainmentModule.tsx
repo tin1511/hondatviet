@@ -35,6 +35,7 @@ import { handleImageError } from '../utils/imageUtils';
 interface FoodAndEntertainmentModuleProps {
   initialHeritageId?: string;
   onNavigateToHeritage?: (heritageId: string) => void;
+  language?: string;
 }
 
 export const FoodAndEntertainmentModule: React.FC<FoodAndEntertainmentModuleProps> = ({

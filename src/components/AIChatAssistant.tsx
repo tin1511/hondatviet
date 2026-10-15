@@ -290,11 +290,12 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
       const currentConfig = getTTSConfig();
       setTtsConfig(currentConfig);
 
+      const isEnglish = language === 'en';
       ttsService.speak(text, {
-        lang: language === 'en' ? 'en-US' : 'vi-VN',
-        provider: currentConfig.provider || 'vieneu',
-        voice: currentConfig.voice || 'Ngọc Lan',
-        speaker: currentConfig.voice || 'Ngọc Lan',
+        lang: isEnglish ? 'en-US' : 'vi-VN',
+        provider: isEnglish ? 'web_speech' : (currentConfig.provider || 'vieneu'),
+        voice: isEnglish ? 'en-US' : (currentConfig.voice || 'Ngọc Lan'),
+        speaker: isEnglish ? 'en-US' : (currentConfig.voice || 'Ngọc Lan'),
         onStatusChange: (status) => {
           setTtsStatusMap((prev) => ({ ...prev, [id]: status }));
           setTtsProviderMap((prev) => ({ ...prev, [id]: ttsService.getActiveProviderName() }));

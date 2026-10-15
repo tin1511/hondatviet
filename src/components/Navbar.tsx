@@ -30,7 +30,7 @@ import {
 import { UserProfile } from '../types';
 import { PWAInstallButton } from './PWAInstallButton';
 import { storageService, DEFAULT_SITE_LOGO } from '../services/storageService';
-import { languageService } from '../services/languageService';
+import { languageService, SUPPORTED_LANGUAGES } from '../services/languageService';
 
 interface NavbarProps {
   currentTab: string;
@@ -243,12 +243,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   title="Chọn ngôn ngữ toàn website / Choose website language"
                   aria-label="Chọn ngôn ngữ website"
                 >
-                  <option value="vi" className="bg-stone-900 text-stone-100 font-semibold py-1">🇻🇳 Tiếng Việt (VI)</option>
-                  <option value="en" className="bg-stone-900 text-stone-100 font-semibold py-1">🇬🇧 English (EN)</option>
-                  <option value="fr" className="bg-stone-900 text-stone-100 font-semibold py-1">🇫🇷 Français (FR)</option>
-                  <option value="ja" className="bg-stone-900 text-stone-100 font-semibold py-1">🇯🇵 日本語 (JA)</option>
-                  <option value="ko" className="bg-stone-900 text-stone-100 font-semibold py-1">🇰🇷 한국어 (KO)</option>
-                  <option value="zh" className="bg-stone-900 text-stone-100 font-semibold py-1">🇨🇳 中文 (ZH)</option>
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <option key={lang.code} value={lang.code} className="bg-stone-900 text-stone-100 font-semibold py-1">
+                      {lang.flag} {lang.name} ({lang.code.toUpperCase()})
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

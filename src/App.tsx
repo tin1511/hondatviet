@@ -164,12 +164,13 @@ export default function App() {
     };
   }, []);
 
-  // Scroll to top immediately whenever activeTab changes so user never has to scroll down
+  // Scroll to top and ensure full DOM translation whenever activeTab or language changes
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (document.body) document.body.scrollTop = 0;
     if (document.documentElement) document.documentElement.scrollTop = 0;
-  }, [activeTab]);
+    languageService.translateDOM(language);
+  }, [activeTab, language]);
 
   const handleDetectGps = async () => {
     setIsDetectingGps(true);
@@ -438,7 +439,9 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {HERITAGE_DATABASE.slice(0, 3).map((item, idx) => (
+                    {HERITAGE_DATABASE.slice(0, 3).map((rawItem, idx) => {
+                      const item = languageService.translateHeritageItem(rawItem, language);
+                      return (
                       <motion.div
                         key={item.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -447,7 +450,7 @@ export default function App() {
                         className="bg-stone-900 border border-stone-800 hover:border-amber-500/40 rounded-3xl overflow-hidden shadow-xl transition-all duration-300 flex flex-col justify-between group"
                       >
                         <div 
-                          onClick={() => handleSelectHeritage(item)}
+                          onClick={() => handleSelectHeritage(rawItem)}
                           className="cursor-pointer"
                         >
                           <div className="relative h-48 w-full overflow-hidden bg-stone-950">
@@ -458,7 +461,7 @@ export default function App() {
                             />
                             <div className="absolute top-3 left-3">
                               <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-stone-950/80 text-amber-300 border border-amber-500/30 backdrop-blur font-semibold">
-                                {languageService.t(item.categoryLabel, language)}
+                                {item.categoryLabel}
                               </span>
                             </div>
                             <div className="absolute bottom-3 left-3 text-[11px] text-white flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded backdrop-blur">
@@ -479,7 +482,7 @@ export default function App() {
 
                         <div className="p-5 pt-0 grid grid-cols-3 gap-2 border-t border-stone-800/80 mt-2">
                           <button
-                            onClick={() => handleSelectHeritage(item)}
+                            onClick={() => handleSelectHeritage(rawItem)}
                             className="py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center justify-center gap-1 shadow transition-all active:scale-95 cursor-pointer"
                             title={languageService.t('btn.details', language, 'Chi tiết')}
                           >
@@ -506,7 +509,8 @@ export default function App() {
                           </button>
                         </div>
                       </motion.div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
 
@@ -610,6 +614,7 @@ export default function App() {
                 onNavigateToFood={handleNavigateToFood}
                 onNavigateToMap={() => setActiveTab('map')}
                 onAskChatbot={(q) => handleNavigate('chat')}
+                language={language}
               />
             )}
 
@@ -620,6 +625,7 @@ export default function App() {
                 initialHistory={storyInitialTopic?.history}
                 initialPeriod={storyInitialTopic?.period}
                 onSelectHeritageForPlaces={handleNavigateToFood}
+                language={language}
               />
             )}
 
@@ -649,6 +655,7 @@ export default function App() {
                 onNavigateToHeritage={(hId) => {
                   setActiveTab('map');
                 }}
+                language={language}
               />
             )}
 
@@ -658,6 +665,7 @@ export default function App() {
                 onNavigateToFood={handleNavigateToFood}
                 currentUser={userProfile}
                 onRequireAuth={() => handleOpenAuthModal('login')}
+                language={language}
               />
             )}
 
@@ -665,17 +673,22 @@ export default function App() {
             {activeTab === 'crafts' && (
               <TraditionalCraftsAndArts
                 currentUser={userProfile}
+                language={language}
               />
             )}
 
             {/* VIEW 10: QUIZ & HISTORICAL TIMELINE */}
             {(activeTab === 'quiz' || activeTab === 'learning') && (
-              <HeritageLearning />
+              <HeritageLearning
+                language={language}
+              />
             )}
 
             {/* VIEW 11: COMMUNITY CONTRIBUTIONS */}
             {activeTab === 'community' && (
-              <CommunityContributionModule />
+              <CommunityContributionModule
+                language={language}
+              />
             )}
 
             {/* VIEW 12: FAVORITES & SAVED ITEMS */}
@@ -686,6 +699,7 @@ export default function App() {
                 onNavigateToMap={() => setActiveTab('map')}
                 onNavigateToTab={handleNavigate}
                 onSelectHeritage={handleSelectHeritage}
+                language={language}
               />
             )}
 
@@ -694,6 +708,7 @@ export default function App() {
               <AdminDashboard
                 currentUser={userProfile}
                 onUserChange={handleUserChange}
+                language={language}
               />
             )}
 
@@ -703,6 +718,7 @@ export default function App() {
                 currentUser={userProfile}
                 onUserChange={handleUserChange}
                 onNavigateTab={handleNavigate}
+                language={language}
               />
             )}
           </motion.div>
@@ -895,6 +911,7 @@ export default function App() {
         onSelectLandmark={handleSelectLandmarkPreset}
         onDetectGps={handleDetectGps}
         isDetectingGps={isDetectingGps}
+        language={language}
       />
 
       {/* Modal: Xem chi tiết Di sản Văn hóa & Thuyết minh */}

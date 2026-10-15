@@ -175,7 +175,8 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       setIsPlaying(false);
     } else if (story?.storyText) {
       setIsPlaying(true);
-      const speechLangTag = language === 'en' || mode === 'foreigner' ? 'en-US' : (
+      const isEnglish = mode === 'foreigner' || language === 'en';
+      const speechLangTag = isEnglish ? 'en-US' : (
         language === 'fr' ? 'fr-FR' : (
           language === 'ja' ? 'ja-JP' : (
             language === 'ko' ? 'ko-KR' : (
@@ -187,6 +188,7 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
       aiService.speakText(story.storyText, {
         rate: speed,
         lang: speechLangTag,
+        provider: isEnglish ? 'web_speech' : undefined,
         onEnd: () => setIsPlaying(false),
         onError: (err) => {
           console.warn('Playback error in StoryPlayer:', err);
@@ -205,9 +207,20 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
     setSpeed(newSpeed);
     if (isPlaying && story?.storyText) {
       aiService.stopSpeaking();
+      const isEnglish = mode === 'foreigner' || language === 'en';
+      const speechLangTag = isEnglish ? 'en-US' : (
+        language === 'fr' ? 'fr-FR' : (
+          language === 'ja' ? 'ja-JP' : (
+            language === 'ko' ? 'ko-KR' : (
+              language === 'zh' ? 'zh-CN' : 'vi-VN'
+            )
+          )
+        )
+      );
       aiService.speakText(story.storyText, {
         rate: newSpeed,
-        lang: mode === 'foreigner' ? 'en-US' : 'vi-VN',
+        lang: speechLangTag,
+        provider: isEnglish ? 'web_speech' : undefined,
         onEnd: () => setIsPlaying(false),
         onError: (err) => {
           console.warn('Playback error in StoryPlayer:', err);
@@ -382,7 +395,9 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
 
             <div>
               <p className="text-xs font-semibold text-stone-200">
-                {isPlaying ? 'Đang đọc truyền cảm qua AI Voice...' : 'Bấm Play để nghe AI đọc to'}
+                {isPlaying 
+                  ? (mode === 'foreigner' || language === 'en' ? 'Đang đọc bằng Giọng đọc Tiếng Anh (English AI Voice)...' : 'Đang đọc truyền cảm qua AI Voice...') 
+                  : (mode === 'foreigner' || language === 'en' ? 'Bấm Play để nghe giọng đọc Tiếng Anh' : 'Bấm Play để nghe AI đọc to')}
               </p>
               <div className="flex items-center gap-1 mt-1">
                 {/* Audio Waveform simulation */}
@@ -392,7 +407,9 @@ export const StoryPlayer: React.FC<StoryPlayerProps> = ({
                   <div className="w-1 bg-amber-400 h-1.5 animate-bounce [animation-delay:0.4s]"></div>
                   <div className="w-1 bg-amber-400 h-2.5 animate-bounce [animation-delay:0.1s]"></div>
                 </div>
-                <span className="text-[10px] text-stone-400 ml-1.5">Tiếng Việt chuẩn</span>
+                <span className="text-[10px] text-amber-300 ml-1.5 font-semibold">
+                  {mode === 'foreigner' || language === 'en' ? '🌐 Giọng đọc Tiếng Anh (English Voice)' : '🇻🇳 Tiếng Việt chuẩn'}
+                </span>
               </div>
             </div>
           </div>

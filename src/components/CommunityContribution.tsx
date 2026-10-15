@@ -24,7 +24,11 @@ import {
 import { storageService } from '../services/storageService';
 import { CommunityContribution } from '../types';
 
-export const CommunityContributionModule: React.FC = () => {
+interface CommunityContributionModuleProps {
+  language?: string;
+}
+
+export const CommunityContributionModule: React.FC<CommunityContributionModuleProps> = () => {
   const [contributions, setContributions] = useState<CommunityContribution[]>([]);
   const [showForm, setShowForm] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState(() => storageService.getCurrentUser());

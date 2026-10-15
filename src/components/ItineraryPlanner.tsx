@@ -27,6 +27,7 @@ interface ItineraryPlannerProps {
   onNavigateToFood?: (heritageId: string) => void;
   currentUser?: UserProfile;
   onRequireAuth?: () => void;
+  language?: string;
 }
 
 export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateToFood, currentUser, onRequireAuth }) => {

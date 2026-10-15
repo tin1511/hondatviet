@@ -50,6 +50,7 @@ import { AdminRecognitionModal } from './AdminRecognitionModal';
 interface AdminDashboardProps {
   currentUser?: UserProfile;
   onUserChange?: (user: UserProfile) => void;
+  language?: string;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({

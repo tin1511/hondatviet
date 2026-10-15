@@ -28,6 +28,7 @@ import { getSafeCraftOrArtImageUrl } from '../utils/imageUtils';
 
 interface TraditionalCraftsAndArtsProps {
   currentUser?: UserProfile;
+  language?: string;
 }
 
 export const TraditionalCraftsAndArts: React.FC<TraditionalCraftsAndArtsProps> = ({ currentUser }) => {

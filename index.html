@@ -2,6 +2,35 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function() {
+        // Suppress benign Vite dev HMR WebSocket disconnection errors in sandboxed iframe environment
+        var origConsoleError = console.error;
+        console.error = function() {
+          if (arguments.length > 0) {
+            var first = arguments[0];
+            var msg = (first && (first.message || first.stack || String(first))) || '';
+            if (typeof msg === 'string' && msg.indexOf('WebSocket closed without opened') !== -1) {
+              return;
+            }
+          }
+          return origConsoleError.apply(console, arguments);
+        };
+        window.addEventListener('error', function(e) {
+          if (e && (e.message && e.message.indexOf('WebSocket') !== -1 || e.error && e.error.message && e.error.message.indexOf('WebSocket') !== -1)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            return true;
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+          if (e && e.reason && String(e.reason.message || e.reason).indexOf('WebSocket') !== -1) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0c0a09" />
     <meta name="mobile-web-app-capable" content="yes" />

@@ -387,18 +387,78 @@ export class BrowserTTSProvider implements TTSProvider {
     const allVoices = this.getVoices();
     if (!allVoices || allVoices.length === 0) return null;
 
+    const cleanLang = (lang || 'vi-VN').toLowerCase().replace('_', '-');
+    const langPrefix = cleanLang.split('-')[0];
+
+    // Check voiceURI ONLY IF its language family matches the requested target language
     if (voiceURI) {
       const matchURI = allVoices.find((v) => v.voiceURI === voiceURI);
-      if (matchURI) return matchURI;
+      if (matchURI) {
+        const vPrefix = matchURI.lang.toLowerCase().replace('_', '-').split('-')[0];
+        if (vPrefix === langPrefix) {
+          return matchURI;
+        }
+      }
     }
 
-    if (lang && lang.toLowerCase().startsWith('en')) {
-      const enMatch = allVoices.find((v) => v.lang.toLowerCase().startsWith('en'));
-      if (enMatch) return enMatch;
+    // 1. If English is requested (e.g. 'en-US', 'en-GB', 'en', foreigner mode):
+    if (langPrefix === 'en') {
+      const enVoices = allVoices.filter((v) => {
+        const l = v.lang.toLowerCase().replace('_', '-');
+        return l.startsWith('en') || l.includes('en-');
+      });
+
+      if (enVoices.length > 0) {
+        // Prefer natural / high quality US or UK English voices
+        const usNatural = enVoices.find((v) => {
+          const n = v.name.toLowerCase();
+          const l = v.lang.toLowerCase().replace('_', '-');
+          return (l.includes('en-us') || l.includes('en-gb')) && (
+            n.includes('google') ||
+            n.includes('natural') ||
+            n.includes('samantha') ||
+            n.includes('jenny') ||
+            n.includes('guy') ||
+            n.includes('aria') ||
+            n.includes('zira') ||
+            n.includes('david') ||
+            n.includes('daniel') ||
+            n.includes('serena') ||
+            n.includes('oliver')
+          );
+        });
+        if (usNatural) return usNatural;
+
+        // Any en-US voice
+        const anyUS = enVoices.find((v) => v.lang.toLowerCase().replace('_', '-').includes('en-us'));
+        if (anyUS) return anyUS;
+
+        // Any en-GB voice
+        const anyGB = enVoices.find((v) => v.lang.toLowerCase().replace('_', '-').includes('en-gb'));
+        if (anyGB) return anyGB;
+
+        // Any English voice
+        return enVoices[0];
+      }
+
+      // Check name containing English
+      const byName = allVoices.find((v) => v.name.toLowerCase().includes('english'));
+      if (byName) return byName;
+
+      // CRITICAL: NEVER return a Vietnamese voice when English is requested!
+      // Return null so SpeechSynthesisUtterance synthesizes natively with utterance.lang = 'en-US'
+      return null;
     }
 
-    const viVoice = this.findVietnameseVoice(lang);
-    if (viVoice) return viVoice;
+    // 2. Exact BCP-47 match
+    const exactMatch = allVoices.find((v) => v.lang.toLowerCase().replace('_', '-') === cleanLang);
+    if (exactMatch) return exactMatch;
+
+    // 3. For Vietnamese, search dedicated voice heuristics
+    if (langPrefix === 'vi') {
+      const viVoice = this.findVietnameseVoice(lang);
+      if (viVoice) return viVoice;
+    }
 
     // Default fallback to first voice or system default voice if vi-VN voice not installed
     return allVoices.find((v) => v.default) || allVoices[0] || null;
@@ -929,7 +989,14 @@ class TTSService {
       options?.onEnd?.();
     };
 
-    const effectiveProvider = options?.provider || ttsConfig.provider || 'vieneu';
+    const targetLang = mergedOptions.lang || 'vi-VN';
+    const isVietnamese = targetLang.toLowerCase().startsWith('vi');
+
+    // VieNeu Cloud TTS is strictly a Vietnamese neural phonetics model.
+    // For all foreign languages (en, fr, ja, ko, zh), we route directly to Browser Web Speech API
+    const effectiveProvider = !isVietnamese
+      ? 'web_speech'
+      : (options?.provider || ttsConfig.provider || 'vieneu');
 
     // Case 1: VieNeu Cloud TTS is selected as Provider
     if (effectiveProvider === 'vieneu') {
