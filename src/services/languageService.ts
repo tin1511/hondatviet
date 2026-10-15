@@ -2420,6 +2420,17 @@ class LanguageService {
           el.removeAttribute('data-orig-text');
         }
       });
+      // Restore original form and accessibility attributes as well.
+      document.querySelectorAll('*').forEach((el) => {
+        ['placeholder', 'title', 'aria-label', 'alt'].forEach((attr) => {
+          const key = 'data-orig-attr-' + attr;
+          const original = el.getAttribute(key);
+          if (original !== null) {
+            el.setAttribute(attr, original);
+            el.removeAttribute(key);
+          }
+        });
+      });
       return;
     }
 
@@ -2535,6 +2546,23 @@ class LanguageService {
           }
           currentNode = walker.nextNode();
         }
+
+        // Translate common text-bearing attributes too (placeholders, tooltips,
+        // image alt text and accessibility labels), using the original value
+        // so switching between languages does not get stuck on a previous translation.
+        document.querySelectorAll('*').forEach((el) => {
+          ['placeholder', 'title', 'aria-label', 'alt'].forEach((attr) => {
+            const key = 'data-orig-attr-' + attr;
+            const currentValue = el.getAttribute(attr);
+            if (currentValue === null) return;
+            const originalValue = el.getAttribute(key) ?? currentValue;
+            const translatedValue = phraseMap[originalValue]?.[code];
+            if (translatedValue) {
+              if (!el.hasAttribute(key)) el.setAttribute(key, originalValue);
+              el.setAttribute(attr, translatedValue);
+            }
+          });
+        });
       } catch (e) {
         console.warn('DOM translation pass:', e);
       } finally {
