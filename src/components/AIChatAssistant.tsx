@@ -738,7 +738,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                   onClick={() => handleSendMessage(isEnglish ? q.en : q.vi)}
                   className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-amber-500/40 whitespace-nowrap transition-colors"
                 >
-                  {q}
+                  {isEnglish ? q.en : q.vi}
                 </button>
               ))}
             </div>
