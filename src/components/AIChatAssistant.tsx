@@ -40,11 +40,11 @@ interface AIChatAssistantProps {
 }
 
 const CULTURAL_SUGGESTIONS = [
-  'Vì sao người Việt có phong tục têm trầu cánh phượng?',
-  'Cổng Ngọ Môn Huế có mấy lối đi và ý nghĩa từng lối?',
-  'Ý nghĩa của 82 Bia Tiến sĩ Văn Miếu Thăng Long là gì?',
-  'Món Cơm Hến Huế có nguồn gốc dân dã như thế nào?',
-  'Giải thích ngắn gọn cho học sinh về chiến thắng Bạch Đằng 938'
+  { vi: 'Vì sao người Việt có phong tục têm trầu cánh phượng?', en: 'Why do Vietnamese people shape betel leaves into phoenix wings?' },
+  { vi: 'Cổng Ngọ Môn Huế có mấy lối đi và ý nghĩa từng lối?', en: 'How many passageways does Ngo Mon Gate in Hue have, and what does each mean?' },
+  { vi: 'Ý nghĩa của 82 Bia Tiến sĩ Văn Miếu Thăng Long là gì?', en: 'What is the significance of the 82 doctoral steles at the Temple of Literature?' },
+  { vi: 'Món Cơm Hến Huế có nguồn gốc dân dã như thế nào?', en: 'What are the humble origins of Hue clam rice?' },
+  { vi: 'Giải thích ngắn gọn cho học sinh về chiến thắng Bạch Đằng 938', en: 'Explain the 938 Bach Dang victory briefly for students.' }
 ];
 
 export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
@@ -341,7 +341,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
         {
           id: 'welcome-guide-' + Date.now(),
           sender: 'assistant',
-          text: guideConfig.welcomeGreeting || ui(`Dạ em là ${guideConfig.guideName} - Hướng dẫn viên du lịch văn hóa! Rất hân hạnh được đồng hành cùng quý đoàn mình. Quý vị muốn em thuyết minh về ${selectedHeritage?.name || 'di sản Việt Nam'} hay tư vấn góc chụp ảnh, quán ngon cứ bảo em nhé!`, `I’m ${guideConfig.guideName}, your cultural tour guide! I’m delighted to join you. Ask me about ${selectedHeritage?.name || 'Vietnamese heritage'}, photo spots, or local food!`),
+          text: isEnglish ? `I’m ${guideConfig.guideName}, your cultural tour guide! I’m delighted to join you. Ask me about ${selectedHeritage?.name || 'Vietnamese heritage'}, photo spots, or local food!` : (guideConfig.welcomeGreeting || `Dạ em là ${guideConfig.guideName} - Hướng dẫn viên du lịch văn hóa! Rất hân hạnh được đồng hành cùng quý đoàn mình. Quý vị muốn em thuyết minh về ${selectedHeritage?.name || 'di sản Việt Nam'} hay tư vấn góc chụp ảnh, quán ngon cứ bảo em nhé!`),
           timestamp: new Date().toISOString(),
           isTourGuideMode: true
         }
@@ -688,7 +688,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
             </p>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
               <button
-                onClick={() => handleSendMessage(`Chào em ${guideConfig.guideName}! Hãy thuyết minh chi tiết và dẫn đoàn đi một vòng quanh ${selectedHeritage?.name || 'điểm di sản này'} nhé.`)}
+                onClick={() => handleSendMessage(ui(`Chào em ${guideConfig.guideName}! Hãy thuyết minh chi tiết và dẫn đoàn đi một vòng quanh ${selectedHeritage?.name || 'điểm di sản này'} nhé.`,`Hi ${guideConfig.guideName}! Please give us a detailed guided tour of ${selectedHeritage?.name || 'this heritage site'}.`))}
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/40 hover:border-amber-400 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Compass className="w-3.5 h-3.5 text-amber-400" />
@@ -696,7 +696,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
               </button>
 
               <button
-                onClick={() => handleSendMessage(`Khi tham quan ${selectedHeritage?.name || 'nơi này'}, quý đoàn cần lưu ý trang phục và các quy tắc ứng xử tôn nghiêm nào?`)}
+                onClick={() => handleSendMessage(ui(`Khi tham quan ${selectedHeritage?.name || 'nơi này'}, quý đoàn cần lưu ý trang phục và các quy tắc ứng xử tôn nghiêm nào?`,`What dress code and respectful behavior rules should visitors follow at ${selectedHeritage?.name || 'this site'}?`))}
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-emerald-500/40 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
@@ -704,7 +704,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
               </button>
 
               <button
-                onClick={() => handleSendMessage(`Gần ${selectedHeritage?.name || 'khu vực này'} có món ăn đặc sản nào ngon và quán nào chuẩn vị của người bản xứ không em?`)}
+                onClick={() => handleSendMessage(ui(`Gần ${selectedHeritage?.name || 'khu vực này'} có món ăn đặc sản nào ngon và quán nào chuẩn vị của người bản xứ không em?`,`What local specialties and authentic restaurants would you recommend near ${selectedHeritage?.name || 'this area'}?`))}
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-rose-500/40 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Utensils className="w-3.5 h-3.5 text-rose-400" />
@@ -712,7 +712,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
               </button>
 
               <button
-                onClick={() => handleSendMessage(`Chỉ cho anh các góc chụp ảnh đẹp nhất và giờ vàng ánh sáng tại ${selectedHeritage?.name || 'di sản'}!`)}
+                onClick={() => handleSendMessage(ui(`Chỉ cho anh các góc chụp ảnh đẹp nhất và giờ vàng ánh sáng tại ${selectedHeritage?.name || 'di sản'}!`,`Show me the best photo spots and golden-hour times at ${selectedHeritage?.name || 'this heritage site'}!`))}
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-sky-500/40 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5 text-sky-400" />
@@ -720,7 +720,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
               </button>
 
               <button
-                onClick={() => handleSendMessage(`Gợi ý cho đoàn lộ trình dạo bước từ 1 đến 2 tiếng tối ưu nhất tại ${selectedHeritage?.name || 'di tích'}.`)}
+                onClick={() => handleSendMessage(ui(`Gợi ý cho đoàn lộ trình dạo bước từ 1 đến 2 tiếng tối ưu nhất tại ${selectedHeritage?.name || 'di tích'}.`,`Suggest an optimized 1–2 hour walking route around ${selectedHeritage?.name || 'this historic site'}.`))}
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-amber-500/40 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
@@ -735,7 +735,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
               {CULTURAL_SUGGESTIONS.map((q, idx) => (
                 <button
                   key={idx}
-                  onClick={() => handleSendMessage(q)}
+                  onClick={() => handleSendMessage(isEnglish ? q.en : q.vi)}
                   className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-amber-500/40 whitespace-nowrap transition-colors"
                 >
                   {q}
