@@ -213,7 +213,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateTo
               const active = interests.includes(opt);
               return (
                 <button
-                  key={isEnglish ? ({ 'Di tích Cung đình & Lịch sử': 'Imperial Sites & History', 'Ẩm thực địa phương & Ăn vặt': 'Local Food & Street Snacks', 'Làng nghề thủ công & Trải nghiệm': 'Craft Villages & Experiences', 'Cà phê ngắm cảnh & Check-in': 'Scenic Cafés & Photo Spots', 'Nghệ thuật & Bảo tàng': 'Art & Museums', 'Chùa chiền & Tâm linh': 'Temples & Spirituality' } as Record<string, string>)[opt] || opt : opt}
+                  key={opt}
                   type="button"
                   onClick={() => handleToggleInterest(opt)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
@@ -223,7 +223,7 @@ export const ItineraryPlanner: React.FC<ItineraryPlannerProps> = ({ onNavigateTo
                   }`}
                 >
                   {active ? '✓ ' : '+ '}
-                  {opt}
+                  {isEnglish ? ({ 'Di tích Cung đình & Lịch sử': 'Imperial Sites & History', 'Ẩm thực địa phương & Ăn vặt': 'Local Food & Street Snacks', 'Làng nghề thủ công & Trải nghiệm': 'Craft Villages & Experiences', 'Cà phê ngắm cảnh & Check-in': 'Scenic Cafés & Photo Spots', 'Nghệ thuật & Bảo tàng': 'Art & Museums', 'Chùa chiền & Tâm linh': 'Temples & Spirituality' } as Record<string, string>)[opt] || opt : opt}
                 </button>
               );
             })}
