@@ -36,14 +36,11 @@ import {
   Send,
   ArrowLeft,
   Copy,
-  Globe,
-  ChevronDown,
   Languages
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
 import { UserProfile, UserActivityLog, UserActionType } from '../types';
 import { cleanVietnameseText } from '../utils/textUtils';
-import { languageService, SUPPORTED_LANGUAGES } from '../services/languageService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -52,8 +49,6 @@ interface AuthModalProps {
   initialTab?: 'login' | 'register' | 'profile' | 'activity' | 'security';
   onNavigateTab?: (tab: string) => void;
   language?: string;
-  onLanguageChange?: (lang: string) => void;
-  onOpenLanguageModal?: () => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -62,14 +57,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onUserChange,
   initialTab = 'login',
   onNavigateTab,
-  language = 'vi',
-  onLanguageChange,
-  onOpenLanguageModal
+  language = 'vi'
 }) => {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'profile' | 'activity' | 'security'>(initialTab);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const currentLang = language || languageService.getCurrentLanguage();
 
   // Body scroll lock to prevent underlying content scroll on mobile
   useEffect(() => {
@@ -325,75 +316,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Quick Language Switcher inside Auth Modal */}
-            <div className="relative">
-              <button
-                type="button"
-                id="btn-auth-modal-lang"
-                onClick={() => setLangMenuOpen(!langMenuOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-stone-200 hover:text-amber-300 border border-stone-700 hover:border-amber-500/50 text-xs font-semibold transition-all cursor-pointer shadow-sm select-none"
-                title="Đổi ngôn ngữ / Change language"
-              >
-                <Globe className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="text-sm shrink-0 leading-none">{languageService.getLanguageInfo(currentLang).flag}</span>
-                <span className="font-mono text-[11px] font-bold text-amber-300 uppercase">{currentLang}</span>
-                <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${langMenuOpen ? 'rotate-180 text-amber-400' : ''}`} />
-              </button>
-
-              {langMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setLangMenuOpen(false)} />
-                  <div className="absolute right-0 top-full mt-1.5 w-52 bg-stone-900/95 backdrop-blur-xl border border-stone-800 rounded-2xl shadow-2xl py-2 z-50 animate-fadeIn">
-                    <div className="px-3 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1 border-b border-stone-800/80 mb-1">
-                      <Languages className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Ngôn ngữ / Language</span>
-                    </div>
-                    {SUPPORTED_LANGUAGES.map((item) => {
-                      const isCur = currentLang === item.code;
-                      return (
-                        <button
-                          key={item.code}
-                          type="button"
-                          onClick={() => {
-                            if (onLanguageChange) {
-                              onLanguageChange(item.code);
-                            } else {
-                              languageService.setLanguage(item.code);
-                            }
-                            setLangMenuOpen(false);
-                          }}
-                          className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition-colors ${
-                            isCur ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-stone-300 hover:bg-stone-800 hover:text-amber-200'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">{item.flag}</span>
-                            <span>{item.nativeName}</span>
-                          </div>
-                          {isCur && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
-                        </button>
-                      );
-                    })}
-                    {onOpenLanguageModal && (
-                      <div className="border-t border-stone-800/80 pt-1 mt-1 px-1.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setLangMenuOpen(false);
-                            onOpenLanguageModal();
-                          }}
-                          className="w-full px-2 py-1 rounded-lg text-left text-[11px] text-amber-300 hover:bg-amber-500/10 font-bold flex items-center gap-1.5"
-                        >
-                          <Languages className="w-3 h-3 text-amber-400" />
-                          <span>Mở cài đặt chi tiết</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-
             <button
               onClick={onClose}
               className="p-2 rounded-xl text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors"

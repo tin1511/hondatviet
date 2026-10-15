@@ -21,15 +21,12 @@ import {
   AlertCircle,
   Award,
   Plus,
-  Languages,
-  ChevronDown,
-  Settings
 } from 'lucide-react';
 import { HERITAGE_DATABASE } from '../data/vietnamHeritageData';
 import { geolocationService, CITY_LANDMARK_PRESETS } from '../services/geolocationService';
 import { getHeritageForLandmark } from '../services/landmarkHeritageService';
 import { UserProfile, HeritageItem, CityLandmarkBackground } from '../types';
-import { languageService, SUPPORTED_LANGUAGES } from '../services/languageService';
+import { languageService } from '../services/languageService';
 
 interface HeroSectionProps {
   onNavigate: (tab: string, heritageId?: string) => void;
@@ -70,7 +67,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<HeritageItem[]>([]);
-  const [showHeroLangDropdown, setShowHeroLangDropdown] = useState(false);
 
   // Fallbacks if not provided via props
   const currentLandmark = propLandmark || CITY_LANDMARK_PRESETS[0];
@@ -190,18 +186,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </button>
             )}
 
-            {/* ⭐ NÚT ĐỔI NGÔN NGỮ NHANH TRỰC TIẾP TẠI ĐẦU TRANG */}
-            <button
-              type="button"
-              id="btn-hero-language-pill"
-              onClick={() => onOpenLanguageModal ? onOpenLanguageModal() : setShowHeroLangDropdown(!showHeroLangDropdown)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-stone-900/90 hover:bg-stone-800 text-stone-200 hover:text-amber-300 border border-stone-700/80 hover:border-amber-500/50 text-xs font-semibold shadow-md backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-              title={languageService.t('lang.changeLanguage', language, 'Đổi ngôn ngữ')}
-            >
-              <Globe className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="text-sm shrink-0 leading-none">{languageService.getLanguageInfo(language).flag}</span>
-              <span className="font-semibold text-amber-300">{languageService.getLanguageInfo(language).nativeName}</span>
-            </button>
+
           </div>
 
           {gpsError && (
@@ -306,85 +291,6 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </div>
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
-                {/* 🌐 Nút đổi ngôn ngữ dành cho người chưa đăng nhập xem và chuyển ngôn ngữ ngay */}
-                <div className="relative flex-1 sm:flex-initial">
-                  <button
-                    type="button"
-                    id="hero-guest-btn-lang"
-                    onClick={() => setShowHeroLangDropdown(!showHeroLangDropdown)}
-                    className="w-full sm:w-auto px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-100 hover:text-amber-300 text-xs font-bold border border-amber-500/40 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow active:scale-95 whitespace-nowrap"
-                    title="Đổi ngôn ngữ trang web / Change language"
-                  >
-                    <Globe className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="text-base shrink-0 leading-none">{languageService.getLanguageInfo(language).flag}</span>
-                    <span className="font-semibold text-amber-200">{languageService.getLanguageInfo(language).nativeName}</span>
-                    <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform duration-200 ${showHeroLangDropdown ? 'rotate-180 text-amber-400' : ''}`} />
-                  </button>
-
-                  {showHeroLangDropdown && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setShowHeroLangDropdown(false)} 
-                      />
-                      <div className="absolute right-0 sm:left-0 top-full mt-2 w-56 bg-stone-900/95 backdrop-blur-xl border border-stone-800 rounded-2xl shadow-2xl py-2 z-50 animate-fadeIn">
-                        <div className="px-3 py-1.5 border-b border-stone-800/80 mb-1 flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1">
-                            <Languages className="w-3.5 h-3.5 text-amber-400" />
-                            <span>Ngôn ngữ / Language</span>
-                          </span>
-                        </div>
-                        <div className="max-h-60 overflow-y-auto py-1">
-                          {SUPPORTED_LANGUAGES.map((item) => {
-                            const isCurrent = language === item.code;
-                            return (
-                              <button
-                                key={item.code}
-                                type="button"
-                                onClick={() => {
-                                  onLanguageChange?.(item.code);
-                                  setShowHeroLangDropdown(false);
-                                }}
-                                className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition-colors ${
-                                  isCurrent
-                                    ? 'bg-amber-500/20 text-amber-300 font-bold'
-                                    : 'text-stone-300 hover:bg-stone-800 hover:text-amber-200'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg">{item.flag}</span>
-                                  <div>
-                                    <div className="leading-tight font-medium">{item.nativeName}</div>
-                                    <div className="text-[10px] text-stone-500">{item.name}</div>
-                                  </div>
-                                </div>
-                                {isCurrent && (
-                                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {onOpenLanguageModal && (
-                          <div className="border-t border-stone-800/80 pt-1.5 mt-1 px-1.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowHeroLangDropdown(false);
-                                onOpenLanguageModal();
-                              }}
-                              className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center gap-1.5 font-bold transition-colors cursor-pointer"
-                            >
-                              <Settings className="w-3.5 h-3.5 text-amber-400" />
-                              <span>Cài đặt chi tiết & giọng đọc</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-
                 <button
                   type="button"
                   id="hero-guest-btn-login"
@@ -495,17 +401,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               <span>{languageService.t('hero.ctaProfile', language, 'Hồ sơ & Danh hiệu')}</span>
             </button>
 
-            {/* Nút Đổi Ngôn Ngữ trong nhóm CTA */}
-            <button
-              id="hero-cta-language"
-              onClick={() => onOpenLanguageModal ? onOpenLanguageModal() : setShowHeroLangDropdown(true)}
-              className="inline-flex px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-stone-200 hover:text-amber-300 font-semibold text-xs sm:text-sm transition-all border border-stone-700/80 hover:border-amber-500/50 items-center gap-1.5 sm:gap-2 active:scale-95 cursor-pointer shadow-md"
-              title="Đổi ngôn ngữ giao diện (Change Language)"
-            >
-              <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
-              <span className="text-sm leading-none">{languageService.getLanguageInfo(language).flag}</span>
-              <span>{languageService.t('lang.changeLanguage', language, 'Đổi ngôn ngữ')}</span>
-            </button>
+
           </div>
         </motion.div>
 

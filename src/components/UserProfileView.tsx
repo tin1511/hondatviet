@@ -40,7 +40,6 @@ interface UserProfileViewProps {
   onNavigateTab: (tab: string, heritageId?: string) => void;
   initialSubTab?: 'badges' | 'profile' | 'activity' | 'security';
   language?: string;
-  onOpenLanguageModal?: () => void;
 }
 
 interface MilestoneBadge {
@@ -239,7 +238,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   onNavigateTab,
   initialSubTab = 'badges',
   language = 'vi',
-  onOpenLanguageModal
 }) => {
   // Tabs are prominently positioned AT THE VERY TOP
   const [activeSubTab, setActiveSubTab] = useState<'badges' | 'profile' | 'activity' | 'security'>(initialSubTab);
@@ -947,16 +945,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 </div>
               </div>
 
-              {onOpenLanguageModal && (
-                <button
-                  type="button"
-                  onClick={onOpenLanguageModal}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs shadow-md transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>Thay Đổi Ngôn Ngữ</span>
-                </button>
-              )}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                <span>{languageService.getLanguageInfo(language).flag} {languageService.getLanguageInfo(language).nativeName}</span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -992,15 +983,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                     "{languageService.getLanguageInfo(language).greeting}"
                   </p>
                 </div>
-                {onOpenLanguageModal && (
-                  <button
-                    type="button"
-                    onClick={onOpenLanguageModal}
-                    className="mt-2 text-xs text-amber-400 hover:text-amber-300 font-semibold text-left underline underline-offset-2"
-                  >
-                    Mở tùy chỉnh chi tiết →
-                  </button>
-                )}
+
               </div>
             </div>
           </div>

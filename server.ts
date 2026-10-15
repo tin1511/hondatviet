@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { HERITAGE_DATABASE } from './src/data/vietnamHeritageData';
+import { getLocalizedHeritage } from './src/services/heritageLocalizationService';
 import { VIETNAM_LANDMARK_PHOTOS } from './src/data/landmarkImagesDatabase';
 
 dotenv.config();
@@ -293,12 +294,41 @@ function buildFallbackStory(params: {
 }) {
   const { heritageName, period, history, mode = 'student', language = 'vi' } = params;
 
+  const isEn = language === 'en' || mode === 'foreigner';
+
   // Find matching heritage in database
   const match = HERITAGE_DATABASE.find((h) =>
     h.name.toLowerCase().includes(heritageName.toLowerCase()) ||
     heritageName.toLowerCase().includes(h.name.toLowerCase()) ||
-    (h.vietnameseName && h.vietnameseName.toLowerCase().includes(heritageName.toLowerCase()))
+    (h.vietnameseName && h.vietnameseName.toLowerCase().includes(heritageName.toLowerCase())) ||
+    (h.englishName && h.englishName.toLowerCase().includes(heritageName.toLowerCase()))
   );
+
+  if (isEn) {
+    const localized = match ? getLocalizedHeritage(match, 'en') : null;
+    const enName = localized?.name || match?.englishName || heritageName;
+    const enHistory = localized?.history || (history || 'An essential chapter of Vietnamese cultural civilization and architectural brilliance.');
+    const enEra = localized?.period || period || 'Vietnam Dynastic Eras';
+    const enSignificance = localized?.culturalSignificance || 'A premier national landmark symbolizing millennia of cultural devotion and creative craftsmanship.';
+
+    const storyText = `Welcome to the timeless story of ${enName}, a cherished cultural treasure from ${enEra}.\n\nThroughout centuries of history, ${enName} has stood as an enduring symbol of resilience, heritage, and artistic mastery. According to verified historical archives: ${enHistory}\n\nToday, ${enName} remains not only a breathtaking architectural marvel (${enSignificance}), but also an immortal testament to the soul and traditions of the Vietnamese people. Explorers from across the world are warmly invited to discover its enduring echoes and sacred legacy.`;
+
+    return {
+      heritageId: match?.id || heritageName.toLowerCase().replace(/\s+/g, '-'),
+      heritageName: enName,
+      mode: mode as any,
+      title: `The Timeless Legacy of ${enName}`,
+      storyText: storyText,
+      historicalContext: `${enEra}: ${enHistory}`,
+      distinctionNote: 'Verified History: Dynastic chronicles, archaeological excavations, and UNESCO heritage dossiers. Folklore & Legends: Local oral memories honoring the deep spiritual devotion of ancestors.',
+      sourceReferences: [
+        'UNESCO World Heritage Documentation',
+        'National Archives of Vietnam',
+        'The Complete Annals of Dai Viet (Đại Việt Sử Ký Toàn Thư)'
+      ],
+      isFallback: true
+    };
+  }
 
   const hist = history || match?.history || 'Di sản văn hóa tiêu biểu của dân tộc Việt Nam, kết tinh giá trị lịch sử và nghệ thuật ngàn năm qua nhiều thế hệ tiền nhân.';
   const era = period || match?.period || 'Lịch sử Việt Nam';
@@ -307,10 +337,7 @@ function buildFallbackStory(params: {
   let storyText = '';
   let distinctionNote = '';
 
-  if (language === 'en' || mode === 'foreigner') {
-    storyText = `Welcome to the timeless story of ${heritageName}, a monumental cultural treasure from ${era}.\n\nThroughout centuries, ${heritageName} has stood as a beacon of Vietnam's profound heritage. According to historical records: ${hist}\n\nToday, ${heritageName} remains not only an architectural marvel (${sig}) but also a living testament to the resilience, spirituality, and artistic mastery of the Vietnamese people.`;
-    distinctionNote = `Verified History: Construction dates, architectural frameworks, and dynastic events are cross-referenced with national archives and UNESCO dossiers. Folklore & Legends: Local oral memories capture the spiritual devotion and poetic legends of the ancestors.`;
-  } else if (mode === 'children') {
+  if (mode === 'children') {
     storyText = `Ngày xửa ngày xưa, giữa dải đất gấm vóc Việt Nam tươi đẹp, có một nơi chốn vô cùng kỳ diệu mang tên ${heritageName}.\n\nCác bé có biết không, từ thời ${era}, các bác thợ tài hoa và ông cha ta đã cùng nhau đắp từng viên gạch, dựng từng cột gỗ để tạo nên một công trình tuyệt đẹp. ${hist}\n\nĐến nay, ${heritageName} vẫn đứng sừng sững như một người ông hiền từ mỉm cười đón chào mọi người, nhắc nhở các bạn nhỏ chúng mình phải luôn yêu quý quê hương đất nước và tự hào giữ gìn báu vật của dân tộc!`;
     distinctionNote = `Chính sử: Thời kỳ lịch sử và các mốc xây dựng được ghi chép trong sử thư. Truyền thuyết: Những câu chuyện dân gian mang màu sắc thần thoại giúp các em nhỏ nuôi dưỡng trí tưởng tượng và lòng nhân ái.`;
   } else if (mode === 'university') {
@@ -517,7 +544,7 @@ Yêu cầu:
 2. Phải phân biệt rạch ròi giữa sự kiện lịch sử đã xác minh và truyền thuyết dân gian.
 3. Tuyệt đối không xuyên tạc lịch sử, không tự bịa nguồn tư liệu.
 4. Ngôn từ truyền cảm, giàu hình tượng, nhịp điệu mượt mà thích hợp đọc to bằng Text-to-Speech.
-5. Ngôn ngữ: ${language === 'en' || mode === 'foreigner' ? 'English' : 'Tiếng Việt'}.`;
+5. Ngôn ngữ: ${language === 'en' || mode === 'foreigner' ? 'English (CRITICAL: Every field including title, storyText, historicalContext, distinctionNote, and sourceReferences MUST be written entirely in fluent, captivating English)' : 'Tiếng Việt'}.`;
 
     const response = await generateContentWithResilience(ai, {
       contents: `Hãy sáng tác câu chuyện di sản cho: ${heritageName}. Bối cảnh: ${history || ''}`,

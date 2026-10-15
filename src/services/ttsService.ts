@@ -387,20 +387,39 @@ export class BrowserTTSProvider implements TTSProvider {
     const allVoices = this.getVoices();
     if (!allVoices || allVoices.length === 0) return null;
 
+    // 1. Explicit voiceURI match
     if (voiceURI) {
       const matchURI = allVoices.find((v) => v.voiceURI === voiceURI);
       if (matchURI) return matchURI;
     }
 
-    if (lang && lang.toLowerCase().startsWith('en')) {
-      const enMatch = allVoices.find((v) => v.lang.toLowerCase().startsWith('en'));
-      if (enMatch) return enMatch;
+    const cleanLang = (lang || 'vi-VN').toLowerCase().replace('_', '-');
+    const langPrefix = cleanLang.split('-')[0];
+
+    // 2. Exact BCP-47 match (e.g. 'en-us', 'fr-fr', 'ja-jp', 'ko-kr', 'zh-cn', 'vi-vn')
+    const exactMatch = allVoices.find((v) => v.lang.toLowerCase().replace('_', '-') === cleanLang);
+    if (exactMatch) return exactMatch;
+
+    // 3. Prefix match for language family (e.g. 'en', 'fr', 'ja', 'ko', 'zh', 'vi')
+    const langVoices = allVoices.filter((v) => v.lang.toLowerCase().startsWith(langPrefix));
+    if (langVoices.length > 0) {
+      const naturalVoice = langVoices.find((v) =>
+        v.name.toLowerCase().includes('google') ||
+        v.name.toLowerCase().includes('natural') ||
+        v.name.toLowerCase().includes('online') ||
+        v.name.toLowerCase().includes('premium') ||
+        v.name.toLowerCase().includes('enhanced')
+      );
+      return naturalVoice || langVoices[0];
     }
 
-    const viVoice = this.findVietnameseVoice(lang);
-    if (viVoice) return viVoice;
+    // 4. Vietnamese specific fallback
+    if (langPrefix === 'vi') {
+      const viVoice = this.findVietnameseVoice(lang);
+      if (viVoice) return viVoice;
+    }
 
-    // Default fallback to first voice or system default voice if vi-VN voice not installed
+    // 5. Default fallback
     return allVoices.find((v) => v.default) || allVoices[0] || null;
   }
 
@@ -929,9 +948,38 @@ class TTSService {
       options?.onEnd?.();
     };
 
+    const targetLang = (mergedOptions.lang || ttsConfig.language || 'vi-VN').toLowerCase();
+    const isVietnamese = targetLang.startsWith('vi');
+
+    // Non-Vietnamese speech (English, French, Japanese, Korean, Chinese, etc.)
+    // is strictly routed to the Browser Web Speech API with the target language.
+    // VieNeu Cloud TTS is a Vietnamese-only neural model and must not be used for foreign text.
+    if (!isVietnamese) {
+      this.activeProviderName = 'web_speech';
+      if (this.browserProvider.isSupported()) {
+        try {
+          this.currentStatus = 'playing';
+          options?.onStatusChange?.('playing');
+          await this.browserProvider.speak(text, { ...mergedOptions, lang: mergedOptions.lang || 'en-US', onEnd: wrappedOnEnd });
+          return;
+        } catch (err: any) {
+          this.currentStatus = 'error';
+          options?.onStatusChange?.('error');
+          options?.onError?.(err);
+          return;
+        }
+      } else {
+        this.currentStatus = 'error';
+        options?.onStatusChange?.('error');
+        const err = new Error();
+        options?.onError?.(err);
+        return;
+      }
+    }
+
     const effectiveProvider = options?.provider || ttsConfig.provider || 'vieneu';
 
-    // Case 1: VieNeu Cloud TTS is selected as Provider
+    // Case 1: VieNeu Cloud TTS is selected as Provider (Vietnamese only)
     if (effectiveProvider === 'vieneu') {
       try {
         this.activeProviderName = 'vieneu';

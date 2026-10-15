@@ -58,13 +58,14 @@ import { PlaceEditModal } from './components/PlaceEditModal';
 import { HeritageItem, UserProfile, CityLandmarkBackground } from './types';
 import { HERITAGE_DATABASE } from './data/vietnamHeritageData';
 import { storageService, applySiteLogoToDom } from './services/storageService';
+import { languageService } from './services/languageService';
 import { geolocationService, CITY_LANDMARK_PRESETS } from './services/geolocationService';
 import { getHeritageForLandmark } from './services/landmarkHeritageService';
 import { loadAIConfigFromFirebase, loadTTSConfigFromFirebase } from './services/systemConfigService';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [language, setLanguage] = useState<string>('vi');
+  const [language, setLanguage] = useState<string>(() => languageService.loadLanguage());
   const [favoritesCount, setFavoritesCount] = useState<number>(2);
   const [userProfile, setUserProfile] = useState<UserProfile>(storageService.getUserProfile());
 
@@ -76,6 +77,24 @@ export default function App() {
   const [showCityPicker, setShowCityPicker] = useState<boolean>(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [isPeekingBackground, setIsPeekingBackground] = useState<boolean>(false);
+
+  const handleLanguageChange = (newLang: string) => {
+    setLanguage(newLang);
+    languageService.setLanguage(newLang);
+  };
+
+  useEffect(() => {
+    const handleLangChanged = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.language) {
+        setLanguage(customEvent.detail.language);
+      }
+    };
+    window.addEventListener('hdv_language_changed', handleLangChanged);
+    languageService.setLanguage(language);
+    return () => window.removeEventListener('hdv_language_changed', handleLangChanged);
+  }, []);
+
 
   // Auth Modal State
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
@@ -311,7 +330,7 @@ export default function App() {
           favoritesCount={favoritesCount}
           userProfile={userProfile}
           language={language}
-          onLanguageChange={setLanguage}
+          onLanguageChange={handleLanguageChange}
           onOpenAuthModal={handleOpenAuthModal}
           onOpenOfflineManager={() => setIsOfflineModalOpen(true)}
           onLogout={handleLogout}
@@ -349,6 +368,7 @@ export default function App() {
                   onOpenAddHeritage={() => setIsGlobalHeritageModalOpen(true)}
                   onOpenAuthModal={handleOpenAuthModal}
                   userProfile={userProfile}
+                  language={language}
                 />
 
                 {/* Mobile-optimized Comprehensive Tools and App Portal */}
@@ -357,6 +377,7 @@ export default function App() {
                   onNavigate={handleNavigate}
                   favoritesCount={favoritesCount}
                   userProfile={userProfile}
+                  language={language}
                 />
 
                 {/* 🗺️ BẢN ĐỒ DU LỊCH TƯƠNG TÁC VIỆT NAM (HÌNH CHỮ S) TRỰC TIẾP TRÊN TRANG CHỦ */}
