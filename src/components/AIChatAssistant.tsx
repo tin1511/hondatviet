@@ -52,6 +52,9 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
   initialQuestion,
   language = 'vi'
 }) => {
+  const isEnglish = language === 'en';
+  const ui = (vi: string, en: string) => isEnglish ? en : vi;
+
   const [guideConfig, setGuideConfig] = useState<AITourGuideConfig>(storageService.getTourGuideConfig());
   const [allHeritages] = useState<HeritageItem[]>(storageService.getHeritages());
   const [selectedHeritage, setSelectedHeritage] = useState<HeritageItem | null>(initialContext || allHeritages[0] || null);
@@ -65,7 +68,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
       {
         id: 'welcome-msg',
         sender: 'assistant',
-        text: config.welcomeGreeting || 'Dạ em chào quý cô bác, anh chị trong đoàn! Em rất vui được làm hướng dẫn viên du lịch đồng hành cùng quý vị.',
+        text: config.welcomeGreeting || isEnglish ? 'Hello everyone! I’m delighted to be your tour guide and companion on this journey.' : 'Dạ em chào quý cô bác, anh chị trong đoàn! Em rất vui được làm hướng dẫn viên du lịch đồng hành cùng quý vị.',
         timestamp: new Date().toISOString(),
         isTourGuideMode: true
       }
@@ -155,7 +158,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
     }
 
     if (!speechService.isSupported()) {
-      setVoiceNotice('Trình duyệt hiện tại chưa hỗ trợ nhận diện giọng nói. Vui lòng sử dụng Chrome hoặc Edge.');
+      setVoiceNotice(ui('Trình duyệt hiện tại chưa hỗ trợ nhận diện giọng nói. Vui lòng sử dụng Chrome hoặc Edge.','Speech recognition is not supported by this browser. Please use Chrome or Edge.'));
       return;
     }
 
@@ -258,8 +261,8 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
         id: 'msg-err-' + Date.now(),
         sender: 'assistant',
         text: isGuide 
-          ? `Dạ em là ${guideConfig.guideName}! Đường truyền máy chủ đang bận đôi chút, quý đoàn mình thông cảm nhé. Em luôn sẵn lòng tiếp tục thuyết minh khi quý vị thử lại!` 
-          : 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi lúc này. Bạn vui lòng thử lại nhé!',
+          ? ui(`Dạ em là ${guideConfig.guideName}! Đường truyền máy chủ đang bận đôi chút, quý đoàn mình thông cảm nhé. Em luôn sẵn lòng tiếp tục thuyết minh khi quý vị thử lại!`, `I’m ${guideConfig.guideName}. The server is temporarily busy. Please try again, and I’ll be happy to continue your tour!`) 
+          : ui('Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi lúc này. Bạn vui lòng thử lại nhé!', 'Sorry, I had trouble processing your question. Please try again.'),
         timestamp: new Date().toISOString(),
         isTourGuideMode: isGuide
       };
@@ -338,7 +341,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
         {
           id: 'welcome-guide-' + Date.now(),
           sender: 'assistant',
-          text: guideConfig.welcomeGreeting || `Dạ em là ${guideConfig.guideName} - Hướng dẫn viên du lịch văn hóa! Rất hân hạnh được đồng hành cùng quý đoàn mình. Quý vị muốn em thuyết minh về ${selectedHeritage?.name || 'di sản Việt Nam'} hay tư vấn góc chụp ảnh, quán ngon cứ bảo em nhé!`,
+          text: guideConfig.welcomeGreeting || ui(`Dạ em là ${guideConfig.guideName} - Hướng dẫn viên du lịch văn hóa! Rất hân hạnh được đồng hành cùng quý đoàn mình. Quý vị muốn em thuyết minh về ${selectedHeritage?.name || 'di sản Việt Nam'} hay tư vấn góc chụp ảnh, quán ngon cứ bảo em nhé!`, `I’m ${guideConfig.guideName}, your cultural tour guide! I’m delighted to join you. Ask me about ${selectedHeritage?.name || 'Vietnamese heritage'}, photo spots, or local food!`),
           timestamp: new Date().toISOString(),
           isTourGuideMode: true
         }
@@ -348,7 +351,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
         {
           id: 'welcome-assistant-' + Date.now(),
           sender: 'assistant',
-          text: 'Xin chào! Tôi là Trợ lý Văn hóa Việt Nam. Tôi giải đáp các câu hỏi học thuật, phân biệt rạch ròi giữa chính sử và truyền thuyết dân gian.',
+          text: ui('Xin chào! Tôi là Trợ lý Văn hóa Việt Nam. Tôi giải đáp các câu hỏi học thuật, phân biệt rạch ròi giữa chính sử và truyền thuyết dân gian.', 'Hello! I’m the Vietnamese Culture Assistant. I answer research questions and clearly distinguish documented history from folk legends.'),
           timestamp: new Date().toISOString(),
           isTourGuideMode: false
         }
@@ -373,7 +376,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
             }`}
           >
             <Compass className="w-4 h-4 shrink-0" />
-            <span className="truncate">HDV Du Lịch AI</span>
+            <span className="truncate">{ui('HDV Du Lịch AI','AI Tour Guide')}</span>
             <span className="hidden md:inline text-[10px] px-1.5 py-0.2 bg-stone-950/20 rounded font-normal">
               Tour Guide
             </span>
@@ -388,7 +391,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
             }`}
           >
             <BookOpen className="w-4 h-4 shrink-0" />
-            <span className="truncate">Trợ Lý Lịch Sử</span>
+            <span className="truncate">{ui('Trợ Lý Lịch Sử','Culture Assistant')}</span>
           </button>
         </div>
 
@@ -398,11 +401,11 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
           <button
             onClick={() => setIsVoiceSettingsOpen(true)}
             className="px-2.5 sm:px-3 py-2 rounded-xl text-xs bg-stone-900 border border-amber-500/40 text-amber-300 hover:text-amber-200 hover:bg-stone-800 flex items-center gap-1.5 transition-all cursor-pointer shrink-0 min-h-[38px] shadow-sm"
-            title="Cài đặt công nghệ đọc VieNeu AI hoặc tùy chỉnh tốc độ, giọng đọc"
+            title={ui('Cài đặt công nghệ đọc VieNeu AI hoặc tùy chỉnh tốc độ, giọng đọc','Configure VieNeu AI speech, voice, and reading speed')}
           >
             <Sliders className="w-3.5 h-3.5 text-amber-400" />
             <span className="font-semibold">
-              {ttsConfig.provider === 'vieneu' ? `Giọng: VieNeu (${ttsConfig.voice || 'Ngọc Lan'})` : 'Giọng: Trình duyệt'}
+              {ttsConfig.provider === 'vieneu' ? (isEnglish ? `Voice: VieNeu (${ttsConfig.voice || 'Ngọc Lan'})` : `Giọng: VieNeu (${ttsConfig.voice || 'Ngọc Lan'})`) : ui('Giọng: Trình duyệt','Voice: Browser')}
             </span>
           </button>
 
@@ -414,19 +417,19 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                 ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-300'
                 : 'bg-stone-900 border-stone-800 text-stone-400 hover:text-stone-300'
             }`}
-            title="Tự động đọc giọng nói thuyết minh mỗi khi AI phản hồi"
+            title={ui('Tự động đọc giọng nói thuyết minh mỗi khi AI phản hồi','Automatically read each AI response aloud')}
           >
             <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Audio: {autoSpeech ? 'Bật' : 'Tắt'}</span>
+            <span>Audio: {autoSpeech ? ui('Bật','On') : ui('Tắt','Off')}</span>
           </button>
 
           <button
             onClick={handleClearChat}
             className="px-2.5 sm:px-3 py-2 rounded-xl text-xs text-stone-400 hover:text-red-400 hover:bg-stone-800 flex items-center gap-1.5 transition-colors border border-stone-800 cursor-pointer shrink-0 min-h-[38px]"
-            title="Làm mới lịch sử trò chuyện"
+            title={ui('Làm mới lịch sử trò chuyện','Clear chat history')}
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Làm mới</span>
+            <span className="hidden sm:inline">{ui('Làm mới','Clear')}</span>
           </button>
         </div>
 
@@ -437,10 +440,10 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
         <div className="mb-4 p-3 bg-amber-950/60 border border-amber-500/50 rounded-2xl text-amber-300 text-xs flex items-center justify-between gap-3 shadow-md animate-fade-in">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-            <span className="font-bold">⚡ Chế độ Hướng Dẫn Viên AI Ngoại Tuyến (Offline)</span>
+            <span className="font-bold">{ui('⚡ Chế độ Hướng Dẫn Viên AI Ngoại Tuyến (Offline)','⚡ AI Tour Guide Offline Mode')}</span>
           </div>
           <p className="text-[11px] text-amber-200 hidden sm:block">
-            Trích xuất tri thức di sản & văn hóa trực tiếp từ bộ dữ liệu lưu trữ thiết bị
+            {ui('Trích xuất tri thức di sản & văn hóa trực tiếp từ bộ dữ liệu lưu trữ thiết bị','Using heritage and cultural knowledge stored on this device')}
           </p>
         </div>
       )}
@@ -464,17 +467,17 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                   <span>HDV. {guideConfig.guideName}</span>
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
-                  Thẻ HDV Quốc Gia #{guideConfig.experienceYears} Năm Nghề
+                  {ui(`Thẻ HDV Quốc Gia #${guideConfig.experienceYears} Năm Nghề`,`National Tour Guide • ${guideConfig.experienceYears} Years’ Experience`)}
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsVoiceSettingsOpen(true)}
                   className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-semibold flex items-center gap-1 transition-all cursor-pointer"
-                  title="Bấm để tùy chỉnh giọng đọc VieNeu AI cho HDV Bảo An"
+                  title={ui('Bấm để tùy chỉnh giọng đọc VieNeu AI cho HDV Bảo An','Click to customize the AI tour guide voice')}
                 >
                   <Sparkles className="w-3 h-3 text-amber-400" />
                   <span>
-                    {ttsConfig.provider === 'vieneu' ? `VieNeu AI (${ttsConfig.voice || 'Ngọc Lan'})` : 'Giọng Trình duyệt'}
+                    {ttsConfig.provider === 'vieneu' ? `VieNeu AI (${ttsConfig.voice || 'Ngọc Lan'})` : isEnglish ? 'Browser Voice' : 'Giọng Trình duyệt'}
                   </span>
                 </button>
               </div>
@@ -495,7 +498,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
           <div className="w-full sm:w-auto bg-stone-950/80 border border-stone-800 rounded-2xl p-2.5 space-y-1">
             <label className="text-[10px] uppercase font-bold text-stone-400 block tracking-wider flex items-center gap-1">
               <MapPin className="w-3 h-3 text-amber-400" />
-              <span>Điểm Dừng Chân Hiện Tại:</span>
+              <span>{ui('Điểm Dừng Chân Hiện Tại:','Current Stop:')}</span>
             </label>
             <select
               value={selectedHeritage?.id || ''}
@@ -521,13 +524,13 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
           </div>
           <div>
             <h2 className="text-lg font-serif font-bold text-stone-100 flex items-center gap-2">
-              <span>Trợ Lý Văn Hóa Việt Nam</span>
+              <span>{ui('Trợ Lý Văn Hóa Việt Nam','Vietnamese Culture Assistant')}</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                Chính sử & Huyền tích
+                {ui('Chính sử & Huyền tích','History & Legends')}
               </span>
             </h2>
             <p className="text-xs text-stone-400">
-              Tra cứu phong tục, làng nghề, lịch sử và thẩm định độ xác thực dữ liệu văn hóa.
+              {ui('Tra cứu phong tục, làng nghề, lịch sử và thẩm định độ xác thực dữ liệu văn hóa.','Explore customs, traditional crafts, history, and the reliability of cultural information.')}
             </p>
           </div>
         </div>
@@ -598,12 +601,12 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                             ? 'bg-rose-950/80 border border-rose-500/40 text-rose-300'
                             : 'bg-stone-900/80 hover:bg-stone-700 text-stone-300 border border-stone-700'
                         }`}
-                        title="Nghe HDV Bảo An đọc bằng công nghệ VieNeu AI (Text-to-Speech)"
+                        title={ui("Nghe hướng dẫn viên đọc bằng VieNeu AI (Text-to-Speech)","Listen to the guide using VieNeu AI text-to-speech")}
                       >
                         {ttsStatusMap[msg.id] === 'playing' ? (
                           <>
                             <Square className="w-3 h-3 text-red-400 fill-current" />
-                            <span>⏹ Dừng</span>
+                            <span>{ui("⏹ Dừng","⏹ Stop")}</span>
                           </>
                         ) : ttsStatusMap[msg.id] === 'generating' || ttsStatusMap[msg.id] === 'loading' ? (
                           <>
@@ -626,17 +629,17 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                       <button
                         onClick={() => handleCopy(msg.id, msg.text)}
                         className="hover:text-amber-300 flex items-center gap-1 px-2 py-1 rounded-lg bg-stone-900/60 border border-stone-700/60 transition-colors cursor-pointer"
-                        title="Sao chép nội dung"
+                        title={ui('Sao chép nội dung','Copy message')}
                       >
                         {copiedId === msg.id ? (
                           <>
                             <Check className="w-3 h-3 text-emerald-400" />
-                            <span className="text-emerald-400">Đã chép</span>
+                            <span className="text-emerald-400">{ui('Đã chép','Copied')}</span>
                           </>
                         ) : (
                           <>
                             <Copy className="w-3 h-3 text-stone-400" />
-                            <span>Chép</span>
+                            <span>{ui('Chép','Copy')}</span>
                           </>
                         )}
                       </button>
@@ -665,8 +668,8 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
               <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
               <span className="text-xs">
                 {mode === 'tour_guide' 
-                  ? `HDV ${guideConfig.guideName} đang chuẩn bị lời thuyết minh cho đoàn...` 
-                  : 'Trợ lý AI đang tra cứu chính sử...'}
+                  ? (isEnglish ? `${guideConfig.guideName} is preparing your tour narration...` : `HDV ${guideConfig.guideName} đang chuẩn bị lời thuyết minh cho đoàn...`) 
+                  : ui('Trợ lý AI đang tra cứu chính sử...','The AI assistant is researching historical sources...')}
               </span>
             </div>
           </div>
@@ -681,7 +684,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
           <div>
             <p className="text-[11px] text-stone-400 mb-1.5 font-medium flex items-center gap-1">
               <Compass className="w-3 h-3 text-amber-400" />
-              <span>Chỉ dẫn du lịch nhanh với HDV {guideConfig.guideName}:</span>
+              <span>{ui(`Chỉ dẫn du lịch nhanh với HDV ${guideConfig.guideName}:`,`Quick tour prompts for ${guideConfig.guideName}:`)}</span>
             </p>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
               <button
@@ -689,7 +692,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/40 hover:border-amber-400 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Compass className="w-3.5 h-3.5 text-amber-400" />
-                <span>Thuyết minh điểm này</span>
+                <span>{ui('Thuyết minh điểm này','Tell me about this site')}</span>
               </button>
 
               <button
@@ -697,7 +700,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-emerald-500/40 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Quy tắc ứng xử & Trang phục</span>
+                <span>{ui('Quy tắc ứng xử & Trang phục','Etiquette & dress code')}</span>
               </button>
 
               <button
@@ -705,7 +708,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-rose-500/40 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Utensils className="w-3.5 h-3.5 text-rose-400" />
-                <span>Quán ngon & Đặc sản bản xứ</span>
+                <span>{ui('Quán ngon & Đặc sản bản xứ','Local food & specialties')}</span>
               </button>
 
               <button
@@ -713,7 +716,7 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-sky-500/40 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Camera className="w-3.5 h-3.5 text-sky-400" />
-                <span>Góc chụp ảnh đẹp & Giờ vàng</span>
+                <span>{ui('Góc chụp ảnh đẹp & Giờ vàng','Photo spots & golden hour')}</span>
               </button>
 
               <button
@@ -721,13 +724,13 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
                 className="text-xs bg-stone-900 hover:bg-stone-800 text-stone-300 px-3 py-1.5 rounded-xl border border-stone-800 hover:border-amber-500/40 whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
-                <span>Lộ trình dạo bước 1-2 giờ</span>
+                <span>{ui('Lộ trình dạo bước 1-2 giờ','1–2 hour walking route')}</span>
               </button>
             </div>
           </div>
         ) : (
           <div>
-            <p className="text-[11px] text-stone-400 mb-1.5 font-medium">Gợi ý câu hỏi nghiên cứu văn hóa:</p>
+            <p className="text-[11px] text-stone-400 mb-1.5 font-medium">{ui('Gợi ý câu hỏi nghiên cứu văn hóa:','Suggested cultural research questions:')}</p>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
               {CULTURAL_SUGGESTIONS.map((q, idx) => (
                 <button
@@ -766,17 +769,17 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
               ? 'bg-red-600 text-white animate-pulse shadow-lg shadow-red-900/50' 
               : 'bg-stone-800 text-stone-200 hover:bg-stone-700 hover:text-amber-300 border border-stone-700'
           }`}
-          title={isRecording ? 'Đang nghe... Bấm để dừng' : 'Bấm để nói bằng giọng nói tiếng Việt'}
+          title={isRecording ? ui('Đang nghe... Bấm để dừng','Listening... Click to stop') : ui('Bấm để nói bằng giọng nói tiếng Việt','Click to speak')}
         >
           {isRecording ? (
             <>
               <MicOff className="w-4 h-4 text-white" />
-              <span className="hidden xs:inline">Đang nghe...</span>
+              <span className="hidden xs:inline">{ui('Đang nghe...','Listening...')}</span>
             </>
           ) : (
             <>
               <Mic className="w-4 h-4 text-amber-400" />
-              <span className="hidden xs:inline sm:inline">Nói</span>
+              <span className="hidden xs:inline sm:inline">{ui('Nói','Speak')}</span>
             </>
           )}
         </button>
@@ -789,10 +792,10 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
           onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
           placeholder={
             isRecording 
-              ? 'Đang lắng nghe giọng nói...' 
+              ? ui('Đang lắng nghe giọng nói...','Listening to your voice...') 
               : mode === 'tour_guide'
-                ? `Hỏi HDV ${guideConfig.guideName}...`
-                : 'Hỏi về di sản Việt Nam...'
+                ? (isEnglish ? `Ask ${guideConfig.guideName}...` : `Hỏi HDV ${guideConfig.guideName}...`)
+                : ui('Hỏi về di sản Việt Nam...','Ask about Vietnamese heritage...')
           }
           className="flex-1 bg-transparent text-base sm:text-sm text-stone-100 placeholder-stone-400 focus:outline-none px-2 py-1 min-w-0"
         />
@@ -802,9 +805,9 @@ export const AIChatAssistant: React.FC<AIChatAssistantProps> = ({
           onClick={() => handleSendMessage()}
           disabled={!input.trim() || loading}
           className="px-3.5 sm:px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow cursor-pointer flex items-center gap-1.5 text-xs shrink-0 min-h-[44px] active:scale-95"
-          title="Gửi câu hỏi"
+          title={ui('Gửi câu hỏi','Send message')}
         >
-          <span>Gửi</span>
+          <span>{ui('Gửi','Send')}</span>
           <Send className="w-3.5 h-3.5" />
         </button>
       </div>
