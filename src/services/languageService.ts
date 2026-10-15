@@ -2312,33 +2312,73 @@ class LanguageService {
   /**
    * Set, persist application language, and trigger full-page DOM translation
    */
-  public setLanguage(code: string): void {
-    if (!SUPPORTED_LANGUAGES.some(l => l.code === code)) {
-      console.warn(`Unsupported language code: ${code}`);
-      return;
-    }
-    this.currentLanguage = code;
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
-      } catch (err) {
-        console.warn('Could not save language to localStorage:', err);
-      }
-    }
+public setLanguage(code: string): void {
+  const supported = SUPPORTED_LANGUAGES.some(
+    (language) => language.code === code
+  );
 
-    // Trigger full page web translation bridge
-    this.applyFullPageTranslation(code);
-
-    // Broadcast event across React components
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('hdv_language_changed', { 
-        detail: { 
-          language: code,
-          info: this.getLanguageInfo(code)
-        } 
-      }));
-    }
+  if (!supported) {
+    console.warn(`Unsupported language code: ${code}`);
+    return;
   }
+
+  this.currentLanguage = code;
+
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
+  } catch (error) {
+    console.warn("Could not save language:", error);
+  }
+
+  const langInfo = this.getLanguageInfo(code);
+
+  document.documentElement.lang = langInfo.bcp47;
+
+  // Đồng bộ lựa chọn với Google Translate.
+  const targetCode = langInfo.googleTranslateCode || code;
+
+  try {
+    const combo = document.querySelector(
+      "select.goog-te-combo"
+    ) as HTMLSelectElement | null;
+
+    if (combo && combo.value !== targetCode) {
+      combo.value = targetCode;
+      combo.dispatchEvent(
+        new Event("change", { bubbles: true })
+      );
+    } else if (!combo) {
+      // Widget chưa sẵn sàng: thử lại khi nó được tải.
+      window.setTimeout(() => {
+        const retry = document.querySelector(
+          "select.goog-te-combo"
+        ) as HTMLSelectElement | null;
+
+        if (retry && retry.value !== targetCode) {
+          retry.value = targetCode;
+          retry.dispatchEvent(
+            new Event("change", { bubbles: true })
+          );
+        }
+      }, 1000);
+    }
+  } catch (error) {
+    console.warn("Google Translate error:", error);
+  }
+
+  // Giữ đồng bộ trạng thái ngôn ngữ giữa các component React.
+  window.dispatchEvent(
+    new CustomEvent("hdv_language_changed", {
+      detail: {
+        language: code,
+        info: langInfo,
+      },
+    })
+  );
+
+  // Dịch các cụm từ đã có trong từ điển của dự án.
+  this.translateDOM(code);
+}
 
   /**
    * Translates the entire webpage content (including database entries, paragraphs, and external text)
