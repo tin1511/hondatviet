@@ -18,8 +18,8 @@ export interface LanguageInfo {
   googleTranslateCode: string;
 }
 
-export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
-  {
+export const SUPPORTED_LANGUAGES = [
+{
     code: 'vi',
     name: 'Tiếng Việt',
     nativeName: 'Tiếng Việt',
@@ -31,7 +31,7 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
     aiVoiceAccent: 'Giọng Bắc/Trung/Nam truyền cảm bản xứ',
     googleTranslateCode: 'vi'
   },
-  {
+{
     code: 'en',
     name: 'Tiếng Anh',
     nativeName: 'English',
@@ -42,54 +42,6 @@ export const SUPPORTED_LANGUAGES: LanguageInfo[] = [
     description: 'Global international language with full AI tour guide and storytelling support.',
     aiVoiceAccent: 'Natural International English',
     googleTranslateCode: 'en'
-  },
-  {
-    code: 'fr',
-    name: 'Français',
-    nativeName: 'Français',
-    flag: '🇫🇷',
-    bcp47: 'fr-FR',
-    greeting: 'Bienvenue au Vietnam !',
-    sampleGreeting: 'Bonjour et bienvenue ! Je suis votre guide du patrimoine par IA, prêt à vous faire découvrir la culture et l’histoire du Vietnam.',
-    description: 'Interface et accompagnement de découverte en français.',
-    aiVoiceAccent: 'Français standard',
-    googleTranslateCode: 'fr'
-  },
-  {
-    code: 'ja',
-    name: '日本語',
-    nativeName: '日本語',
-    flag: '🇯🇵',
-    bcp47: 'ja-JP',
-    greeting: 'ベトナムへようこそ！',
-    sampleGreeting: 'こんにちは。AI文化遺産ガイドです。ベトナムの文化と歴史をご案内します。',
-    description: '日本語で文化遺産を探索できます。',
-    aiVoiceAccent: '日本語',
-    googleTranslateCode: 'ja'
-  },
-  {
-    code: 'ko',
-    name: '한국어',
-    nativeName: '한국어',
-    flag: '🇰🇷',
-    bcp47: 'ko-KR',
-    greeting: '베트남에 오신 것을 환영합니다!',
-    sampleGreeting: '안녕하세요. 베트남의 문화와 역사를 안내하는 AI 문화유산 가이드입니다.',
-    description: '한국어 문화유산 탐색 지원.',
-    aiVoiceAccent: '한국어',
-    googleTranslateCode: 'ko'
-  },
-  {
-    code: 'zh',
-    name: '简体中文',
-    nativeName: '简体中文',
-    flag: '🇨🇳',
-    bcp47: 'zh-CN',
-    greeting: '欢迎来到越南！',
-    sampleGreeting: '您好！我是您的人工智能文化遗产导游，将带您探索越南的文化与历史。',
-    description: '支持简体中文文化遗产探索。',
-    aiVoiceAccent: '普通话',
-    googleTranslateCode: 'zh-CN'
   }
 ];
 
