@@ -5,6 +5,7 @@ import {
 } from 'firebase/auth';
 import {
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -92,7 +93,7 @@ export async function saveUserToFirestore(user: UserProfile): Promise<boolean> {
     delete safeProfile.password;
     delete safeProfile.passwordHash;
     delete safeProfile.credentials;
-    await setDoc(doc(db, USERS_COLLECTION, currentUser.uid), safeProfile, { merge: true });
+    await setDoc(doc(db, USERS_COLLECTION, currentUser.uid), { ...safeProfile, password: deleteField(), passwordHash: deleteField(), credential: deleteField(), credentials: deleteField() }, { merge: true });
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${USERS_COLLECTION}/${user.id}`);
