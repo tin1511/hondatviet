@@ -164,11 +164,19 @@ export default function App() {
     };
   }, []);
 
-  // Scroll to top and ensure full DOM translation whenever activeTab or language changes
+  // Reset scroll only when navigating to another section, not when switching language.
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (document.body) document.body.scrollTop = 0;
     if (document.documentElement) document.documentElement.scrollTop = 0;
+  }, [activeTab]);
+
+  // Keep document language and browser-tab branding synchronized with the selected language.
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = language === 'en'
+      ? 'HỒN ĐẤT VIỆT | Discover Vietnam Heritage & Culture'
+      : 'HỒN ĐẤT VIỆT | Khám phá Di sản & Văn hóa Việt Nam';
     languageService.translateDOM(language);
   }, [activeTab, language]);
 
