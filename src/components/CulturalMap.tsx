@@ -37,7 +37,7 @@ import { HeritageItem, UserProfile, UserLocation } from '../types';
 import { storageService } from '../services/storageService';
 import { handleImageError, getSafeHeritageImageUrl } from '../utils/imageUtils';
 import { geolocationService, calculateDistanceKm } from '../services/geolocationService';
-import { VIETNAM_63_ADMINISTRATIVE_UNITS, getAdministrativeUnitByName } from '../data/administrativeUnits';
+import { VIETNAM_34_ADMINISTRATIVE_UNITS, getCurrentAdministrativeUnitByName } from '../data/administrativeUnits';
 import { languageService } from '../services/languageService';
 
 interface CulturalMapProps {
@@ -49,12 +49,72 @@ interface CulturalMapProps {
 }
 
 interface ProvinceProperties {
-  Name: string;
-  vietnameseName: string;
+  Name?: string;
+  vietnameseName?: string;
+  name?: string;
+  NAME_1?: string;
+  Ten_Tinh?: string;
+  TenTinh?: string;
+  ten_tinh?: string;
   isIsland?: boolean;
   Note?: string | null;
   center?: [number, number];
+  [key: string]: unknown;
 }
+
+const CURRENT_BOUNDARIES_URL = 'https://raw.githubusercontent.com/nguyenduy1133/Free-GIS-Data/main/Vietnam%20Administrative%20Divisions%20(Post-2025)%20-%20%C4%90%C6%A1n%20v%E1%BB%8B%20h%C3%A0nh%20ch%C3%ADnh%20Vi%E1%BB%87t%20Nam%20(T%E1%BB%AB%202025)/Provinces.geojson';
+
+const CURRENT_PROVINCE_ALIASES: Record<string, string[]> = {
+  'Tuyên Quang': ['Tuyên Quang', 'Hà Giang'],
+  'Lào Cai': ['Lào Cai', 'Yên Bái'],
+  'Thái Nguyên': ['Thái Nguyên', 'Bắc Kạn'],
+  'Phú Thọ': ['Phú Thọ', 'Vĩnh Phúc', 'Hòa Bình'],
+  'Bắc Ninh': ['Bắc Ninh', 'Bắc Giang'],
+  'Hải Phòng': ['Hải Phòng', 'Hải Dương'],
+  'Hưng Yên': ['Hưng Yên', 'Thái Bình'],
+  'Ninh Bình': ['Ninh Bình', 'Hà Nam', 'Nam Định'],
+  'Quảng Trị': ['Quảng Trị', 'Quảng Bình'],
+  'Huế': ['Huế', 'Thừa Thiên Huế'],
+  'Đà Nẵng': ['Đà Nẵng', 'Quảng Nam'],
+  'Quảng Ngãi': ['Quảng Ngãi', 'Kon Tum'],
+  'Gia Lai': ['Gia Lai', 'Bình Định'],
+  'Khánh Hòa': ['Khánh Hòa', 'Ninh Thuận'],
+  'Đắk Lắk': ['Đắk Lắk', 'Phú Yên'],
+  'Lâm Đồng': ['Lâm Đồng', 'Đắk Nông', 'Bình Thuận'],
+  'Đồng Nai': ['Đồng Nai', 'Bình Phước'],
+  'Hồ Chí Minh': ['Hồ Chí Minh', 'TP. Hồ Chí Minh', 'Thành phố Hồ Chí Minh', 'Bình Dương', 'Bà Rịa - Vũng Tàu'],
+  'Tây Ninh': ['Tây Ninh', 'Long An'],
+  'Đồng Tháp': ['Đồng Tháp', 'Tiền Giang'],
+  'Vĩnh Long': ['Vĩnh Long', 'Bến Tre', 'Trà Vinh'],
+  'An Giang': ['An Giang', 'Kiên Giang'],
+  'Cần Thơ': ['Cần Thơ', 'Hậu Giang', 'Sóc Trăng'],
+  'Cà Mau': ['Cà Mau', 'Bạc Liêu']
+};
+
+const normalizeProvinceName = (value: unknown): string =>
+  String(value ?? '')
+    .trim()
+    .replace(/^(tỉnh|thành phố|province|city)\s+/i, '')
+    .toLocaleLowerCase('vi');
+
+const getGeoJSONProvinceName = (properties: ProvinceProperties): string => {
+  const raw = properties.vietnameseName || properties.Name || properties.Ten_Tinh ||
+    properties.TenTinh || properties.ten_tinh || properties.name || properties.NAME_1;
+  const name = String(raw || '').trim();
+  return name.replace(/^(tỉnh|thành phố)\s+/i, '').trim();
+};
+
+const provinceNameMatches = (heritageProvince: string, selectedProvince: string): boolean => {
+  const selected = Object.keys(CURRENT_PROVINCE_ALIASES).find(name =>
+    normalizeProvinceName(name) === normalizeProvinceName(selectedProvince)
+  ) || selectedProvince;
+  const aliases = CURRENT_PROVINCE_ALIASES[selected] || [selected];
+  const heritage = normalizeProvinceName(heritageProvince);
+  return aliases.some(alias => {
+    const normalizedAlias = normalizeProvinceName(alias);
+    return heritage === normalizedAlias || heritage.includes(normalizedAlias) || normalizedAlias.includes(heritage);
+  });
+};
 
 // Map Base Modes: Vietnam Exclusive (default) vs Global satellite/streets
 export type MapBaseMode = 'vietnam_only' | 'satellite' | 'topo' | 'streets';
@@ -240,15 +300,16 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
     const fetchGeoJSON = async () => {
       try {
         setLoadingGeo(true);
-        const res = await fetch('/data/vietnam-provinces.geojson');
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) {
-            setGeoData(data);
-          }
+        // Use the post-2025 boundary dataset (34 provincial-level units), not the legacy 63-unit file.
+        const res = await fetch(CURRENT_BOUNDARIES_URL);
+        if (!res.ok) throw new Error(`Không tải được dữ liệu ranh giới mới (HTTP ${res.status})`);
+        const data = await res.json();
+        if (!Array.isArray(data.features) || data.features.length !== 34) {
+          throw new Error('Dữ liệu bản đồ không đúng phiên bản 34 tỉnh/thành');
         }
+        if (isMounted) setGeoData(data);
       } catch (err) {
-        console.warn('GeoJSON boundary load error:', err);
+        console.warn('Current 34-province GeoJSON load error:', err);
       } finally {
         if (isMounted) {
           setLoadingGeo(false);
@@ -490,14 +551,14 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
     if (!geoData) return;
 
     const getProvinceStyle = (feature: any) => {
-      const displayName = feature.properties.vietnameseName || feature.properties.Name;
+      const displayName = getGeoJSONProvinceName(feature.properties as ProvinceProperties);
       const isSelected = selectedProvinceName && (
         displayName.toLowerCase() === selectedProvinceName.toLowerCase() ||
-        feature.properties.Name?.toLowerCase() === selectedProvinceName.toLowerCase()
+        normalizeProvinceName(getGeoJSONProvinceName(feature.properties as ProvinceProperties)) === normalizeProvinceName(selectedProvinceName)
       );
       const isHovered = hoveredProvinceName && (
         displayName.toLowerCase() === hoveredProvinceName.toLowerCase() ||
-        feature.properties.Name?.toLowerCase() === hoveredProvinceName.toLowerCase()
+        normalizeProvinceName(getGeoJSONProvinceName(feature.properties as ProvinceProperties)) === normalizeProvinceName(hoveredProvinceName)
       );
 
       if (isSelected) {
@@ -535,12 +596,9 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
       style: getProvinceStyle,
       onEachFeature: (feature, layer) => {
         const props = feature.properties as ProvinceProperties;
-        const displayName = props.vietnameseName || props.Name;
+        const displayName = getGeoJSONProvinceName(props);
 
-        const heritagesInProv = heritages.filter(h => 
-          h.province.toLowerCase().includes(displayName.toLowerCase()) ||
-          displayName.toLowerCase().includes(h.province.toLowerCase())
-        );
+        const heritagesInProv = heritages.filter(h => provinceNameMatches(h.province, displayName));
 
         const tooltipContent = `
           <div class="px-3 py-2 bg-stone-950/95 text-stone-100 border border-amber-500/70 rounded-xl shadow-2xl text-xs font-serif">
@@ -599,7 +657,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
     if (!showProvinceLabels) return;
 
-    VIETNAM_63_ADMINISTRATIVE_UNITS.forEach((unit) => {
+    VIETNAM_34_ADMINISTRATIVE_UNITS.forEach((unit) => {
       const displayName = unit.shortName;
       const center = unit.center;
 
@@ -607,8 +665,8 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
       const isSelected = selectedProvinceName && (
         displayName.toLowerCase() === selectedProvinceName.toLowerCase() ||
-        unit.name.toLowerCase().includes(selectedProvinceName.toLowerCase()) ||
-        selectedProvinceName.toLowerCase().includes(displayName.toLowerCase())
+        normalizeProvinceName(unit.name) === normalizeProvinceName(selectedProvinceName) ||
+        normalizeProvinceName(selectedProvinceName).includes(normalizeProvinceName(displayName))
       );
 
       const labelIcon = L.divIcon({
@@ -659,10 +717,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
     // Filter by selected province
     if (selectedProvinceName) {
-      itemsToPin = itemsToPin.filter(h => 
-        h.province.toLowerCase().includes(selectedProvinceName.toLowerCase()) ||
-        selectedProvinceName.toLowerCase().includes(h.province.toLowerCase())
-      );
+      itemsToPin = itemsToPin.filter(h => provinceNameMatches(h.province, selectedProvinceName));
     }
 
     // Filter by search query
@@ -733,7 +788,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
         if (matched?.properties && (matched.properties as any).center) {
           map.setView((matched.properties as any).center, 9, { animate: true });
         } else {
-          const adminUnit = getAdministrativeUnitByName(name);
+          const adminUnit = getCurrentAdministrativeUnitByName(name);
           if (adminUnit?.center) {
             map.setView(adminUnit.center, 9, { animate: true });
           }
@@ -804,8 +859,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
     if (selectedCategory !== 'all' && item.category !== selectedCategory) return false;
     if (selectedRegion !== 'all' && item.region !== selectedRegion) return false;
     if (selectedProvinceName) {
-      const matchProv = item.province.toLowerCase().includes(selectedProvinceName.toLowerCase()) ||
-        selectedProvinceName.toLowerCase().includes(item.province.toLowerCase());
+      const matchProv = provinceNameMatches(item.province, selectedProvinceName);
       if (!matchProv) return false;
     }
     if (searchQuery.trim()) {
