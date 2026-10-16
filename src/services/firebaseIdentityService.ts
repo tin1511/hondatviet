@@ -7,7 +7,7 @@ import {
   updateProfile,
   type User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { deleteField, doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import type { UserProfile } from '../types';
 
@@ -92,7 +92,7 @@ async function saveProfileForSignedInUser(user: FirebaseUser, proposed?: Partial
     delete persistedProfile.roleLabel;
   }
 
-  await setDoc(ref, persistedProfile, { merge: true });
+  await setDoc(ref, { ...persistedProfile, password: deleteField(), passwordHash: deleteField(), credential: deleteField(), credentials: deleteField() }, { merge: true });
   localStorage.removeItem(LEGACY_ACCOUNTS_KEY);
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(safeProfile));
   return safeProfile;
