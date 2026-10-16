@@ -30,8 +30,7 @@ import { cleanVietnameseText } from '../utils/textUtils';
 import { signOutFirebaseIdentity } from './firebaseIdentityService';
 import {
   saveUserToFirestore,
-  getAccountsFromFirestore,
-  
+  getAccountsFromFirestore
 } from './firebaseAuthService';
 
 const FAVORITES_KEY = 'heritageai_favorites';
