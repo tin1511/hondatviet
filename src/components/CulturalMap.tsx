@@ -54,8 +54,15 @@ interface ProvinceProperties {
   name?: string;
   NAME_1?: string;
   Ten_Tinh?: string;
+  TEN_TINH?: string;
   TenTinh?: string;
+  tenTinh?: string;
   ten_tinh?: string;
+  province?: string;
+  Province?: string;
+  province_name?: string;
+  PROV_NAME?: string;
+  name_vi?: string;
   isIsland?: boolean;
   Note?: string | null;
   center?: [number, number];
@@ -98,8 +105,9 @@ const normalizeProvinceName = (value: unknown): string =>
     .toLocaleLowerCase('vi');
 
 const getGeoJSONProvinceName = (properties: ProvinceProperties): string => {
-  const raw = properties.vietnameseName || properties.Name || properties.Ten_Tinh ||
-    properties.TenTinh || properties.ten_tinh || properties.name || properties.NAME_1;
+  const raw = properties.vietnameseName || properties.Name || properties.Ten_Tinh || properties.TEN_TINH ||
+    properties.TenTinh || properties.tenTinh || properties.ten_tinh || properties.province_name ||
+    properties.PROV_NAME || properties.name_vi || properties.province || properties.Province || properties.name || properties.NAME_1;
   const name = String(raw || '').trim();
   return name.replace(/^(tỉnh|thành phố)\s+/i, '').trim();
 };
