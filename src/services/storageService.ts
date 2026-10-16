@@ -27,6 +27,7 @@ import {
   TRADITIONAL_ARTS
 } from '../data/vietnamHeritageData';
 import { cleanVietnameseText } from '../utils/textUtils';
+import { signOutFirebaseIdentity } from './firebaseIdentityService';
 import {
   saveUserToFirestore,
   getAccountsFromFirestore,
@@ -311,82 +312,44 @@ export const storageService = {
   // ==========================================
   getAccounts(): UserProfile[] {
     try {
-      const data = localStorage.getItem(ACCOUNTS_KEY);
-      if (data) {
-        return JSON.parse(data);
-      }
-      const initialAccounts: UserProfile[] = [];
-      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(initialAccounts));
-      return initialAccounts;
+      const raw = localStorage.getItem(ACCOUNTS_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      const safeAccounts = parsed.map((account: UserProfile) => {
+        const safe = { ...account };
+        delete safe.password;
+        return safe;
+      });
+      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(safeAccounts));
+      return safeAccounts;
     } catch {
       return [];
     }
   },
 
   async fetchAccounts(): Promise<UserProfile[]> {
-    const local = this.getAccounts();
     try {
-      // 1. Fetch directly from Firebase Firestore Cloud Database
-      const firestoreAccounts = await getAccountsFromFirestore();
-      if (firestoreAccounts && firestoreAccounts.length > 0) {
-        const map = new Map<string, UserProfile>();
-        local.forEach(a => map.set(a.id, a));
-        firestoreAccounts.forEach((fsAcc: UserProfile) => {
-          const localAcc = map.get(fsAcc.id) || Array.from(map.values()).find(l => l.email && fsAcc.email && l.email.toLowerCase() === fsAcc.email.toLowerCase());
-          if (localAcc) {
-            const mergedAcc: UserProfile = {
-              ...localAcc,
-              ...fsAcc,
-              password: fsAcc.password || localAcc.password
-            };
-            map.set(mergedAcc.id, mergedAcc);
-          } else {
-            map.set(fsAcc.id, fsAcc);
-          }
-        });
-        const merged = Array.from(map.values());
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
-        return merged;
-      }
-
-      // 2. Secondary fallback to server API
-      const res = await fetch('/api/accounts');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.accounts)) {
-          const map = new Map<string, UserProfile>();
-          local.forEach(a => map.set(a.id, a));
-          data.accounts.forEach((serverAcc: UserProfile) => {
-            const localAcc = map.get(serverAcc.id) || Array.from(map.values()).find(l => l.email && serverAcc.email && l.email.toLowerCase() === serverAcc.email.toLowerCase());
-            if (localAcc) {
-              const mergedAcc: UserProfile = {
-                ...localAcc,
-                ...serverAcc,
-                password: serverAcc.password || localAcc.password
-              };
-              map.set(mergedAcc.id, mergedAcc);
-            } else {
-              map.set(serverAcc.id, serverAcc);
-            }
-          });
-          const merged = Array.from(map.values());
-          localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(merged));
-          return merged;
-        }
-      }
-    } catch (err) {
-      console.warn('Unable to sync accounts from Firebase/server:', err);
+      const profiles = await getAccountsFromFirestore();
+      return profiles.map(profile => {
+        const safe = { ...profile };
+        delete safe.password;
+        return safe;
+      });
+    } catch (error) {
+      console.warn('Unable to load authorized Firebase profiles:', error);
+      return [];
     }
-    return local;
   },
 
   getCurrentUser(): UserProfile {
     try {
-      const current = localStorage.getItem(CURRENT_USER_KEY);
-      if (current) {
-        return JSON.parse(current);
-      }
-      return GUEST_USER;
+      const raw = localStorage.getItem(CURRENT_USER_KEY);
+      if (!raw) return GUEST_USER;
+      const current = JSON.parse(raw) as UserProfile;
+      delete current.password;
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(current));
+      return current;
     } catch {
       return GUEST_USER;
     }
@@ -667,6 +630,7 @@ export const storageService = {
 
   logout(): UserProfile {
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(GUEST_USER));
+    void signOutFirebaseIdentity().catch(() => undefined);
     return GUEST_USER;
   },
 
