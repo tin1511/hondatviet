@@ -77,11 +77,22 @@ function toProfile(user: FirebaseUser, saved?: Partial<UserProfile> | null): Use
 async function saveProfileForSignedInUser(user: FirebaseUser, proposed?: Partial<UserProfile>): Promise<UserProfile> {
   const ref = doc(db, USERS_COLLECTION, user.uid);
   const snapshot = await getDoc(ref);
-  const profile = toProfile(user, { ...(snapshot.exists() ? snapshot.data() as Partial<UserProfile> : {}), ...proposed });
+  const storedProfile = snapshot.exists() ? snapshot.data() as Partial<UserProfile> : {};
+  const profile = toProfile(user, { ...storedProfile, ...proposed });
 
   // Never persist passwords or client-supplied identity fields.
-  const { password: _ignoredPassword, ...safeProfile } = profile;
-  await setDoc(ref, safeProfile, { merge: true });
+  const safeProfile = { ...profile };
+  delete safeProfile.password;
+
+  // A legacy profile may have a forged "admin" role. Keep that legacy role out
+  // of the client profile and avoid attempting a forbidden self-promotion/demotion write.
+  const persistedProfile: Record<string, unknown> = { ...safeProfile };
+  if (!isTrustedAdmin(user) && storedProfile.role === 'admin') {
+    delete persistedProfile.role;
+    delete persistedProfile.roleLabel;
+  }
+
+  await setDoc(ref, persistedProfile, { merge: true });
   localStorage.removeItem(LEGACY_ACCOUNTS_KEY);
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(safeProfile));
   return safeProfile;
