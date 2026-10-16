@@ -37,7 +37,7 @@ service cloud.firestore {
       allow update: if isAuthenticated()
         && (isTrustedAdmin() || request.auth.uid == userId)
         && request.resource.data.id == userId
-        && request.resource.data.email == request.auth.token.email
+        && (isTrustedAdmin() || request.resource.data.email == request.auth.token.email)
         && hasNoPasswordField(request.resource.data)
         && (
           isTrustedAdmin()
