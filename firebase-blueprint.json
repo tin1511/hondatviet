@@ -2,13 +2,12 @@
   "entities": {
     "User": {
       "title": "User",
-      "description": "User profile and account with cultural preferences, credentials, and achievements",
+      "description": "User profile with cultural preferences and achievements; authentication credentials are managed by Firebase Authentication",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
-        "password": { "type": "string" },
         "avatarUrl": { "type": "string" },
         "city": { "type": "string" },
         "role": { "type": "string", "enum": ["user", "student", "researcher", "admin"] },
@@ -130,7 +129,11 @@
   "firestore": {
     "/system_config/{configId}": {
       "schema": "SystemConfig",
-      "description": "Global system configuration documents for AI and TTS APIs"
+      "description": "Legacy secret-bearing configuration documents; admin-only access"
+    },
+    "/system_config_public/{configId}": {
+      "schema": "SystemConfig",
+      "description": "Public AI/TTS settings without API keys or private credentials"
     },
     "/users/{userId}": {
       "schema": "User",
