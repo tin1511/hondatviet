@@ -389,24 +389,35 @@ app.get('/api/health', (req: Request, res: Response) => {
 // ==========================================
 app.post('/api/ai/recognize-heritage', async (req: Request, res: Response) => {
   try {
-    const { imageBase64, mimeType, optionalPrompt } = req.body;
+    const { imageBase64, mimeType, optionalPrompt, language = 'vi' } = req.body;
     if (!imageBase64) {
       return res.status(400).json({ error: 'Hình ảnh không được để trống (imageBase64 required)' });
     }
 
     const ai = getGemini();
-    const systemPrompt = `Bạn là Senior Vietnam Cultural Heritage & History Expert của nền tảng Hồn Đất Việt.
-Nhiệm vụ: Nhận diện chính xác hình ảnh người dùng tải lên, có thể là:
-- Di tích, Đình, Chùa, Đền, Thành cổ, Cung điện, Lăng tẩm, Nhà cổ
-- Làng nghề thủ công, Hiện vật, Trang phục truyền thống, Nhạc cụ dân tộc, Kiến trúc, Nghệ thuật dân gian, Món ăn truyền thống Việt Nam.
+    const languageNames: Record<string, string> = {
+      vi: 'Vietnamese (Tiếng Việt)',
+      en: 'English',
+      fr: 'French (Français)',
+      ja: 'Japanese (日本語)',
+      ko: 'Korean (한국어)',
+      zh: 'Chinese (中文)',
+    };
+    const targetLanguage = languageNames[language] || language;
+    const systemPrompt = `You are the Senior Vietnam Cultural Heritage & History Expert for HỒN ĐẤT VIỆT.
+Task: Accurately identify the user's uploaded image. It may show:
+- Historic sites, communal houses, pagodas, temples, citadels, palaces, tombs, or ancient houses
+- Craft villages, artifacts, traditional costumes, ethnic musical instruments, architecture, folk art, or traditional Vietnamese food.
 
-QUY TẮC BẮT BUỘC VỀ DỮ LIỆU:
-1. Tuyệt đối không được tự bịa lịch sử.
-2. Phải phân biệt rõ:
-   - "verified": [THÔNG TIN ĐÃ XÁC MINH] theo chính sử, khảo cổ học hoặc UNESCO
-   - "folk_legend": [TRUYỀN THUYẾT / DÂN GIAN] theo huyền tích dân gian
-   - "unverified": [THÔNG TIN CHƯA ĐỦ DỮ LIỆU / GIẢ THUYẾT]
-3. Cung cấp câu chuyện và thông tin sâu sắc, xúc động và chính xác.`;
+MANDATORY DATA RULES:
+1. Never invent historical facts, dates, origins, or provenance.
+2. Clearly distinguish:
+   - "verified": information supported by reliable historical records, archaeology, or UNESCO
+   - "folk_legend": folklore or traditional legends
+   - "unverified": uncertain claims or information lacking sufficient evidence
+3. Provide useful, culturally sensitive, accurate information.
+4. OUTPUT LANGUAGE (MANDATORY): The user's currently selected website language is "${targetLanguage}" (code: "${language}"). Write EVERY human-readable JSON value in this language, including the object's name when appropriate, categoryLabel, province, period, dynasty, history, culturalSignificance, description, and all other descriptive fields. Keep JSON property keys and machine-readable enum values (such as category, region, and verification status) in the exact schema format. Preserve authentic Vietnamese proper names; where useful, explain them in the selected language.
+5. If you cannot reliably identify an object, say so in the selected language and clearly indicate uncertainty. Do not claim a precise date or identity without evidence.` ;
 
     const cleanBase64 = imageBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
@@ -420,8 +431,8 @@ QUY TẮC BẮT BUỘC VỀ DỮ LIỆU:
             },
           },
           {
-            text: `Hãy phân tích và nhận diện di sản / hiện vật / món ăn / làng nghề trong ảnh này. ${optionalPrompt || ''}
-Trả về đúng định dạng JSON đã định nghĩa.`,
+            text: `Analyze and identify the heritage site, artifact, traditional costume, musical instrument, craft village, or other cultural object in this image. ${optionalPrompt || ''}
+The selected output language is ${languageNames[language] || language}. Write all human-readable values in that language. Keep JSON keys and schema enum values unchanged. Return only the defined JSON format.`,
           },
         ],
       },
