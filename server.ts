@@ -1203,54 +1203,6 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const ACCOUNTS_FILE = path.join(DATA_DIR, 'server_accounts.json');
-const ACTIVITIES_FILE = path.join(DATA_DIR, 'server_activities.json');
-
-const DEFAULT_ADMIN_ACCOUNT_SERVER = {
-  id: 'user-admin',
-  displayName: 'Quản trị viên Hệ thống',
-  email: 'admin@heritageai.vn',
-  password: 'AINHS2026',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-  city: 'Hà Nội / Huế',
-  role: 'admin',
-  roleLabel: 'Quản trị viên & Kiểm định Di sản',
-  interests: ['Quản lý di sản', 'Kiểm duyệt tri thức', 'Bảo tồn văn hóa'],
-  favoritesCount: 0,
-  contributionsCount: 0,
-  quizzesCompleted: 0,
-  storiesCreated: 0,
-  recognitionsCount: 0,
-  itinerariesCount: 0,
-  points: 2026,
-  level: 'Quản Trị Viên Hệ Thống',
-  badges: [],
-  createdAt: '2026-01-01T00:00:00Z',
-  lastLoginAt: new Date().toISOString(),
-  isLoggedIn: false
-};
-
-function readServerAccounts(): any[] {
-  try {
-    if (fs.existsSync(ACCOUNTS_FILE)) {
-      const content = fs.readFileSync(ACCOUNTS_FILE, 'utf-8');
-      const list = JSON.parse(content);
-      if (Array.isArray(list) && list.length > 0) return list;
-    }
-  } catch (err) {
-    console.warn('Error reading server_accounts.json:', err);
-  }
-  return [DEFAULT_ADMIN_ACCOUNT_SERVER];
-}
-
-function writeServerAccounts(accounts: any[]) {
-  try {
-    fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('Error writing server_accounts.json:', err);
-  }
-}
-
 function readServerActivities(): any[] {
   try {
     if (fs.existsSync(ACTIVITIES_FILE)) {
@@ -1272,7 +1224,6 @@ function writeServerActivities(activities: any[]) {
   }
 }
 
-let serverAccounts = readServerAccounts();
 let serverActivities = readServerActivities();
 
 // Legacy account endpoints exposed plaintext credentials and bypassed Firebase Authentication.
