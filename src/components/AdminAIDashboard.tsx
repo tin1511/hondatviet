@@ -40,6 +40,17 @@ import {
   loadEmailJSConfigFromFirebase
 } from '../services/systemConfigService';
 import { storageService } from '../services/storageService';
+import { auth } from '../services/firebase';
+
+async function getAdminAuthHeaders(): Promise<Record<string, string>> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Firebase Authentication session is missing.');
+  const token = await user.getIdToken();
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  };
+}
 
 export const AdminAIDashboard: React.FC = () => {
   // Current user email
@@ -214,7 +225,7 @@ export const AdminAIDashboard: React.FC = () => {
     try {
       const res = await fetch('/api/ai/test-connection', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAdminAuthHeaders(),
         body: JSON.stringify({
           provider: aiConfig.provider,
           model: aiConfig.model,
@@ -271,7 +282,7 @@ export const AdminAIDashboard: React.FC = () => {
     try {
       const res = await fetch('/api/tts/test-connection', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAdminAuthHeaders(),
         body: JSON.stringify({
           provider: ttsConfig.provider,
           endpoint: ttsConfig.endpoint,
@@ -324,7 +335,7 @@ export const AdminAIDashboard: React.FC = () => {
     try {
       const res = await fetch('/api/emailjs/test-connection', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getAdminAuthHeaders(),
         body: JSON.stringify({
           serviceId: emailJsConfig.serviceId,
           templateId: emailJsConfig.templateId,
