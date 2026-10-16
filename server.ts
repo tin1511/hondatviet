@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
@@ -19,6 +19,58 @@ const cliPort = portFlagIndex !== -1 && args[portFlagIndex + 1] ? parseInt(args[
 const PORT = cliPort || (process.env.PORT ? parseInt(process.env.PORT, 10) : 3000);
 
 app.use(express.json({ limit: '25mb' }));
+
+const TRUSTED_ADMIN_EMAIL = 'btin2499@gmail.com';
+
+function getFirebaseWebApiKey(): string {
+  if (process.env.FIREBASE_WEB_API_KEY) return process.env.FIREBASE_WEB_API_KEY;
+  if (process.env.VITE_FIREBASE_API_KEY) return process.env.VITE_FIREBASE_API_KEY;
+  try {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    return typeof config.apiKey === 'string' ? config.apiKey : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Verify the Firebase ID token with Identity Toolkit before permitting
+ * privileged configuration/test endpoints. No client-supplied role is trusted.
+ */
+async function requireTrustedAdmin(req: Request, res: Response, next: NextFunction) {
+  const token = (req.header('authorization') || '').match(/^Bearer\\s+(.+)$/i)?.[1];
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Cần đăng nhập bằng Firebase Authentication.' });
+  }
+
+  const apiKey = getFirebaseWebApiKey();
+  if (!apiKey) {
+    return res.status(503).json({ success: false, error: 'Thiếu FIREBASE_WEB_API_KEY để xác minh phiên đăng nhập.' });
+  }
+
+  try {
+    const verification = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: token })
+    });
+    if (!verification.ok) {
+      return res.status(401).json({ success: false, error: 'Phiên đăng nhập Firebase không hợp lệ hoặc đã hết hạn.' });
+    }
+
+    const payload = await verification.json() as { users?: Array<{ email?: string; emailVerified?: boolean }> };
+    const user = payload.users?.[0];
+    if (!user || !user.emailVerified || (user.email || '').toLowerCase() !== TRUSTED_ADMIN_EMAIL) {
+      return res.status(403).json({ success: false, error: 'Chỉ quản trị viên đã xác minh email mới được dùng chức năng này.' });
+    }
+
+    return next();
+  } catch (error) {
+    console.error('[Admin API] Firebase token verification failed:', error);
+    return res.status(503).json({ success: false, error: 'Không thể xác minh phiên Firebase lúc này.' });
+  }
+}
 
 // Centralized AI Model Configuration
 export const AI_MODEL = "gemini-flash-latest";
@@ -716,7 +768,7 @@ Bối cảnh di sản người dùng đang theo dõi: ${currentHeritageContext ?
 /**
  * Endpoint for testing provider API connection ("Test API")
  */
-app.post('/api/ai/test-connection', async (req: Request, res: Response) => {
+app.post('/api/ai/test-connection', requireTrustedAdmin, async (req: Request, res: Response) => {
   const { provider = 'gemini', model = 'gemini-flash-latest', apiKey, baseUrl } = req.body;
   const startTime = Date.now();
 
@@ -766,7 +818,7 @@ app.post('/api/ai/test-connection', async (req: Request, res: Response) => {
 /**
  * Endpoint for testing custom prompt model response ("Test Model")
  */
-app.post('/api/ai/test-model', async (req: Request, res: Response) => {
+app.post('/api/ai/test-model', requireTrustedAdmin, async (req: Request, res: Response) => {
   const { provider = 'gemini', model = 'gemini-flash-latest', prompt, apiKey, baseUrl, temperature, maxTokens } = req.body;
   const startTime = Date.now();
 
@@ -1770,7 +1822,7 @@ app.get('/api/ai/tour-guide-config', (req: Request, res: Response) => {
   return res.json({ success: true, config: serverTourGuideConfig });
 });
 
-app.post('/api/ai/tour-guide-config', (req: Request, res: Response) => {
+app.post('/api/ai/tour-guide-config', requireTrustedAdmin, (req: Request, res: Response) => {
   try {
     const { config } = req.body;
     if (config && config.guideName) {
@@ -2083,7 +2135,7 @@ app.post('/api/tts/vieneu', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
+app.post('/api/tts/test-connection', requireTrustedAdmin, async (req: Request, res: Response) => {
   try {
     const { provider = 'vieneu', endpoint, apiKey, model = 'vieneu-v4' } = req.body;
 
@@ -2118,7 +2170,7 @@ app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
 });
 
 // Test EmailJS API Configuration
-app.post('/api/emailjs/test-connection', async (req: Request, res: Response) => {
+app.post('/api/emailjs/test-connection', requireTrustedAdmin, async (req: Request, res: Response) => {
   const startTime = Date.now();
   try {
     const { serviceId, templateId, publicKey, privateKey, testEmail } = req.body;
