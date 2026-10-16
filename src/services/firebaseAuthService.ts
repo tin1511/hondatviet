@@ -1,15 +1,17 @@
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  query, 
-  where 
+import {
+  sendPasswordResetEmail,
+  updatePassword,
+  type User as FirebaseUser
+} from 'firebase/auth';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc
 } from 'firebase/firestore';
-import { db, auth } from './firebase';
-import { UserProfile } from '../types';
+import { auth, db } from './firebase';
+import type { UserProfile } from '../types';
 
 export enum OperationType {
   CREATE = 'create',
@@ -24,20 +26,23 @@ export interface FirestoreErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-  };
+  authInfo: { userId?: string | null; email?: string | null };
+}
+
+const USERS_COLLECTION = 'users';
+const TRUSTED_ADMIN_EMAIL = 'btin2499@gmail.com';
+
+function isTrustedAdmin(user: FirebaseUser | null): boolean {
+  return !!user
+    && user.emailVerified
+    && (user.email || '').toLowerCase() === TRUSTED_ADMIN_EMAIL;
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errMsg = error instanceof Error ? error.message : String(error);
   const errInfo: FirestoreErrorInfo = {
     error: errMsg,
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-    },
+    authInfo: { userId: auth.currentUser?.uid, email: auth.currentUser?.email },
     operationType,
     path
   };
@@ -49,25 +54,22 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   return errInfo;
 }
 
-const USERS_COLLECTION = 'users';
-
 /**
- * Lấy tất cả danh sách tài khoản trực tiếp từ Firebase Firestore
+ * Returns only the current user's profile. Full account listing is restricted
+ * to the verified, allow-listed administrator.
  */
 export async function getAccountsFromFirestore(): Promise<UserProfile[]> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return [];
+
   try {
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('firestore_timeout')), 3500)
-    );
-    const querySnapshot = await Promise.race([
-      getDocs(collection(db, USERS_COLLECTION)),
-      timeoutPromise
-    ]);
-    const accounts: UserProfile[] = [];
-    querySnapshot.forEach((docSnap) => {
-      accounts.push(docSnap.data() as UserProfile);
-    });
-    return accounts;
+    if (isTrustedAdmin(currentUser)) {
+      const snapshot = await getDocs(collection(db, USERS_COLLECTION));
+      return snapshot.docs.map(item => item.data() as UserProfile);
+    }
+
+    const snapshot = await getDoc(doc(db, USERS_COLLECTION, currentUser.uid));
+    return snapshot.exists() ? [snapshot.data() as UserProfile] : [];
   } catch (error) {
     handleFirestoreError(error, OperationType.GET, USERS_COLLECTION);
     return [];
@@ -75,17 +77,22 @@ export async function getAccountsFromFirestore(): Promise<UserProfile[]> {
 }
 
 /**
- * Lưu hoặc cập nhật tài khoản người dùng trực tiếp trên Firebase Firestore
+ * Writes a profile only to the signed-in user's UID document.
+ * Credentials are deliberately excluded from Firestore.
  */
 export async function saveUserToFirestore(user: UserProfile): Promise<boolean> {
+  const currentUser = auth.currentUser;
+  if (!currentUser || currentUser.uid !== user.id) {
+    handleFirestoreError(new Error('profile_owner_mismatch'), OperationType.WRITE, `${USERS_COLLECTION}/${user.id}`);
+    return false;
+  }
+
   try {
-    const userRef = doc(db, USERS_COLLECTION, user.id);
-    const payload = {
-      ...user,
-      updatedAt: new Date().toISOString()
-    };
-    await setDoc(userRef, payload, { merge: true });
-    console.log(`✅ Đã lưu tài khoản [${user.displayName} - ${user.email}] lên Firebase Firestore!`);
+    const safeProfile: Record<string, unknown> = { ...user, updatedAt: new Date().toISOString() };
+    delete safeProfile.password;
+    delete safeProfile.passwordHash;
+    delete safeProfile.credentials;
+    await setDoc(doc(db, USERS_COLLECTION, currentUser.uid), safeProfile, { merge: true });
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${USERS_COLLECTION}/${user.id}`);
@@ -94,83 +101,45 @@ export async function saveUserToFirestore(user: UserProfile): Promise<boolean> {
 }
 
 /**
- * Đăng nhập bằng cách đối chiếu thông tin tài khoản trên Firebase Firestore
+ * Legacy password-based Firestore login is intentionally disabled.
+ * Call signInWithEmailAndPassword from firebase/auth instead.
  */
 export async function loginWithFirestore(
-  identifier: string, 
-  password?: string
+  _identifier: string,
+  _password?: string
 ): Promise<{ success: boolean; user?: UserProfile; error?: string }> {
-  try {
-    const cleanId = identifier.trim().toLowerCase();
-    const cleanPass = password ? password.trim() : '';
-
-    const allAccounts = await getAccountsFromFirestore();
-    
-    // Tìm tài khoản theo email, displayName hoặc ID
-    const account = allAccounts.find(a => 
-      (a.email && a.email.toLowerCase() === cleanId) ||
-      (a.displayName && a.displayName.toLowerCase() === cleanId) ||
-      (a.id && a.id.toLowerCase() === cleanId)
-    );
-
-    if (!account) {
-      return { 
-        success: false, 
-        error: 'Tài khoản không tồn tại trên Firebase. Vui lòng kiểm tra lại hoặc Đăng Ký Mới.' 
-      };
-    }
-
-    if (cleanPass && account.password && account.password !== cleanPass) {
-      return { success: false, error: 'Mật khẩu không chính xác. Vui lòng thử lại.' };
-    }
-
-    // Cập nhật trạng thái đăng nhập gần nhất trên Firestore
-    const updatedAccount: UserProfile = {
-      ...account,
-      lastLoginAt: new Date().toISOString(),
-      isLoggedIn: true
-    };
-
-    await saveUserToFirestore(updatedAccount);
-
-    return { success: true, user: updatedAccount };
-  } catch (error) {
-    handleFirestoreError(error, OperationType.GET, USERS_COLLECTION);
-    return { success: false, error: 'Lỗi kết nối tới Firebase Firestore.' };
-  }
+  return {
+    success: false,
+    error: 'Đăng nhập qua Firestore đã bị vô hiệu hóa. Hãy sử dụng Firebase Authentication.'
+  };
 }
 
 /**
- * Cập nhật mật khẩu tài khoản trên Firebase Firestore
+ * Updates the password in Firebase Authentication only; never writes it to Firestore.
  */
 export async function updatePasswordInFirestore(userId: string, newPassword: string): Promise<boolean> {
+  const currentUser = auth.currentUser;
+  if (!currentUser || currentUser.uid !== userId || newPassword.length < 6) return false;
+
   try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
-    await updateDoc(userRef, {
-      password: newPassword.trim(),
-      updatedAt: new Date().toISOString()
-    });
+    await updatePassword(currentUser, newPassword);
     return true;
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `${USERS_COLLECTION}/${userId}`);
+    handleFirestoreError(error, OperationType.UPDATE, 'Firebase Authentication password');
     return false;
   }
 }
 
 /**
- * Khôi phục mật khẩu tài khoản trên Firebase Firestore theo Email
+ * A password reset must be completed through the secure email action link.
+ * The supplied new password is intentionally ignored.
  */
-export async function resetPasswordInFirestoreByEmail(email: string, newPassword: string): Promise<boolean> {
+export async function resetPasswordInFirestoreByEmail(email: string, _newPassword: string): Promise<boolean> {
   try {
-    const cleanEmail = email.trim().toLowerCase();
-    const accounts = await getAccountsFromFirestore();
-    const acc = accounts.find(a => a.email.toLowerCase() === cleanEmail);
-    if (acc) {
-      return await updatePasswordInFirestore(acc.id, newPassword);
-    }
-    return false;
+    await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+    return true;
   } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, USERS_COLLECTION);
+    handleFirestoreError(error, OperationType.UPDATE, 'Firebase Authentication password reset');
     return false;
   }
 }
