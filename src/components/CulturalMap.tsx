@@ -113,14 +113,14 @@ const getGeoJSONProvinceName = (properties: ProvinceProperties): string => {
 };
 
 const provinceNameMatches = (heritageProvince: string, selectedProvince: string): boolean => {
-  const selected = Object.keys(CURRENT_PROVINCE_ALIASES).find(name =>
-    normalizeProvinceName(name) === normalizeProvinceName(selectedProvince)
-  ) || selectedProvince;
-  const aliases = CURRENT_PROVINCE_ALIASES[selected] || [selected];
   const heritage = normalizeProvinceName(heritageProvince);
+  const requested = normalizeProvinceName(selectedProvince);
+  if (!heritage || !requested) return false;
+  const selected = Object.keys(CURRENT_PROVINCE_ALIASES).find(name => normalizeProvinceName(name) === requested) || selectedProvince;
+  const aliases = CURRENT_PROVINCE_ALIASES[selected] || [selected];
   return aliases.some(alias => {
     const normalizedAlias = normalizeProvinceName(alias);
-    return heritage === normalizedAlias || heritage.includes(normalizedAlias) || normalizedAlias.includes(heritage);
+    return normalizedAlias !== '' && (heritage === normalizedAlias || heritage.includes(normalizedAlias) || normalizedAlias.includes(heritage));
   });
 };
 
@@ -248,6 +248,8 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
   const [heritages, setHeritages] = useState<HeritageItem[]>(() => storageService.getHeritages());
   const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(null);
   const [loadingGeo, setLoadingGeo] = useState<boolean>(true);
+  const [geoLoadError, setGeoLoadError] = useState<string | null>(null);
+  const [geoRetry, setGeoRetry] = useState<number>(0);
 
   // BASE MODE: 'vietnam_only' (Pure Vietnam vector map, no foreign territory) vs external tiles
   const [baseMode, setBaseMode] = useState<MapBaseMode>('vietnam_only');
@@ -302,47 +304,48 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
     return () => clearTimeout(timer);
   }, [sidePosition]);
 
-  // 1. Fetch GeoJSON for Vietnam province boundaries
+  // 1. Load current 34-unit boundaries with timeout, validation, and retry support.
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
     const fetchGeoJSON = async () => {
+      setLoadingGeo(true);
+      setGeoLoadError(null);
       try {
-        setLoadingGeo(true);
-        // Use the post-2025 boundary dataset (34 provincial-level units), not the legacy 63-unit file.
-        const res = await fetch(CURRENT_BOUNDARIES_URL);
-        if (!res.ok) throw new Error(`Không tải được dữ liệu ranh giới mới (HTTP ${res.status})`);
-        const data = await res.json();
-        if (!Array.isArray(data.features) || data.features.length !== 34) {
-          throw new Error('Dữ liệu bản đồ không đúng phiên bản 34 tỉnh/thành');
+        const res = await fetch(CURRENT_BOUNDARIES_URL, { signal: controller.signal, headers: { Accept: 'application/geo+json, application/json' } });
+        if (!res.ok) throw new Error('Không tải được ranh giới hành chính (HTTP ' + res.status + ').');
+        const data = await res.json() as GeoJSON.FeatureCollection;
+        if (data?.type !== 'FeatureCollection' || !Array.isArray(data.features) || data.features.length !== 34) {
+          throw new Error('Dữ liệu ranh giới không đúng phiên bản 34 tỉnh/thành.');
         }
-        if (isMounted) setGeoData(data);
+        const namedFeatures = data.features.filter(feature => feature?.type === 'Feature' && feature.geometry && getGeoJSONProvinceName((feature.properties || {}) as ProvinceProperties).length > 0);
+        if (namedFeatures.length !== 34) throw new Error('Dữ liệu bản đồ thiếu tên hoặc hình học của một số tỉnh/thành.');
+        if (isMounted) { setGeoData(data); setGeoLoadError(null); }
       } catch (err) {
+        if (!isMounted) return;
+        const message = err instanceof Error && err.name === 'AbortError'
+          ? 'Tải bản đồ quá thời gian chờ. Hãy kiểm tra kết nối rồi thử lại.'
+          : err instanceof Error ? err.message : 'Không thể tải dữ liệu bản đồ.';
+        setGeoLoadError(message);
         console.warn('Current 34-province GeoJSON load error:', err);
       } finally {
-        if (isMounted) {
-          setLoadingGeo(false);
-        }
+        window.clearTimeout(timeoutId);
+        if (isMounted) setLoadingGeo(false);
       }
     };
-
     fetchGeoJSON();
-
-    const handleDataUpdated = () => {
-      setHeritages(storageService.getHeritages());
-    };
+    const handleDataUpdated = () => setHeritages(storageService.getHeritages());
     window.addEventListener('heritage-data-updated', handleDataUpdated);
-
     const saved = geolocationService.getLastKnownLocation();
-    if (saved) {
-      setUserLocation(saved);
-    }
-
+    if (saved) setUserLocation(saved);
     return () => {
       isMounted = false;
+      controller.abort();
+      window.clearTimeout(timeoutId);
       window.removeEventListener('heritage-data-updated', handleDataUpdated);
     };
-  }, []);
-
+  }, [geoRetry]);
   // 2. Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
@@ -1422,12 +1425,29 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
               }}
             />
 
+            {/* Boundary data status and recovery control */}
+            {(loadingGeo || geoLoadError) && (
+              <div className="absolute inset-x-3 top-3 z-30 flex justify-center pointer-events-none">
+                <div className="pointer-events-auto max-w-md rounded-2xl border border-amber-400/40 bg-stone-950/95 px-4 py-3 text-center text-xs text-stone-100 shadow-2xl backdrop-blur">
+                  {loadingGeo ? (
+                    <div className="flex items-center justify-center gap-2"><span className="h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" /><span>Đang tải ranh giới hành chính 34 tỉnh/thành…</span></div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="font-semibold text-amber-200">Chưa tải được dữ liệu ranh giới bản đồ</p>
+                      <p className="text-stone-300">{geoLoadError}</p>
+                      <button type="button" onClick={() => setGeoRetry(value => value + 1)} className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-1.5 font-bold text-stone-950 hover:bg-amber-300"><RotateCcw className="h-3.5 w-3.5" />Thử tải lại</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Map Legend Overlay */}
             <div className="absolute bottom-4 left-4 z-20 bg-stone-950/90 backdrop-blur border border-stone-800 p-2.5 rounded-2xl text-[11px] space-y-1.5 shadow-xl hidden sm:block pointer-events-none">
               <div className="font-bold text-amber-300 font-serif">Chú giải bản đồ Việt Nam:</div>
               <div className="flex items-center gap-2 text-stone-300">
                 <span className="w-3 h-0.5 bg-[#f59e0b]" />
-                <span>Đường ranh giới 63 tỉnh thành</span>
+                <span>Ranh giới 34 tỉnh/thành (từ 2025)</span>
               </div>
               <div className="flex items-center gap-2 text-stone-300">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
