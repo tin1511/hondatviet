@@ -219,7 +219,6 @@ const DEFAULT_ADMIN_ACCOUNT: UserProfile = {
   id: 'user-admin',
   displayName: 'Quản trị viên Hệ thống',
   email: 'admin@heritageai.vn',
-  password: 'AINHS2026',
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
   city: 'Hà Nội / Huế',
   role: 'admin',
@@ -316,11 +315,11 @@ export const storageService = {
       if (data) {
         return JSON.parse(data);
       }
-      const initialAccounts = [DEFAULT_ADMIN_ACCOUNT];
+      const initialAccounts: UserProfile[] = [];
       localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(initialAccounts));
       return initialAccounts;
     } catch {
-      return [DEFAULT_ADMIN_ACCOUNT];
+      return [];
     }
   },
 
@@ -643,7 +642,7 @@ export const storageService = {
     localStorage.removeItem(PENDING_REG_KEY);
   },
 
-  register(params: {
+  register(_params: {
     displayName: string;
     email: string;
     password?: string;
@@ -653,179 +652,17 @@ export const storageService = {
     interests?: string[];
     emailVerified?: boolean;
   }): { success: boolean; user?: UserProfile; error?: string } {
-    const cleanEmail = params.email.trim().toLowerCase();
-    if (!cleanEmail) {
-      return { success: false, error: 'Vui lòng nhập địa chỉ email.' };
-    }
-    if (!params.displayName.trim()) {
-      return { success: false, error: 'Vui lòng nhập họ và tên của bạn.' };
-    }
-
-    if (cleanEmail === 'admin' || cleanEmail === 'admin@heritageai.vn') {
-      return { success: false, error: 'Tên đăng nhập admin đã được dành riêng cho quản trị viên.' };
-    }
-
-    const accounts = this.getAccounts();
-    const existing = accounts.find(a => a.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      return { success: false, error: 'Email này đã được đăng ký. Vui lòng chuyển sang tab Đăng nhập.' };
-    }
-
-    const role = params.role || 'user';
-    const roleLabels: Record<string, string> = {
-      user: 'Người yêu Văn hóa & Du khách',
-      student: 'Học sinh / Sinh viên',
-      researcher: 'Nhà nghiên cứu / Giảng viên',
-      admin: 'Quản trị viên Hệ thống'
+    return {
+      success: false,
+      error: 'Đăng ký bằng kho tài khoản cũ đã bị vô hiệu hóa. Hãy sử dụng Firebase Authentication.'
     };
-
-    const newUser: UserProfile = {
-      id: 'user-' + Date.now(),
-      displayName: cleanVietnameseText(params.displayName),
-      email: cleanEmail,
-      password: params.password || '123456',
-      avatarUrl: params.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
-      city: params.city ? cleanVietnameseText(params.city) : 'Việt Nam',
-      role,
-      roleLabel: roleLabels[role] || 'Người yêu Văn hóa',
-      interests: params.interests || ['Di sản Việt Nam', 'Ẩm thực truyền thống'],
-      favoritesCount: 0,
-      contributionsCount: 0,
-      quizzesCompleted: 0,
-      storiesCreated: 0,
-      recognitionsCount: 0,
-      itinerariesCount: 0,
-      points: 100, // starting bonus
-      level: 'Thành Viên Mới (Cấp 1)',
-      badges: [INITIAL_BADGES[0]],
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-      isLoggedIn: true,
-      emailVerified: params.emailVerified !== undefined ? params.emailVerified : true
-    };
-
-    accounts.push(newUser);
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
-
-    // Direct Cloud Save to Firebase Firestore
-    saveUserToFirestore(newUser).catch(err => console.warn('Firebase Firestore register save warning:', err));
-
-    // Secondary sync to server database
-    fetch('/api/accounts/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newUser)
-    }).then(r => r.json()).then(data => {
-      if (data.success && data.user) {
-        const accs = this.getAccounts();
-        const idx = accs.findIndex(a => a.id === data.user.id || a.email.toLowerCase() === data.user.email.toLowerCase());
-        if (idx >= 0) {
-          accs[idx] = { ...accs[idx], ...data.user };
-        } else {
-          accs.push(data.user);
-        }
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accs));
-      }
-    }).catch(err => console.warn('Server registration sync warning:', err));
-
-    this.logActivity({
-      userId: newUser.id,
-      actionType: 'auth',
-      title: 'Tạo tài khoản mới',
-      description: `Đăng ký thành công tài khoản ${newUser.displayName} (${newUser.email})`
-    });
-
-    return { success: true, user: newUser };
   },
 
-  login(identifier: string, password?: string): { success: boolean; user?: UserProfile; error?: string } {
-    const cleanId = identifier.trim().toLowerCase();
-    const cleanPass = password?.trim() || '';
-
-    if (!cleanId) {
-      return { success: false, error: 'Vui lòng nhập tên đăng nhập hoặc email.' };
-    }
-
-    // 1. Check Admin Credentials: username 'admin' or email 'admin@heritageai.vn' with password 'AINHS2026'
-    if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
-      if (cleanPass === 'AINHS2026') {
-        const adminAccount: UserProfile = {
-          ...DEFAULT_ADMIN_ACCOUNT,
-          isLoggedIn: true,
-          lastLoginAt: new Date().toISOString()
-        };
-
-        const accounts = this.getAccounts();
-        const otherAccounts = accounts.filter(a => a.id !== 'user-admin' && a.email.toLowerCase() !== 'admin@heritageai.vn');
-        otherAccounts.push(adminAccount);
-        localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(otherAccounts));
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(adminAccount));
-
-        // Sync admin login to Firestore and server
-        saveUserToFirestore(adminAccount).catch(err => console.warn('Firestore admin login save warning:', err));
-        fetch('/api/accounts/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identifier: cleanId, password: cleanPass })
-        }).catch(err => console.warn('Server admin login sync warning:', err));
-
-        this.logActivity({
-          userId: adminAccount.id,
-          actionType: 'auth',
-          title: 'Đăng nhập Quản trị viên',
-          description: 'Quản trị viên đã đăng nhập thành công vào Hệ thống Hồn Đất Việt'
-        });
-
-        return { success: true, user: adminAccount };
-      } else {
-        return { success: false, error: 'Mật khẩu quản trị viên không chính xác.' };
-      }
-    }
-
-    // 2. Regular user authentication
-    const accounts = this.getAccounts();
-    const account = accounts.find(a => 
-      a.email.toLowerCase() === cleanId || 
-      a.displayName.toLowerCase() === cleanId ||
-      a.id.toLowerCase() === cleanId
-    );
-
-    if (!account) {
-      return { 
-        success: false, 
-        error: 'Tài khoản không tồn tại. Vui lòng kiểm tra lại hoặc chuyển sang tab "Đăng Ký Mới".' 
-      };
-    }
-
-    if (cleanPass && account.password && account.password !== cleanPass) {
-      return { success: false, error: 'Mật khẩu không chính xác. Vui lòng thử lại.' };
-    }
-
-    account.lastLoginAt = new Date().toISOString();
-    account.isLoggedIn = true;
-
-    // Update in accounts list
-    const updatedAccounts = accounts.map(a => a.id === account.id ? account : a);
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(updatedAccounts));
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(account));
-
-    // Sync login to Firestore and server
-    saveUserToFirestore(account).catch(err => console.warn('Firestore login sync warning:', err));
-    fetch('/api/accounts/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier: cleanId, password: cleanPass })
-    }).catch(err => console.warn('Server login sync warning:', err));
-
-    this.logActivity({
-      userId: account.id,
-      actionType: 'auth',
-      title: 'Đăng nhập tài khoản',
-      description: `Chào mừng ${account.displayName} quay trở lại Hồn Đất Việt`
-    });
-
-    return { success: true, user: account };
+  login(_identifier: string, _password?: string): { success: boolean; user?: UserProfile; error?: string } {
+    return {
+      success: false,
+      error: 'Đăng nhập bằng kho tài khoản cũ đã bị vô hiệu hóa. Hãy sử dụng Firebase Authentication.'
+    };
   },
 
   logout(): UserProfile {
@@ -833,128 +670,18 @@ export const storageService = {
     return GUEST_USER;
   },
 
-  changePassword(oldPassword: string, newPassword: string): { success: boolean; error?: string } {
-    const current = this.getCurrentUser();
-    if (!current.isLoggedIn) {
-      return { success: false, error: 'Bạn cần đăng nhập để đổi mật khẩu.' };
-    }
-
-    const cleanOld = oldPassword.trim();
-    const cleanNew = newPassword.trim();
-
-    if (!cleanOld || !cleanNew) {
-      return { success: false, error: 'Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới.' };
-    }
-
-    if (cleanNew.length < 6) {
-      return { success: false, error: 'Mật khẩu mới phải có tối thiểu 6 ký tự.' };
-    }
-
-    if (cleanOld === cleanNew) {
-      return { success: false, error: 'Mật khẩu mới không được trùng với mật khẩu hiện tại.' };
-    }
-
-    // Verify old password
-    const accounts = this.getAccounts();
-    const account = accounts.find(a => a.id === current.id || a.email.toLowerCase() === current.email.toLowerCase());
-
-    if (current.role === 'admin' || current.id === 'user-admin' || current.email.toLowerCase() === 'admin@heritageai.vn') {
-      const currentAdminPass = account?.password || 'AINHS2026';
-      if (cleanOld !== currentAdminPass && cleanOld !== 'AINHS2026') {
-        return { success: false, error: 'Mật khẩu cũ của quản trị viên không chính xác.' };
-      }
-    } else {
-      if (account?.password && account.password !== cleanOld) {
-        return { success: false, error: 'Mật khẩu hiện tại không chính xác. Vui lòng kiểm tra lại.' };
-      }
-    }
-
-    const updatedUser: UserProfile = {
-      ...current,
-      password: cleanNew
+  changePassword(_oldPassword: string, _newPassword: string): { success: boolean; error?: string } {
+    return {
+      success: false,
+      error: 'Để bảo vệ tài khoản, hãy sử dụng chức năng gửi liên kết đặt lại mật khẩu qua Firebase Authentication.'
     };
-
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-
-    const updatedAccounts = accounts.map(a => 
-      (a.id === updatedUser.id || a.email.toLowerCase() === updatedUser.email.toLowerCase())
-        ? { ...a, password: cleanNew }
-        : a
-    );
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(updatedAccounts));
-
-    // Sync to Firestore and server
-    updatePasswordInFirestore(updatedUser.id, cleanNew).catch(err => console.warn('Firestore password change warning:', err));
-    fetch('/api/accounts/change-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: updatedUser.id,
-        oldPassword: cleanOld,
-        newPassword: cleanNew
-      })
-    }).catch(err => console.warn('Server password change sync warning:', err));
-
-    this.logActivity({
-      userId: updatedUser.id,
-      actionType: 'auth',
-      title: 'Đổi mật khẩu tài khoản',
-      description: `Tài khoản ${updatedUser.displayName} đã đổi mật khẩu bảo mật thành công.`
-    });
-
-    return { success: true };
   },
 
-  resetPasswordByEmail(email: string, newPassword: string): { success: boolean; error?: string } {
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanNew = newPassword.trim();
-
-    if (!cleanEmail) {
-      return { success: false, error: 'Vui lòng nhập địa chỉ email của bạn.' };
-    }
-    if (!cleanNew || cleanNew.length < 6) {
-      return { success: false, error: 'Mật khẩu mới phải có độ dài tối thiểu 6 ký tự.' };
-    }
-
-    const accounts = this.getAccounts();
-    const accountIndex = accounts.findIndex(a => 
-      a.email.toLowerCase() === cleanEmail || 
-      (cleanEmail === 'admin' && (a.id === 'user-admin' || a.role === 'admin'))
-    );
-
-    if (accountIndex < 0) {
-      return { success: false, error: 'Không tìm thấy tài khoản tương ứng với email này trong hệ thống.' };
-    }
-
-    accounts[accountIndex].password = cleanNew;
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-
-    // If currently logged in as this user, update state too
-    const current = this.getCurrentUser();
-    if (current.id === accounts[accountIndex].id) {
-      current.password = cleanNew;
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(current));
-    }
-
-    // Sync to Firestore and server
-    resetPasswordInFirestoreByEmail(cleanEmail, cleanNew).catch(err => console.warn('Firestore reset password warning:', err));
-    fetch('/api/accounts/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: cleanEmail,
-        newPassword: cleanNew
-      })
-    }).catch(err => console.warn('Server reset password sync warning:', err));
-
-    this.logActivity({
-      userId: accounts[accountIndex].id,
-      actionType: 'auth',
-      title: 'Đặt lại mật khẩu',
-      description: `Mật khẩu của tài khoản ${accounts[accountIndex].displayName} (${cleanEmail}) đã được đặt lại.`
-    });
-
-    return { success: true };
+  resetPasswordByEmail(_email: string, _newPassword: string): { success: boolean; error?: string } {
+    return {
+      success: false,
+      error: 'Hãy yêu cầu liên kết đặt lại mật khẩu qua Firebase Authentication.'
+    };
   },
 
   updateUserProfile(profileUpdate: Partial<UserProfile>): UserProfile {
