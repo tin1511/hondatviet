@@ -127,7 +127,7 @@ async function executeUnifiedAIRequest(params: {
 
   const tryCall = async (p: string, m: string): Promise<string> => {
     if (p === 'openrouter') {
-      const apiKey = params.apiKey || process.env.OPENROUTER_API_KEY || process.env.VITE_AI_API_KEY || '';
+      const apiKey = process.env.OPENROUTER_API_KEY || params.apiKey || '';
       const messages = [
         ...(params.systemPrompt ? [{ role: 'system', content: params.systemPrompt }] : []),
         ...(params.conversationHistory || []).map((item) => ({
@@ -159,7 +159,7 @@ async function executeUnifiedAIRequest(params: {
       }
       return data?.choices?.[0]?.message?.content || '';
     } else if (p === 'huggingface') {
-      const apiKey = params.apiKey || process.env.HUGGINGFACE_API_KEY || '';
+      const apiKey = process.env.HUGGINGFACE_API_KEY || params.apiKey || '';
       const promptText = `${params.systemPrompt || ''}\n\nUser: ${params.message}\nAssistant:`;
       const hfModel = m || 'mistralai/Mistral-7B-Instruct-v0.2';
 
@@ -193,7 +193,7 @@ async function executeUnifiedAIRequest(params: {
       return typeof data === 'string' ? data : JSON.stringify(data);
     } else if (p === 'custom') {
       const baseUrl = params.baseUrl || process.env.VITE_AI_BASE_URL || 'https://api.openai.com/v1';
-      const apiKey = params.apiKey || process.env.VITE_AI_API_KEY || '';
+      const apiKey = process.env.CUSTOM_AI_API_KEY || process.env.OPENAI_API_KEY || params.apiKey || '';
       const messages = [
         ...(params.systemPrompt ? [{ role: 'system', content: params.systemPrompt }] : []),
         ...(params.conversationHistory || []).map((item) => ({
@@ -2264,7 +2264,7 @@ app.post('/api/tts/vieneu', async (req: Request, res: Response) => {
     }
 
     const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
-    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+    const targetApiKey = process.env.VIENEU_API_KEY || apiKey || '';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
