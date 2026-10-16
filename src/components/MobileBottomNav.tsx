@@ -128,9 +128,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       {/* Mobile Sticky Bottom Nav Bar (visible on md and below) */}
       <nav 
         id="mobile-bottom-nav" 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-stone-950/95 backdrop-blur-xl border-t border-amber-900/40 shadow-2xl pb-safe transition-transform duration-200"
+        className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-stone-950/95 backdrop-blur-xl border-t border-amber-900/40 shadow-2xl pb-[env(safe-area-inset-bottom)] transition-transform duration-200"
       >
-        <div className="flex items-center justify-around h-16 px-1 max-w-lg mx-auto">
+        <div className="grid grid-cols-6 items-stretch min-h-16 px-0.5 max-w-lg mx-auto">
           {mainBottomTabs.map((item) => {
             const Icon = item.icon;
             const isActive = currentTab === item.id && !isMoreMenuOpen;
@@ -139,7 +139,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 key={item.id}
                 id={`mobile-tab-${item.id}`}
                 onClick={() => handleSelectTab(item.id)}
-                className={`relative flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all duration-150 active:scale-90 ${
+                className={`relative min-w-0 flex flex-col items-center justify-center py-2 px-0.5 rounded-xl transition-colors duration-150 active:bg-stone-800/70 ${
                   isActive 
                     ? 'text-amber-400 font-bold' 
                     : 'text-stone-400 hover:text-stone-200 font-medium'
@@ -156,7 +156,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] mt-1 tracking-tight truncate max-w-[62px]">
+                <span className="text-[10px] leading-tight mt-1 tracking-tight text-center whitespace-normal break-words w-full px-0.5">
                   {item.label}
                 </span>
               </button>
@@ -167,7 +167,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <button
             id="mobile-tab-more"
             onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-            className={`relative flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all duration-150 active:scale-90 ${
+            className={`relative min-w-0 flex flex-col items-center justify-center py-2 px-0.5 rounded-xl transition-colors duration-150 active:bg-stone-800/70 ${
               isMoreMenuOpen || ['food', 'itinerary', 'crafts', 'learning', 'favorites', 'profile', 'community', 'admin'].includes(currentTab)
                 ? 'text-amber-400 font-bold' 
                 : 'text-stone-400 hover:text-stone-200 font-medium'
@@ -188,7 +188,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 </span>
               )}
             </div>
-            <span className="text-[10px] mt-1 tracking-tight">
+            <span className="text-[10px] leading-tight mt-1 tracking-tight text-center whitespace-normal break-words w-full px-0.5">
               {isMoreMenuOpen ? languageService.t('lang.close', language, 'Đóng') : languageService.t('mobile.more', language, 'Thêm')}
             </span>
           </button>
@@ -202,7 +202,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           onClick={() => setIsMoreMenuOpen(false)}
         >
           <div 
-            className="bg-stone-900 border-t border-amber-500/40 rounded-t-3xl max-h-[85vh] overflow-y-auto pb-safe shadow-2xl p-4 sm:p-6 space-y-4 animate-slideUp"
+            className="bg-stone-900 border-t border-amber-500/40 rounded-t-3xl max-h-[calc(100dvh-4.5rem)] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-2xl p-4 sm:p-6 space-y-4 animate-slideUp"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header / Grab Bar */}
@@ -323,7 +323,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-1">
-                        <h4 className={`text-sm font-semibold truncate ${isItemActive ? 'text-amber-300' : 'text-stone-100'}`}>
+                        <h4 className={`text-sm font-semibold whitespace-normal break-words ${isItemActive ? 'text-amber-300' : 'text-stone-100'}`}>
                           {item.label}
                         </h4>
                         {item.badge && (
@@ -332,7 +332,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-stone-400 truncate mt-0.5">
+                      <p className="text-[11px] leading-snug text-stone-400 whitespace-normal break-words mt-0.5">
                         {item.description}
                       </p>
                     </div>
