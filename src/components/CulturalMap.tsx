@@ -669,8 +669,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       itemsToPin = itemsToPin.filter(h => 
-        h.name.toLowerCase().includes(q) || 
-        h.province.toLowerCase().includes(q)
+        [h.name, h.province, h.address, h.culturalSignificance, h.categoryLabel, ...(h.tags || [])].join(' ').toLowerCase().includes(q)
       );
     }
 
@@ -811,7 +810,8 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      const matchQuery = item.name.toLowerCase().includes(q) || item.province.toLowerCase().includes(q);
+      const searchableText = [item.name, item.province, item.address, item.culturalSignificance, item.categoryLabel, ...(item.tags || [])].join(' ').toLowerCase();
+      const matchQuery = searchableText.includes(q);
       if (!matchQuery) return false;
     }
     return true;
@@ -823,7 +823,21 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
     { id: 'palace', label: languageService.t('🏛 Hoàng thành & Cung điện', language, '🏛 Hoàng thành & Cung điện') },
     { id: 'temple', label: languageService.t('⛩ Đền chùa & Tháp cổ', language, '⛩ Đền chùa & Tháp cổ') },
     { id: 'ancient_house', label: languageService.t('🏘 Đô thị cổ', language, '🏘 Đô thị cổ') },
-    { id: 'craft_village', label: languageService.t('🏺 Làng nghề truyền thống', language, '🏺 Làng nghề truyền thống') }
+    { id: 'craft_village', label: languageService.t('🏺 Làng nghề truyền thống', language, '🏺 Làng nghề truyền thống') },
+    { id: 'citadel', label: languageService.t('🏰 Thành cổ & Kinh thành', language, '🏰 Thành cổ & Kinh thành') },
+    { id: 'tomb', label: languageService.t('⚱️ Lăng tẩm', language, '⚱️ Lăng tẩm') },
+    { id: 'museum', label: languageService.t('🏺 Bảo tàng', language, '🏺 Bảo tàng') },
+    { id: 'scenic_landscape', label: languageService.t('🏞️ Danh lam thắng cảnh', language, '🏞️ Danh lam thắng cảnh') },
+    { id: 'ecotourism', label: languageService.t('🌿 Du lịch sinh thái', language, '🌿 Du lịch sinh thái') },
+    { id: 'island_beach', label: languageService.t('🏖️ Biển & hải đảo', language, '🏖️ Biển & hải đảo') },
+    { id: 'community_tourism', label: languageService.t('🏡 Du lịch cộng đồng', language, '🏡 Du lịch cộng đồng') },
+    { id: 'cultural_site', label: languageService.t('🎭 Không gian văn hóa', language, '🎭 Không gian văn hóa') },
+    { id: 'culinary', label: languageService.t('🍜 Địa điểm ẩm thực', language, '🍜 Địa điểm ẩm thực') },
+    { id: 'architecture', label: languageService.t('🏛️ Kiến trúc đặc sắc', language, '🏛️ Kiến trúc đặc sắc') },
+    { id: 'folk_art', label: languageService.t('🎶 Nghệ thuật dân gian', language, '🎶 Nghệ thuật dân gian') },
+    { id: 'artifact', label: languageService.t('🪷 Hiện vật & bảo vật', language, '🪷 Hiện vật & bảo vật') },
+    { id: 'costume', label: languageService.t('👘 Trang phục truyền thống', language, '👘 Trang phục truyền thống') },
+    { id: 'instrument', label: languageService.t('🥁 Nhạc cụ truyền thống', language, '🥁 Nhạc cụ truyền thống') }
   ];
 
   return (
@@ -1216,7 +1230,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
       {/* Main Map & Interactive Layout: Ô Di Sản Nằm Bên Cạnh Ô Bản Đồ ("ô di sản nằm bên cạnh ô bản đồ") */}
       {(() => {
         const heritageBoxContent = (
-          <div className="bg-stone-900/95 border border-stone-800 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur flex flex-col transition-all duration-200 w-full flex-1 max-h-[680px]">
+          <div className="bg-stone-900/95 border border-stone-800 rounded-3xl p-3 sm:p-5 shadow-2xl backdrop-blur flex flex-col transition-all duration-200 w-full flex-1 max-h-[55vh] sm:max-h-[680px]">
             
             {/* Header: Title, Count, Position Toggle, Collapse & Reset */}
             <div className="pb-3 border-b border-stone-800 mb-3 space-y-2">
@@ -1337,7 +1351,7 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
 
         // MAP CANVAS ELEMENT (Reusable across layout modes)
         const mapCanvasElement = (
-          <div className="w-full h-[580px] sm:h-[680px] relative z-0 bg-[#061426] overflow-hidden rounded-3xl">
+          <div className="w-full h-[min(58vh,520px)] min-h-[360px] sm:h-[680px] sm:min-h-0 relative z-0 bg-[#061426] overflow-hidden rounded-3xl">
             <div 
               ref={mapContainerRef} 
               className="w-full h-full relative z-0 bg-[#061426]"
@@ -1389,10 +1403,10 @@ export const CulturalMap: React.FC<CulturalMapProps> = ({
         if (sidePosition === 'left') {
           return (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-              <div className="col-span-1 lg:col-span-4 lg:order-first flex flex-col gap-4">
+              <div className="col-span-1 lg:col-span-4 order-last lg:order-first flex flex-col gap-4">
                 {heritageBoxContent}
               </div>
-              <div className="col-span-1 lg:col-span-8 rounded-3xl border border-amber-500/30 shadow-2xl overflow-hidden relative">
+              <div className="col-span-1 lg:col-span-8 order-first lg:order-last rounded-3xl border border-amber-500/30 shadow-2xl overflow-hidden relative">
                 {mapCanvasElement}
               </div>
             </div>
