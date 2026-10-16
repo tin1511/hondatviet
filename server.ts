@@ -39,7 +39,7 @@ function getFirebaseWebApiKey(): string {
  * privileged configuration/test endpoints. No client-supplied role is trusted.
  */
 async function requireTrustedAdmin(req: Request, res: Response, next: NextFunction) {
-  const token = (req.header('authorization') || '').match(/^Bearer\\s+(.+)$/i)?.[1];
+  const token = (req.header('authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) {
     return res.status(401).json({ success: false, error: 'Cần đăng nhập bằng Firebase Authentication.' });
   }
@@ -2152,7 +2152,7 @@ app.post('/api/tts/test-connection', requireTrustedAdmin, async (req: Request, r
     }
 
     const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
-    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+    const targetApiKey = process.env.VIENEU_API_KEY || apiKey || '';
 
     const testResult = await testVieNeuApiConnection(targetEndpoint, targetApiKey, model);
     return res.status(testResult.success ? 200 : 400).json(testResult);
