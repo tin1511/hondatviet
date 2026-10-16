@@ -7,6 +7,9 @@ import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
+import { cert, getApps as getAdminApps, initializeApp as initializeAdminApp } from 'firebase-admin/app';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { HERITAGE_DATABASE } from './src/data/vietnamHeritageData';
 import { VIETNAM_LANDMARK_PHOTOS } from './src/data/landmarkImagesDatabase';
 
@@ -21,6 +24,22 @@ const PORT = cliPort || (process.env.PORT ? parseInt(process.env.PORT, 10) : 300
 app.use(express.json({ limit: '25mb' }));
 
 const TRUSTED_ADMIN_EMAIL = 'btin2499@gmail.com';
+
+function getFirebaseAdminApp() {
+  const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!rawServiceAccount) return null;
+  try {
+    const serviceAccount = JSON.parse(rawServiceAccount);
+    const existing = getAdminApps().find(item => item.name === 'hondatviet-admin');
+    return existing || initializeAdminApp({
+      credential: cert(serviceAccount),
+      projectId: serviceAccount.project_id
+    }, 'hondatviet-admin');
+  } catch (error) {
+    console.error('[Admin API] Firebase Admin SDK configuration is invalid:', error);
+    return null;
+  }
+}
 
 function getFirebaseWebApiKey(): string {
   if (process.env.FIREBASE_WEB_API_KEY) return process.env.FIREBASE_WEB_API_KEY;
@@ -1277,6 +1296,39 @@ function writeServerActivities(activities: any[]) {
 }
 
 let serverActivities = readServerActivities();
+
+// Delete both the Firebase Authentication account and its UID-owned profile.
+// Requires a server-side service account; never accept service-account material from the browser.
+app.delete('/api/accounts/:id', requireTrustedAdmin, async (req: Request, res: Response) => {
+  const adminApp = getFirebaseAdminApp();
+  if (!adminApp) {
+    return res.status(503).json({
+      success: false,
+      error: 'Account deletion requires FIREBASE_SERVICE_ACCOUNT_JSON in server environment settings.'
+    });
+  }
+
+  const uid = String(req.params.id || '').trim();
+  if (!uid) return res.status(400).json({ success: false, error: 'Missing account UID.' });
+
+  try {
+    const authAdmin = getAdminAuth(adminApp);
+    const target = await authAdmin.getUser(uid);
+    if ((target.email || '').toLowerCase() === TRUSTED_ADMIN_EMAIL) {
+      return res.status(403).json({ success: false, error: 'The trusted administrator account cannot be deleted here.' });
+    }
+
+    await authAdmin.deleteUser(uid);
+    await getAdminFirestore(adminApp).collection('users').doc(uid).delete();
+    return res.json({ success: true });
+  } catch (error: any) {
+    console.error('[Admin API] Account deletion failed:', error?.message || error);
+    return res.status(error?.code === 'auth/user-not-found' ? 404 : 500).json({
+      success: false,
+      error: 'Unable to delete the Firebase account. Check server credentials and try again.'
+    });
+  }
+});
 
 // Legacy account endpoints exposed plaintext credentials and bypassed Firebase Authentication.
 // They are intentionally disabled; the client now uses Firebase Authentication and UID-owned profiles.
