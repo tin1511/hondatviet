@@ -128,6 +128,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       {/* Mobile Sticky Bottom Nav Bar (visible on md and below) */}
       <nav 
         id="mobile-bottom-nav" 
+        aria-label={languageService.t('mobile.navigation', language, 'Điều hướng chính trên điện thoại')}
         className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-stone-950/95 backdrop-blur-xl border-t border-amber-900/40 shadow-2xl pb-[env(safe-area-inset-bottom)] transition-transform duration-200"
       >
         <div className="grid grid-cols-6 items-stretch min-h-16 px-0.5 max-w-lg mx-auto">
@@ -166,6 +167,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           {/* More / Menu Drawer Button */}
           <button
             id="mobile-tab-more"
+            aria-expanded={isMoreMenuOpen}
+            aria-controls="mobile-more-features-sheet"
+            aria-label={languageService.t('mobile.more', language, 'Thêm tính năng')}
             onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
             className={`relative min-w-0 flex flex-col items-center justify-center py-2 px-0.5 rounded-xl transition-colors duration-150 active:bg-stone-800/70 ${
               isMoreMenuOpen || ['food', 'itinerary', 'crafts', 'learning', 'favorites', 'profile', 'community', 'admin'].includes(currentTab)
@@ -202,6 +206,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           onClick={() => setIsMoreMenuOpen(false)}
         >
           <div 
+            id="mobile-more-features-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label={languageService.t('tools.title', language, 'Tất Cả Tính Năng Di Sản')}
             className="bg-stone-900 border-t border-amber-500/40 rounded-t-3xl max-h-[calc(100dvh-4.5rem)] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom)+1rem)] shadow-2xl p-4 sm:p-6 space-y-4 animate-slideUp"
             onClick={(e) => e.stopPropagation()}
           >
