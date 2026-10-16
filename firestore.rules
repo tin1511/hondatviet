@@ -26,6 +26,8 @@ service cloud.firestore {
 
       allow create: if isAuthenticated()
         && request.auth.uid == userId
+        && request.resource.data.id == userId
+        && request.resource.data.email == request.auth.token.email
         && hasNoPasswordField(request.resource.data)
         && (
           isAllowedMemberRole(request.resource.data.role)
@@ -33,10 +35,12 @@ service cloud.firestore {
         );
 
       allow update: if isAuthenticated()
-        && request.auth.uid == userId
+        && (isTrustedAdmin() || request.auth.uid == userId)
+        && request.resource.data.id == userId
+        && request.resource.data.email == request.auth.token.email
         && hasNoPasswordField(request.resource.data)
         && (
-          (isTrustedAdmin())
+          isTrustedAdmin()
           || (
             isAllowedMemberRole(resource.data.role)
             && request.resource.data.role == resource.data.role
@@ -109,7 +113,15 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid;
 
-      allow update, delete: if isAuthenticated()
+      allow update: if isAuthenticated()
+        && (
+          isTrustedAdmin()
+          || (
+            resource.data.userId == request.auth.uid
+            && request.resource.data.userId == resource.data.userId
+          )
+        );
+      allow delete: if isAuthenticated()
         && (resource.data.userId == request.auth.uid || isTrustedAdmin());
     }
 
@@ -120,7 +132,15 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid;
 
-      allow update, delete: if isAuthenticated()
+      allow update: if isAuthenticated()
+        && (
+          isTrustedAdmin()
+          || (
+            resource.data.userId == request.auth.uid
+            && request.resource.data.userId == resource.data.userId
+          )
+        );
+      allow delete: if isAuthenticated()
         && (resource.data.userId == request.auth.uid || isTrustedAdmin());
     }
 
