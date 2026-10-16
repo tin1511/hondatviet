@@ -212,7 +212,7 @@ export const ImageRecognizer: React.FC<ImageRecognizerProps> = ({
       }
 
       const promptNote = note !== undefined ? note : userNote;
-      const aiResult = await aiService.recognizeHeritage(base64, promptNote);
+      const aiResult = await aiService.recognizeHeritage(base64, promptNote, language);
       const translatedResult = languageService.translateHeritageItem(aiResult, language);
       setResult(translatedResult);
 
