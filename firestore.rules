@@ -1,72 +1,142 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-    function isAdmin() {
-      return isAuthenticated() && 
-        (request.auth.token.role == 'admin' || request.auth.token.email == 'btin2499@gmail.com');
+
+    function isTrustedAdmin() {
+      return isAuthenticated()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'btin2499@gmail.com';
     }
 
-    // User profiles & accounts
+    function hasNoPasswordField(data) {
+      return !data.keys().hasAny(['password', 'passwordHash', 'credential', 'credentials']);
+    }
+
+    function isAllowedMemberRole(role) {
+      return role in ['user', 'student', 'researcher'];
+    }
+
+    // User documents are keyed by Firebase Authentication UID.
+    // Passwords and authentication credentials must never be stored here.
     match /users/{userId} {
-      allow read, write: if true;
-    }
-    match /accounts/{accountId} {
-      allow read, write: if true;
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isTrustedAdmin());
+
+      allow create: if isAuthenticated()
+        && request.auth.uid == userId
+        && hasNoPasswordField(request.resource.data)
+        && (
+          isAllowedMemberRole(request.resource.data.role)
+          || (isTrustedAdmin() && request.resource.data.role == 'admin')
+        );
+
+      allow update: if isAuthenticated()
+        && request.auth.uid == userId
+        && hasNoPasswordField(request.resource.data)
+        && (
+          (isTrustedAdmin())
+          || (
+            isAllowedMemberRole(resource.data.role)
+            && request.resource.data.role == resource.data.role
+          )
+        );
+
+      allow delete: if isTrustedAdmin();
     }
 
-    // Heritage cultural items (Public read, Admin write)
+    // Legacy account documents are intentionally blocked. Authentication
+    // records belong in Firebase Authentication, not a readable collection.
+    match /accounts/{accountId} {
+      allow read, write: if false;
+    }
+
+    // Public cultural reference data; only verified admins can change it.
     match /heritage/{heritageId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isTrustedAdmin();
     }
 
-    // Grandparents oral stories (Private, Family, or Public read; Owner write)
+    // Family stories are private unless explicitly published as public.
     match /familyStories/{storyId} {
-      allow read: if resource.data.visibility == 'public' || 
-                     (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.visibility == 'family')) ||
-                     isAdmin();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if resource.data.visibility == 'public'
+        || (isAuthenticated() && resource.data.userId == request.auth.uid)
+        || isTrustedAdmin();
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAuthenticated()
+        && (
+          isTrustedAdmin()
+          || (
+            resource.data.userId == request.auth.uid
+            && request.resource.data.userId == resource.data.userId
+          )
+        );
+
+      allow delete: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid || isTrustedAdmin());
     }
 
-    // Community contributions (Approved items public, Author sees own, Admin manages all)
+    // Community members may submit posts, but cannot approve their own posts.
     match /communityPosts/{postId} {
-      allow read: if resource.data.status == 'approved' || 
-                     (isAuthenticated() && resource.data.userId == request.auth.uid) ||
-                     isAdmin();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if resource.data.status == 'approved'
+        || (isAuthenticated() && resource.data.userId == request.auth.uid)
+        || isTrustedAdmin();
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending';
+
+      allow update: if isTrustedAdmin()
+        || (
+          isAuthenticated()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.status == resource.data.status
+        );
+
+      allow delete: if isTrustedAdmin()
+        || (isAuthenticated() && resource.data.userId == request.auth.uid);
     }
 
-    // Itineraries (Owner read/write, Admin read/write)
     match /itineraries/{itineraryId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid || isTrustedAdmin());
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid || isTrustedAdmin());
     }
 
-    // Favorites (Owner read/write)
     match /favorites/{favoriteId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid || isTrustedAdmin());
+
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update, delete: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid || isTrustedAdmin());
     }
 
-    // System & API Configuration (AI and TTS API parameters)
-    match /system_config/{configId} {
+    // Safe, non-secret AI/TTS settings can be read by the app.
+    // API keys, private keys and credentials must stay in server environment variables.
+    match /system_config_public/{configId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isTrustedAdmin();
     }
 
-    // Default deny
+    // Never expose secret-bearing legacy config documents to ordinary clients.
+    match /system_config/{configId} {
+      allow read, write: if isTrustedAdmin();
+    }
+
+    // Default deny.
     match /{document=**} {
       allow read, write: if false;
     }
