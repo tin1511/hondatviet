@@ -868,3 +868,83 @@ export function getAdministrativeUnitByName(name: string): AdministrativeUnit | 
     norm.includes(u.shortName.toLowerCase())
   );
 }
+
+
+/**
+ * Current provincial-level administrative units after the 2025 reorganization.
+ * Official list: 34 units (28 provinces and 6 centrally governed cities).
+ * Legacy 63-unit data above is retained for historical references only.
+ */
+const POST_2025_PROVINCES: Array<{
+  code: string; shortName: string; center: [number, number]; type: 'tinh' | 'thanh_pho_tw';
+  oldNames: string[];
+}> = [
+  { code: '01', shortName: 'Hà Nội', center: [21.0285, 105.8542], type: 'thanh_pho_tw', oldNames: ['Hà Nội'] },
+  { code: '04', shortName: 'Cao Bằng', center: [22.6667, 106.2500], type: 'tinh', oldNames: ['Cao Bằng'] },
+  { code: '08', shortName: 'Tuyên Quang', center: [21.8236, 105.2142], type: 'tinh', oldNames: ['Tuyên Quang', 'Hà Giang'] },
+  { code: '11', shortName: 'Điện Biên', center: [21.3860, 103.0230], type: 'tinh', oldNames: ['Điện Biên'] },
+  { code: '12', shortName: 'Lai Châu', center: [22.3964, 103.4582], type: 'tinh', oldNames: ['Lai Châu'] },
+  { code: '14', shortName: 'Sơn La', center: [21.3270, 103.9140], type: 'tinh', oldNames: ['Sơn La'] },
+  { code: '15', shortName: 'Lào Cai', center: [21.7051, 104.8758], type: 'tinh', oldNames: ['Lào Cai', 'Yên Bái'] },
+  { code: '19', shortName: 'Thái Nguyên', center: [21.5944, 105.8482], type: 'tinh', oldNames: ['Thái Nguyên', 'Bắc Kạn'] },
+  { code: '20', shortName: 'Lạng Sơn', center: [21.8537, 106.7610], type: 'tinh', oldNames: ['Lạng Sơn'] },
+  { code: '22', shortName: 'Quảng Ninh', center: [20.9500, 107.0800], type: 'tinh', oldNames: ['Quảng Ninh'] },
+  { code: '24', shortName: 'Bắc Ninh', center: [21.2819, 106.1975], type: 'tinh', oldNames: ['Bắc Ninh', 'Bắc Giang'] },
+  { code: '25', shortName: 'Phú Thọ', center: [21.3227, 105.4019], type: 'tinh', oldNames: ['Phú Thọ', 'Vĩnh Phúc', 'Hòa Bình'] },
+  { code: '31', shortName: 'Hải Phòng', center: [20.8449, 106.6881], type: 'thanh_pho_tw', oldNames: ['Hải Phòng', 'Hải Dương'] },
+  { code: '33', shortName: 'Hưng Yên', center: [20.6464, 106.0511], type: 'tinh', oldNames: ['Hưng Yên', 'Thái Bình'] },
+  { code: '37', shortName: 'Ninh Bình', center: [20.2506, 105.9745], type: 'tinh', oldNames: ['Ninh Bình', 'Hà Nam', 'Nam Định'] },
+  { code: '38', shortName: 'Thanh Hóa', center: [19.8067, 105.7852], type: 'tinh', oldNames: ['Thanh Hóa'] },
+  { code: '40', shortName: 'Nghệ An', center: [18.6796, 105.6813], type: 'tinh', oldNames: ['Nghệ An'] },
+  { code: '42', shortName: 'Hà Tĩnh', center: [18.3559, 105.8877], type: 'tinh', oldNames: ['Hà Tĩnh'] },
+  { code: '44', shortName: 'Quảng Trị', center: [17.4689, 106.6223], type: 'tinh', oldNames: ['Quảng Trị', 'Quảng Bình'] },
+  { code: '46', shortName: 'Huế', center: [16.4637, 107.5909], type: 'thanh_pho_tw', oldNames: ['Thừa Thiên Huế', 'Huế'] },
+  { code: '48', shortName: 'Đà Nẵng', center: [16.0544, 108.2022], type: 'thanh_pho_tw', oldNames: ['Đà Nẵng', 'Quảng Nam'] },
+  { code: '51', shortName: 'Quảng Ngãi', center: [15.1205, 108.7923], type: 'tinh', oldNames: ['Quảng Ngãi', 'Kon Tum'] },
+  { code: '52', shortName: 'Gia Lai', center: [13.7820, 109.2190], type: 'tinh', oldNames: ['Gia Lai', 'Bình Định'] },
+  { code: '56', shortName: 'Khánh Hòa', center: [12.2388, 109.1967], type: 'tinh', oldNames: ['Khánh Hòa', 'Ninh Thuận'] },
+  { code: '66', shortName: 'Đắk Lắk', center: [12.6667, 108.0500], type: 'tinh', oldNames: ['Đắk Lắk', 'Phú Yên'] },
+  { code: '68', shortName: 'Lâm Đồng', center: [11.9404, 108.4583], type: 'tinh', oldNames: ['Lâm Đồng', 'Đắk Nông', 'Bình Thuận'] },
+  { code: '75', shortName: 'Đồng Nai', center: [10.9574, 106.8427], type: 'tinh', oldNames: ['Đồng Nai', 'Bình Phước'] },
+  { code: '79', shortName: 'Hồ Chí Minh', center: [10.7769, 106.7009], type: 'thanh_pho_tw', oldNames: ['TP. Hồ Chí Minh', 'Thành phố Hồ Chí Minh', 'Bình Dương', 'Bà Rịa - Vũng Tàu'] },
+  { code: '80', shortName: 'Tây Ninh', center: [11.3100, 106.0983], type: 'tinh', oldNames: ['Tây Ninh', 'Long An'] },
+  { code: '82', shortName: 'Đồng Tháp', center: [10.3600, 106.3600], type: 'tinh', oldNames: ['Đồng Tháp', 'Tiền Giang'] },
+  { code: '86', shortName: 'Vĩnh Long', center: [10.2537, 105.9722], type: 'tinh', oldNames: ['Vĩnh Long', 'Bến Tre', 'Trà Vinh'] },
+  { code: '91', shortName: 'An Giang', center: [10.0125, 105.0809], type: 'tinh', oldNames: ['An Giang', 'Kiên Giang'] },
+  { code: '92', shortName: 'Cần Thơ', center: [10.0452, 105.7469], type: 'thanh_pho_tw', oldNames: ['Cần Thơ', 'Hậu Giang', 'Sóc Trăng'] },
+  { code: '96', shortName: 'Cà Mau', center: [9.1769, 105.1500], type: 'tinh', oldNames: ['Cà Mau', 'Bạc Liêu'] }
+];
+
+export const VIETNAM_34_ADMINISTRATIVE_UNITS: AdministrativeUnit[] = POST_2025_PROVINCES.map((province) => {
+  const base = VIETNAM_63_ADMINISTRATIVE_UNITS.find(unit =>
+    province.oldNames.some(name => unit.shortName.toLocaleLowerCase('vi') === name.toLocaleLowerCase('vi'))
+  );
+  const lat = province.center[0];
+  const region: AdministrativeUnit['region'] = lat >= 20.5 ? 'north' : lat >= 14.5 ? 'central' : 'south';
+  const subRegion: AdministrativeUnit['subRegion'] = region === 'north'
+    ? 'dong_bang_song_hong'
+    : region === 'central' ? 'nam_trung_bo' : 'dong_nam_bo';
+  return {
+    code: province.code,
+    name: province.type === 'thanh_pho_tw' ? `Thành phố ${province.shortName}` : `Tỉnh ${province.shortName}`,
+    shortName: province.shortName,
+    region,
+    regionName: region === 'north' ? 'Miền Bắc' : region === 'central' ? 'Miền Trung' : 'Miền Nam',
+    subRegion: base?.subRegion || subRegion,
+    subRegionName: base?.subRegionName || (region === 'north' ? 'Miền Bắc' : region === 'central' ? 'Duyên hải miền Trung' : 'Miền Nam'),
+    type: province.type,
+    center: province.center,
+    historicalNames: province.oldNames.filter(name => name !== province.shortName),
+    historicalNotes: province.oldNames.length > 1
+      ? `Đơn vị hành chính mới sau sắp xếp năm 2025; kế thừa địa bàn ${province.oldNames.join(', ')}.`
+      : undefined
+  };
+});
+
+export function getCurrentAdministrativeUnitByName(name: string): AdministrativeUnit | undefined {
+  const normalized = name.trim().toLocaleLowerCase('vi').replace(/^(tỉnh|thành phố)\s+/, '');
+  return VIETNAM_34_ADMINISTRATIVE_UNITS.find(unit =>
+    unit.shortName.toLocaleLowerCase('vi') === normalized ||
+    unit.name.toLocaleLowerCase('vi') === name.trim().toLocaleLowerCase('vi')
+  );
+}
