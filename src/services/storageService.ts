@@ -31,8 +31,7 @@ import { signOutFirebaseIdentity } from './firebaseIdentityService';
 import {
   saveUserToFirestore,
   getAccountsFromFirestore,
-  updatePasswordInFirestore,
-  resetPasswordInFirestoreByEmail
+  
 } from './firebaseAuthService';
 
 const FAVORITES_KEY = 'heritageai_favorites';
@@ -215,29 +214,6 @@ const INITIAL_BADGES: UserBadge[] = [
     unlockedAt: '2026-09-15T09:15:00Z'
   }
 ];
-
-const DEFAULT_ADMIN_ACCOUNT: UserProfile = {
-  id: 'user-admin',
-  displayName: 'Quản trị viên Hệ thống',
-  email: 'admin@heritageai.vn',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-  city: 'Hà Nội / Huế',
-  role: 'admin',
-  roleLabel: 'Quản trị viên & Kiểm định Di sản',
-  interests: ['Quản lý di sản', 'Kiểm duyệt tri thức', 'Bảo tồn văn hóa'],
-  favoritesCount: 0,
-  contributionsCount: 0,
-  quizzesCompleted: 0,
-  storiesCreated: 0,
-  recognitionsCount: 0,
-  itinerariesCount: 0,
-  points: 2026,
-  level: 'Quản Trị Viên Hệ Thống',
-  badges: INITIAL_BADGES,
-  createdAt: '2026-01-01T00:00:00Z',
-  lastLoginAt: new Date().toISOString(),
-  isLoggedIn: false
-};
 
 const GUEST_USER: UserProfile = {
   id: 'user-guest',
@@ -438,7 +414,6 @@ export const storageService = {
     const pendingData: PendingRegistration = {
       email: cleanEmail,
       displayName: cleanVietnameseText(params.displayName),
-      password: params.password || '123456',
       role: params.role || 'user',
       city: params.city ? cleanVietnameseText(params.city) : 'Việt Nam',
       avatarUrl: params.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
