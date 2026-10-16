@@ -28,6 +28,7 @@ import {
 } from '../data/vietnamHeritageData';
 import { cleanVietnameseText } from '../utils/textUtils';
 import { signOutFirebaseIdentity } from './firebaseIdentityService';
+import { auth } from './firebase';
 import {
   saveUserToFirestore,
   getAccountsFromFirestore
@@ -643,12 +644,6 @@ export const storageService = {
 
     // Sync profile update to Firestore and server
     saveUserToFirestore(updated).catch(err => console.warn('Firestore profile update warning:', err));
-    fetch('/api/accounts/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated)
-    }).catch(err => console.warn('Server profile update sync warning:', err));
-
     this.logActivity({
       userId: updated.id,
       actionType: 'profile',
@@ -776,28 +771,41 @@ export const storageService = {
     }
   },
 
-  deleteAccount(userId: string): { success: boolean; error?: string } {
-    if (userId === 'user-admin') {
-      return { success: false, error: 'Không thể xóa tài khoản Quản trị viên gốc của hệ thống.' };
+  async deleteAccount(userId: string): Promise<{ success: boolean; error?: string }> {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      return { success: false, error: 'Bạn cần đăng nhập lại bằng Firebase Authentication.' };
     }
-    const accounts = this.getAccounts();
-    const target = accounts.find(a => a.id === userId);
-    if (!target) {
-      return { success: false, error: 'Không tìm thấy tài khoản cần xóa.' };
+    if (currentUser.uid === userId) {
+      return { success: false, error: 'Không thể tự xóa tài khoản đang đăng nhập.' };
     }
-    const filtered = accounts.filter(a => a.id !== userId);
-    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(filtered));
 
-    fetch(`/api/accounts/${userId}`, { method: 'DELETE' }).catch(() => {});
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch(`/api/accounts/${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        return {
+          success: false,
+          error: result.error || 'Không thể xóa tài khoản Firebase.'
+        };
+      }
 
-    this.logActivity({
-      actionType: 'admin_action',
-      title: 'Xóa tài khoản người dùng',
-      description: `Quản trị viên đã xóa tài khoản ${target.displayName} (${target.email}) khỏi web`,
-      targetId: userId
-    });
-
-    return { success: true };
+      const remaining = this.getAccounts().filter(account => account.id !== userId);
+      localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(remaining));
+      this.logActivity({
+        actionType: 'admin_action',
+        title: 'Xóa tài khoản người dùng',
+        description: `Quản trị viên đã xóa tài khoản Firebase UID ${userId}.`,
+        targetId: userId
+      });
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Không thể kết nối máy chủ để xóa tài khoản.' };
+    }
   },
 
   exportAuditLogs(): string {
