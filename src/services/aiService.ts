@@ -165,7 +165,7 @@ export const aiService = {
   /**
    * AI Visual Recognition for heritage, crafts, artifacts, culinary items (With Offline Fallback)
    */
-  async recognizeHeritage(imageBase64: string, optionalPrompt?: string): Promise<RecognizeHeritageResult> {
+  async recognizeHeritage(imageBase64: string, optionalPrompt?: string, language: string = 'vi'): Promise<RecognizeHeritageResult> {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       return getOfflineHeritageRecognition(optionalPrompt);
     }
@@ -174,7 +174,7 @@ export const aiService = {
       const res = await fetch('/api/ai/recognize-heritage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64, optionalPrompt }),
+        body: JSON.stringify({ imageBase64, optionalPrompt, language }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
