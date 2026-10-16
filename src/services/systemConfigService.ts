@@ -4,7 +4,7 @@ import { AIConfig, getAIConfig, saveAIConfig, DEFAULT_AI_CONFIG } from '../confi
 import { TTSConfig, getTTSConfig, saveTTSConfig, DEFAULT_TTS_CONFIG } from '../config/ttsConfig';
 import { EmailJSConfig, getEmailJSConfig, saveEmailJSConfig, DEFAULT_EMAILJS_CONFIG } from '../config/emailJsConfig';
 
-const SYSTEM_CONFIG_COLLECTION = 'system_config';
+const PUBLIC_SYSTEM_CONFIG_COLLECTION = 'system_config_public';
 const AI_CONFIG_DOC_ID = 'ai_config';
 const TTS_CONFIG_DOC_ID = 'tts_config';
 const EMAILJS_CONFIG_DOC_ID = 'emailjs_config';
@@ -21,7 +21,7 @@ export async function saveAIConfigToFirebase(
 
   // 2. Persist to Firebase Firestore
   try {
-    const configDocRef = doc(db, SYSTEM_CONFIG_COLLECTION, AI_CONFIG_DOC_ID);
+    const configDocRef = doc(db, PUBLIC_SYSTEM_CONFIG_COLLECTION, AI_CONFIG_DOC_ID);
     const payload = {
       id: AI_CONFIG_DOC_ID,
       configType: 'ai_config',
@@ -33,7 +33,6 @@ export async function saveAIConfigToFirebase(
         temperature: config.temperature,
         maxTokens: config.maxTokens,
         baseUrl: config.baseUrl || '',
-        apiKey: config.apiKey || '',
         systemPrompt: config.systemPrompt
       },
       updatedAt: new Date().toISOString(),
@@ -65,7 +64,7 @@ export async function saveAIConfigToFirebase(
  */
 export async function loadAIConfigFromFirebase(): Promise<AIConfig> {
   try {
-    const configDocRef = doc(db, SYSTEM_CONFIG_COLLECTION, AI_CONFIG_DOC_ID);
+    const configDocRef = doc(db, PUBLIC_SYSTEM_CONFIG_COLLECTION, AI_CONFIG_DOC_ID);
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('firestore_timeout')), 3500)
     );
@@ -108,14 +107,13 @@ export async function saveTTSConfigToFirebase(
 
   // 2. Persist to Firebase Firestore
   try {
-    const configDocRef = doc(db, SYSTEM_CONFIG_COLLECTION, TTS_CONFIG_DOC_ID);
+    const configDocRef = doc(db, PUBLIC_SYSTEM_CONFIG_COLLECTION, TTS_CONFIG_DOC_ID);
     const payload = {
       id: TTS_CONFIG_DOC_ID,
       configType: 'tts_config',
       data: {
         provider: config.provider,
         endpoint: config.endpoint,
-        apiKey: config.apiKey || '',
         voice: config.voice,
         language: config.language,
         enabled: config.enabled,
@@ -150,7 +148,7 @@ export async function saveTTSConfigToFirebase(
  */
 export async function loadTTSConfigFromFirebase(): Promise<TTSConfig> {
   try {
-    const configDocRef = doc(db, SYSTEM_CONFIG_COLLECTION, TTS_CONFIG_DOC_ID);
+    const configDocRef = doc(db, PUBLIC_SYSTEM_CONFIG_COLLECTION, TTS_CONFIG_DOC_ID);
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('firestore_timeout')), 3500)
     );
@@ -193,7 +191,7 @@ export async function saveEmailJSConfigToFirebase(
 
   // 2. Persist to Firebase Firestore
   try {
-    const configDocRef = doc(db, SYSTEM_CONFIG_COLLECTION, EMAILJS_CONFIG_DOC_ID);
+    const configDocRef = doc(db, PUBLIC_SYSTEM_CONFIG_COLLECTION, EMAILJS_CONFIG_DOC_ID);
     const payload = {
       id: EMAILJS_CONFIG_DOC_ID,
       configType: 'emailjs_config',
@@ -201,7 +199,6 @@ export async function saveEmailJSConfigToFirebase(
         serviceId: config.serviceId,
         templateId: config.templateId,
         publicKey: config.publicKey || '',
-        privateKey: config.privateKey || '',
         enabled: config.enabled,
         senderName: config.senderName || 'Hồn Đất Việt',
         otpExpirationMinutes: config.otpExpirationMinutes || 5
@@ -235,7 +232,7 @@ export async function saveEmailJSConfigToFirebase(
  */
 export async function loadEmailJSConfigFromFirebase(): Promise<EmailJSConfig> {
   try {
-    const configDocRef = doc(db, SYSTEM_CONFIG_COLLECTION, EMAILJS_CONFIG_DOC_ID);
+    const configDocRef = doc(db, PUBLIC_SYSTEM_CONFIG_COLLECTION, EMAILJS_CONFIG_DOC_ID);
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('firestore_timeout')), 3500)
     );

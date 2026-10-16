@@ -15,7 +15,7 @@ export const STORAGE_KEY_TTS_CONFIG = 'heritage_tts_config';
 export const DEFAULT_TTS_CONFIG: TTSConfig = {
   provider: (import.meta.env?.VITE_TTS_PROVIDER as TTSProviderType) || 'vieneu',
   endpoint: import.meta.env?.VITE_TTS_API_URL || 'https://api.vieneu.io/api/v1/audio/speech',
-  apiKey: import.meta.env?.VITE_TTS_API_KEY || '',
+  apiKey: '',
   voice: 'Ngọc Lan',
   language: 'vi-VN',
   enabled: true,

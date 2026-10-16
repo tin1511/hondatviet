@@ -302,7 +302,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleExportAccounts = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(storageService.exportAccounts());
+    const exportableAccounts = accounts.map(account => ({
+      id: account.id,
+      displayName: account.displayName,
+      email: account.email,
+      role: account.role,
+      roleLabel: account.roleLabel,
+      city: account.city,
+      points: account.points,
+      level: account.level,
+      createdAt: account.createdAt,
+      lastLoginAt: account.lastLoginAt
+    }));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportableAccounts, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", `heritageai-danh-sach-tai-khoan-${new Date().toISOString().split('T')[0]}.json`);

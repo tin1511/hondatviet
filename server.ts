@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
@@ -7,6 +7,9 @@ import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
+import { cert, getApps as getAdminApps, initializeApp as initializeAdminApp } from 'firebase-admin/app';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { HERITAGE_DATABASE } from './src/data/vietnamHeritageData';
 import { VIETNAM_LANDMARK_PHOTOS } from './src/data/landmarkImagesDatabase';
 
@@ -19,6 +22,74 @@ const cliPort = portFlagIndex !== -1 && args[portFlagIndex + 1] ? parseInt(args[
 const PORT = cliPort || (process.env.PORT ? parseInt(process.env.PORT, 10) : 3000);
 
 app.use(express.json({ limit: '25mb' }));
+
+const TRUSTED_ADMIN_EMAIL = 'btin2499@gmail.com';
+
+function getFirebaseAdminApp() {
+  const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!rawServiceAccount) return null;
+  try {
+    const serviceAccount = JSON.parse(rawServiceAccount);
+    const existing = getAdminApps().find(item => item.name === 'hondatviet-admin');
+    return existing || initializeAdminApp({
+      credential: cert(serviceAccount),
+      projectId: serviceAccount.project_id
+    }, 'hondatviet-admin');
+  } catch (error) {
+    console.error('[Admin API] Firebase Admin SDK configuration is invalid:', error);
+    return null;
+  }
+}
+
+function getFirebaseWebApiKey(): string {
+  if (process.env.FIREBASE_WEB_API_KEY) return process.env.FIREBASE_WEB_API_KEY;
+  if (process.env.VITE_FIREBASE_API_KEY) return process.env.VITE_FIREBASE_API_KEY;
+  try {
+    const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    return typeof config.apiKey === 'string' ? config.apiKey : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Verify the Firebase ID token with Identity Toolkit before permitting
+ * privileged configuration/test endpoints. No client-supplied role is trusted.
+ */
+async function requireTrustedAdmin(req: Request, res: Response, next: NextFunction) {
+  const token = (req.header('authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'Cần đăng nhập bằng Firebase Authentication.' });
+  }
+
+  const apiKey = getFirebaseWebApiKey();
+  if (!apiKey) {
+    return res.status(503).json({ success: false, error: 'Thiếu FIREBASE_WEB_API_KEY để xác minh phiên đăng nhập.' });
+  }
+
+  try {
+    const verification = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: token })
+    });
+    if (!verification.ok) {
+      return res.status(401).json({ success: false, error: 'Phiên đăng nhập Firebase không hợp lệ hoặc đã hết hạn.' });
+    }
+
+    const payload = await verification.json() as { users?: Array<{ email?: string; emailVerified?: boolean }> };
+    const user = payload.users?.[0];
+    if (!user || !user.emailVerified || (user.email || '').toLowerCase() !== TRUSTED_ADMIN_EMAIL) {
+      return res.status(403).json({ success: false, error: 'Chỉ quản trị viên đã xác minh email mới được dùng chức năng này.' });
+    }
+
+    return next();
+  } catch (error) {
+    console.error('[Admin API] Firebase token verification failed:', error);
+    return res.status(503).json({ success: false, error: 'Không thể xác minh phiên Firebase lúc này.' });
+  }
+}
 
 // Centralized AI Model Configuration
 export const AI_MODEL = "gemini-flash-latest";
@@ -127,7 +198,7 @@ async function executeUnifiedAIRequest(params: {
 
   const tryCall = async (p: string, m: string): Promise<string> => {
     if (p === 'openrouter') {
-      const apiKey = params.apiKey || process.env.OPENROUTER_API_KEY || process.env.VITE_AI_API_KEY || '';
+      const apiKey = process.env.OPENROUTER_API_KEY || params.apiKey || '';
       const messages = [
         ...(params.systemPrompt ? [{ role: 'system', content: params.systemPrompt }] : []),
         ...(params.conversationHistory || []).map((item) => ({
@@ -159,7 +230,7 @@ async function executeUnifiedAIRequest(params: {
       }
       return data?.choices?.[0]?.message?.content || '';
     } else if (p === 'huggingface') {
-      const apiKey = params.apiKey || process.env.HUGGINGFACE_API_KEY || '';
+      const apiKey = process.env.HUGGINGFACE_API_KEY || params.apiKey || '';
       const promptText = `${params.systemPrompt || ''}\n\nUser: ${params.message}\nAssistant:`;
       const hfModel = m || 'mistralai/Mistral-7B-Instruct-v0.2';
 
@@ -193,7 +264,7 @@ async function executeUnifiedAIRequest(params: {
       return typeof data === 'string' ? data : JSON.stringify(data);
     } else if (p === 'custom') {
       const baseUrl = params.baseUrl || process.env.VITE_AI_BASE_URL || 'https://api.openai.com/v1';
-      const apiKey = params.apiKey || process.env.VITE_AI_API_KEY || '';
+      const apiKey = process.env.CUSTOM_AI_API_KEY || process.env.OPENAI_API_KEY || params.apiKey || '';
       const messages = [
         ...(params.systemPrompt ? [{ role: 'system', content: params.systemPrompt }] : []),
         ...(params.conversationHistory || []).map((item) => ({
@@ -716,7 +787,7 @@ Bối cảnh di sản người dùng đang theo dõi: ${currentHeritageContext ?
 /**
  * Endpoint for testing provider API connection ("Test API")
  */
-app.post('/api/ai/test-connection', async (req: Request, res: Response) => {
+app.post('/api/ai/test-connection', requireTrustedAdmin, async (req: Request, res: Response) => {
   const { provider = 'gemini', model = 'gemini-flash-latest', apiKey, baseUrl } = req.body;
   const startTime = Date.now();
 
@@ -766,7 +837,7 @@ app.post('/api/ai/test-connection', async (req: Request, res: Response) => {
 /**
  * Endpoint for testing custom prompt model response ("Test Model")
  */
-app.post('/api/ai/test-model', async (req: Request, res: Response) => {
+app.post('/api/ai/test-model', requireTrustedAdmin, async (req: Request, res: Response) => {
   const { provider = 'gemini', model = 'gemini-flash-latest', prompt, apiKey, baseUrl, temperature, maxTokens } = req.body;
   const startTime = Date.now();
 
@@ -1203,54 +1274,6 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const ACCOUNTS_FILE = path.join(DATA_DIR, 'server_accounts.json');
-const ACTIVITIES_FILE = path.join(DATA_DIR, 'server_activities.json');
-
-const DEFAULT_ADMIN_ACCOUNT_SERVER = {
-  id: 'user-admin',
-  displayName: 'Quản trị viên Hệ thống',
-  email: 'admin@heritageai.vn',
-  password: 'AINHS2026',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-  city: 'Hà Nội / Huế',
-  role: 'admin',
-  roleLabel: 'Quản trị viên & Kiểm định Di sản',
-  interests: ['Quản lý di sản', 'Kiểm duyệt tri thức', 'Bảo tồn văn hóa'],
-  favoritesCount: 0,
-  contributionsCount: 0,
-  quizzesCompleted: 0,
-  storiesCreated: 0,
-  recognitionsCount: 0,
-  itinerariesCount: 0,
-  points: 2026,
-  level: 'Quản Trị Viên Hệ Thống',
-  badges: [],
-  createdAt: '2026-01-01T00:00:00Z',
-  lastLoginAt: new Date().toISOString(),
-  isLoggedIn: false
-};
-
-function readServerAccounts(): any[] {
-  try {
-    if (fs.existsSync(ACCOUNTS_FILE)) {
-      const content = fs.readFileSync(ACCOUNTS_FILE, 'utf-8');
-      const list = JSON.parse(content);
-      if (Array.isArray(list) && list.length > 0) return list;
-    }
-  } catch (err) {
-    console.warn('Error reading server_accounts.json:', err);
-  }
-  return [DEFAULT_ADMIN_ACCOUNT_SERVER];
-}
-
-function writeServerAccounts(accounts: any[]) {
-  try {
-    fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('Error writing server_accounts.json:', err);
-  }
-}
-
 function readServerActivities(): any[] {
   try {
     if (fs.existsSync(ACTIVITIES_FILE)) {
@@ -1272,208 +1295,48 @@ function writeServerActivities(activities: any[]) {
   }
 }
 
-let serverAccounts = readServerAccounts();
 let serverActivities = readServerActivities();
 
-app.get('/api/accounts', (req: Request, res: Response) => {
-  return res.json({ success: true, accounts: serverAccounts });
-});
+// Delete both the Firebase Authentication account and its UID-owned profile.
+// Requires a server-side service account; never accept service-account material from the browser.
+app.delete('/api/accounts/:id', requireTrustedAdmin, async (req: Request, res: Response) => {
+  const adminApp = getFirebaseAdminApp();
+  if (!adminApp) {
+    return res.status(503).json({
+      success: false,
+      error: 'Account deletion requires FIREBASE_SERVICE_ACCOUNT_JSON in server environment settings.'
+    });
+  }
 
-app.post('/api/accounts/register', (req: Request, res: Response) => {
+  const uid = String(req.params.id || '').trim();
+  if (!uid) return res.status(400).json({ success: false, error: 'Missing account UID.' });
+
   try {
-    const newUser = req.body;
-    if (!newUser || !newUser.email) {
-      return res.status(400).json({ success: false, error: 'Dữ liệu tài khoản không hợp lệ.' });
-    }
-    const cleanEmail = String(newUser.email).trim().toLowerCase();
-    const existingIndex = serverAccounts.findIndex((a: any) => a.email && a.email.toLowerCase() === cleanEmail);
-    
-    if (existingIndex >= 0) {
-      // Update existing account details or return updated account
-      const existing = serverAccounts[existingIndex];
-      const updatedUser = {
-        ...existing,
-        ...newUser,
-        email: cleanEmail,
-        password: newUser.password || existing.password || '123456',
-        lastLoginAt: new Date().toISOString(),
-        isLoggedIn: true
-      };
-      serverAccounts[existingIndex] = updatedUser;
-      writeServerAccounts(serverAccounts);
-      return res.json({ success: true, user: updatedUser, alreadyExisted: true });
+    const authAdmin = getAdminAuth(adminApp);
+    const target = await authAdmin.getUser(uid);
+    if ((target.email || '').toLowerCase() === TRUSTED_ADMIN_EMAIL) {
+      return res.status(403).json({ success: false, error: 'The trusted administrator account cannot be deleted here.' });
     }
 
-    const userToSave = {
-      ...newUser,
-      email: cleanEmail,
-      password: newUser.password || '123456',
-      createdAt: newUser.createdAt || new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-      isLoggedIn: true
-    };
-
-    serverAccounts.push(userToSave);
-    writeServerAccounts(serverAccounts);
-
-    const log = {
-      id: 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-      userId: userToSave.id,
-      userName: userToSave.displayName,
-      userRole: userToSave.role || 'user',
-      userEmail: userToSave.email,
-      actionType: 'auth',
-      title: 'Tạo tài khoản mới',
-      description: `Đăng ký thành công tài khoản ${userToSave.displayName} (${userToSave.email}) trên hệ thống`,
-      timestamp: new Date().toISOString()
-    };
-    serverActivities.unshift(log);
-    if (serverActivities.length > 500) serverActivities = serverActivities.slice(0, 500);
-    writeServerActivities(serverActivities);
-
-    return res.json({ success: true, user: userToSave });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
+    await authAdmin.deleteUser(uid);
+    await getAdminFirestore(adminApp).collection('users').doc(uid).delete();
+    return res.json({ success: true });
+  } catch (error: any) {
+    console.error('[Admin API] Account deletion failed:', error?.message || error);
+    return res.status(error?.code === 'auth/user-not-found' ? 404 : 500).json({
+      success: false,
+      error: 'Unable to delete the Firebase account. Check server credentials and try again.'
+    });
   }
 });
 
-app.post('/api/accounts/login', (req: Request, res: Response) => {
-  try {
-    const { identifier, password } = req.body;
-    if (!identifier) {
-      return res.status(400).json({ success: false, error: 'Vui lòng nhập tên đăng nhập hoặc email.' });
-    }
-
-    const cleanId = String(identifier).trim().toLowerCase();
-    const cleanPass = password ? String(password).trim() : '';
-
-    // Check Admin Credentials
-    if (cleanId === 'admin' || cleanId === 'admin@heritageai.vn' || cleanId === 'admin@gmail.com') {
-      if (cleanPass === 'AINHS2026') {
-        let adminAccount = serverAccounts.find((a: any) => a.id === 'user-admin' || (a.email && a.email.toLowerCase() === 'admin@heritageai.vn'));
-        if (!adminAccount) {
-          adminAccount = { ...DEFAULT_ADMIN_ACCOUNT_SERVER };
-          serverAccounts.push(adminAccount);
-        }
-        adminAccount.lastLoginAt = new Date().toISOString();
-        adminAccount.isLoggedIn = true;
-        writeServerAccounts(serverAccounts);
-        return res.json({ success: true, user: adminAccount });
-      } else {
-        return res.status(400).json({ success: false, error: 'Mật khẩu quản trị viên không chính xác.' });
-      }
-    }
-
-    // Regular User authentication
-    const account = serverAccounts.find((a: any) => 
-      (a.email && a.email.toLowerCase() === cleanId) || 
-      (a.displayName && a.displayName.toLowerCase() === cleanId) ||
-      (a.id && a.id.toLowerCase() === cleanId)
-    );
-
-    if (!account) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Tài khoản không tồn tại. Vui lòng kiểm tra lại thông tin hoặc Đăng Ký Mới.' 
-      });
-    }
-
-    if (cleanPass && account.password && account.password !== cleanPass) {
-      return res.status(400).json({ success: false, error: 'Mật khẩu không chính xác. Vui lòng thử lại.' });
-    }
-
-    account.lastLoginAt = new Date().toISOString();
-    account.isLoggedIn = true;
-    writeServerAccounts(serverAccounts);
-
-    return res.json({ success: true, user: account });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/accounts/reset-password', (req: Request, res: Response) => {
-  try {
-    const { email, newPassword } = req.body;
-    if (!email || !newPassword) {
-      return res.status(400).json({ success: false, error: 'Vui lòng cung cấp email và mật khẩu mới.' });
-    }
-
-    const cleanEmail = String(email).trim().toLowerCase();
-    const cleanNew = String(newPassword).trim();
-
-    const accountIndex = serverAccounts.findIndex((a: any) => 
-      (a.email && a.email.toLowerCase() === cleanEmail) || 
-      (cleanEmail === 'admin' && (a.id === 'user-admin' || a.role === 'admin'))
-    );
-
-    if (accountIndex < 0) {
-      return res.status(404).json({ success: false, error: 'Không tìm thấy tài khoản tương ứng với email này.' });
-    }
-
-    serverAccounts[accountIndex].password = cleanNew;
-    writeServerAccounts(serverAccounts);
-
-    return res.json({ success: true, user: serverAccounts[accountIndex] });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/accounts/change-password', (req: Request, res: Response) => {
-  try {
-    const { userId, oldPassword, newPassword } = req.body;
-    if (!userId || !oldPassword || !newPassword) {
-      return res.status(400).json({ success: false, error: 'Thiếu dữ liệu đổi mật khẩu.' });
-    }
-
-    const cleanOld = String(oldPassword).trim();
-    const cleanNew = String(newPassword).trim();
-
-    const account = serverAccounts.find((a: any) => a.id === userId);
-    if (!account) {
-      return res.status(404).json({ success: false, error: 'Không tìm thấy tài khoản người dùng.' });
-    }
-
-    if (account.password && account.password !== cleanOld) {
-      return res.status(400).json({ success: false, error: 'Mật khẩu hiện tại không chính xác.' });
-    }
-
-    account.password = cleanNew;
-    writeServerAccounts(serverAccounts);
-
-    return res.json({ success: true, user: account });
-  } catch (err: any) {
-    return res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.delete('/api/accounts/:id', (req: Request, res: Response) => {
-  const targetId = req.params.id;
-  if (targetId === 'user-admin') {
-    return res.status(400).json({ success: false, error: 'Không thể xóa tài khoản Quản trị viên gốc.' });
-  }
-  const target = serverAccounts.find((a: any) => a.id === targetId);
-  serverAccounts = serverAccounts.filter((a: any) => a.id !== targetId);
-  writeServerAccounts(serverAccounts);
-
-  if (target) {
-    const log = {
-      id: 'act-' + Date.now(),
-      userId: 'user-admin',
-      userName: 'Quản trị viên Hệ thống',
-      userRole: 'admin',
-      userEmail: 'admin@heritageai.vn',
-      actionType: 'admin_action',
-      title: 'Xóa tài khoản người dùng',
-      description: `Quản trị viên đã xóa tài khoản ${target.displayName} (${target.email}) khỏi hệ thống server`,
-      timestamp: new Date().toISOString()
-    };
-    serverActivities.unshift(log);
-    writeServerActivities(serverActivities);
-  }
-
-  return res.json({ success: true });
+// Legacy account endpoints exposed plaintext credentials and bypassed Firebase Authentication.
+// They are intentionally disabled; the client now uses Firebase Authentication and UID-owned profiles.
+app.use('/api/accounts', (_req: Request, res: Response) => {
+  return res.status(410).json({
+    success: false,
+    error: 'Legacy account API has been disabled. Use Firebase Authentication.'
+  });
 });
 
 app.get('/api/activities', (req: Request, res: Response) => {
@@ -2011,7 +1874,7 @@ app.get('/api/ai/tour-guide-config', (req: Request, res: Response) => {
   return res.json({ success: true, config: serverTourGuideConfig });
 });
 
-app.post('/api/ai/tour-guide-config', (req: Request, res: Response) => {
+app.post('/api/ai/tour-guide-config', requireTrustedAdmin, (req: Request, res: Response) => {
   try {
     const { config } = req.body;
     if (config && config.guideName) {
@@ -2264,7 +2127,7 @@ app.post('/api/tts/vieneu', async (req: Request, res: Response) => {
     }
 
     const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
-    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+    const targetApiKey = process.env.VIENEU_API_KEY || apiKey || '';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -2324,7 +2187,7 @@ app.post('/api/tts/vieneu', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
+app.post('/api/tts/test-connection', requireTrustedAdmin, async (req: Request, res: Response) => {
   try {
     const { provider = 'vieneu', endpoint, apiKey, model = 'vieneu-v4' } = req.body;
 
@@ -2341,7 +2204,7 @@ app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
     }
 
     const targetEndpoint = endpoint || process.env.VIENEU_API_ENDPOINT || 'https://api.vieneu.io/api/v1/audio/speech';
-    const targetApiKey = apiKey || process.env.VIENEU_API_KEY || '';
+    const targetApiKey = process.env.VIENEU_API_KEY || apiKey || '';
 
     const testResult = await testVieNeuApiConnection(targetEndpoint, targetApiKey, model);
     return res.status(testResult.success ? 200 : 400).json(testResult);
@@ -2359,7 +2222,7 @@ app.post('/api/tts/test-connection', async (req: Request, res: Response) => {
 });
 
 // Test EmailJS API Configuration
-app.post('/api/emailjs/test-connection', async (req: Request, res: Response) => {
+app.post('/api/emailjs/test-connection', requireTrustedAdmin, async (req: Request, res: Response) => {
   const startTime = Date.now();
   try {
     const { serviceId, templateId, publicKey, privateKey, testEmail } = req.body;

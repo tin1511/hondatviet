@@ -36,6 +36,7 @@ import { storageService } from '../services/storageService';
 import { geolocationService, CITY_LANDMARK_PRESETS } from '../services/geolocationService';
 import { UserProfile, CityLandmarkBackground } from '../types';
 import { languageService, SUPPORTED_LANGUAGES } from '../services/languageService';
+import { signInWithFirebaseIdentity, registerWithFirebaseIdentity, sendFirebasePasswordReset } from '../services/firebaseIdentityService';
 
 interface AuthGatewayProps {
   onLoginSuccess: (user: UserProfile) => void;
@@ -170,29 +171,24 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
     setIsLoading(true);
+    const res = await signInWithFirebaseIdentity(loginIdentifier, loginPassword);
+    setIsLoading(false);
 
-    setTimeout(() => {
-      const res = storageService.login(loginIdentifier, loginPassword);
-      setIsLoading(false);
+    if (!res.success || !res.user) {
+      setErrorMessage(res.error || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+      return;
+    }
 
-      if (!res.success || !res.user) {
-        setErrorMessage(res.error || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
-        return;
-      }
-
-      setSuccessMessage(`Đăng nhập thành công! Chào mừng ${res.user.displayName}`);
-      setTimeout(() => {
-        onLoginSuccess(res.user!);
-      }, 500);
-    }, 300);
+    setSuccessMessage(`Đăng nhập thành công! Chào mừng ${res.user.displayName}`);
+    setTimeout(() => onLoginSuccess(res.user!), 500);
   };
 
-  const handleInitiateRegister = (e: React.FormEvent) => {
+  const handleInitiateRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
@@ -201,7 +197,6 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
       setErrorMessage('Vui lòng điền đầy đủ họ và tên cùng email.');
       return;
     }
-
     if (!regPassword || regPassword.length < 6) {
       setErrorMessage('Mật khẩu cần tối thiểu 6 ký tự để bảo mật.');
       return;
@@ -214,31 +209,26 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const res = storageService.register({
-        displayName: regName,
-        email: regEmail,
-        password: regPassword,
-        role: regRole,
-        city: regCity,
-        interests: ['Di sản Văn hóa Việt Nam', 'Ẩm thực truyền thống', 'Làng nghề & Nghệ thuật'],
-        emailVerified: true
-      });
-      setIsLoading(false);
+    const res = await registerWithFirebaseIdentity({
+      displayName: regName,
+      email: regEmail,
+      password: regPassword,
+      role: regRole,
+      city: regCity,
+      interests: ['Di sản Văn hóa Việt Nam', 'Ẩm thực truyền thống', 'Làng nghề & Nghệ thuật']
+    });
+    setIsLoading(false);
 
-      if (!res.success || !res.user) {
-        setErrorMessage(res.error || 'Không thể tạo tài khoản.');
-        return;
-      }
+    if (!res.success || !res.user) {
+      setErrorMessage(res.error || 'Không thể tạo tài khoản.');
+      return;
+    }
 
-      setSuccessMessage(`Đăng ký tài khoản thành công! Chào mừng ${res.user.displayName} gia nhập (+100 XP)`);
-      setTimeout(() => {
-        onLoginSuccess(res.user!);
-      }, 500);
-    }, 350);
+    setSuccessMessage('Tạo tài khoản thành công. Hãy kiểm tra email để xác minh tài khoản của bạn.');
+    setTimeout(() => onLoginSuccess(res.user!), 900);
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
     setSuccessMessage('');
@@ -247,32 +237,17 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
       setErrorMessage('Vui lòng nhập email đã đăng ký.');
       return;
     }
-    if (!forgotNewPass.trim() || forgotNewPass.length < 6) {
-      setErrorMessage('Mật khẩu mới phải có tối thiểu 6 ký tự.');
-      return;
-    }
-    if (forgotNewPass !== forgotConfirmPass) {
-      setErrorMessage('Xác nhận lại mật khẩu mới không khớp.');
-      return;
-    }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const res = storageService.resetPasswordByEmail(forgotEmail, forgotNewPass);
-      setIsLoading(false);
+    const res = await sendFirebasePasswordReset(forgotEmail);
+    setIsLoading(false);
 
-      if (!res.success) {
-        setErrorMessage(res.error || 'Đặt lại mật khẩu không thành công.');
-        return;
-      }
+    if (!res.success) {
+      setErrorMessage(res.error || 'Không thể gửi email đặt lại mật khẩu.');
+      return;
+    }
 
-      setSuccessMessage('Đổi mật khẩu thành công! Bạn có thể đăng nhập ngay bây giờ.');
-      setLoginIdentifier(forgotEmail);
-      setLoginPassword(forgotNewPass);
-      setTimeout(() => {
-        setActiveTab('login');
-      }, 900);
-    }, 400);
+    setSuccessMessage('Nếu email thuộc một tài khoản, hướng dẫn đặt lại mật khẩu sẽ được gửi đến hộp thư của bạn.');
   };
 
   return (
@@ -801,9 +776,9 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2.5">
                   <KeyRound className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div className="text-xs text-stone-300">
-                    <p className="font-semibold text-amber-300">Đặt lại mật khẩu</p>
+                    <p className="font-semibold text-amber-300">Đặt lại mật khẩu an toàn</p>
                     <p className="text-[11px] text-stone-400 mt-0.5">
-                      Nhập địa chỉ email đã đăng ký của bạn cùng mật khẩu mới (tối thiểu 6 ký tự).
+                      Nhập email. Firebase sẽ gửi liên kết để bạn tự đặt mật khẩu mới; website không lưu hoặc nhận mật khẩu mới qua biểu mẫu này.
                     </p>
                   </div>
                 </div>
@@ -825,82 +800,20 @@ export const AuthGateway: React.FC<AuthGatewayProps> = ({ onLoginSuccess }) => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
-                    Mật khẩu mới
-                  </label>
-                  <div className="relative">
-                    <Key className="w-4 h-4 text-stone-500 absolute left-3.5 top-3.5" />
-                    <input
-                      type={showForgotNewPass ? 'text' : 'password'}
-                      required
-                      minLength={6}
-                      value={forgotNewPass}
-                      onChange={(e) => setForgotNewPass(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-11 py-3 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotNewPass(!showForgotNewPass)}
-                      className="absolute right-3.5 top-3.5 text-stone-500 hover:text-stone-300"
-                    >
-                      {showForgotNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-stone-300 mb-1.5 uppercase tracking-wider">
-                    Xác nhận lại mật khẩu mới
-                  </label>
-                  <div className="relative">
-                    <CheckCircle2 className="w-4 h-4 text-stone-500 absolute left-3.5 top-3.5" />
-                    <input
-                      type={showForgotConfirmPass ? 'text' : 'password'}
-                      required
-                      minLength={6}
-                      value={forgotConfirmPass}
-                      onChange={(e) => setForgotConfirmPass(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full bg-stone-950 border border-stone-800 rounded-xl pl-10 pr-11 py-3 text-stone-100 text-xs sm:text-sm focus:outline-none focus:border-amber-500 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotConfirmPass(!showForgotConfirmPass)}
-                      className="absolute right-3.5 top-3.5 text-stone-500 hover:text-stone-300"
-                    >
-                      {showForgotConfirmPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
                 <button
                   type="submit"
                   disabled={isLoading}
                   className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold text-xs sm:text-sm shadow-lg shadow-amber-950/40 transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
                 >
-                  {isLoading ? (
-                    <span>Đang cập nhật...</span>
-                  ) : (
-                    <>
-                      <KeyRound className="w-4 h-4" />
-                      <span>Xác Nhận Đổi Mật Khẩu Mới</span>
-                    </>
-                  )}
+                  {isLoading ? <span>Đang gửi hướng dẫn...</span> : <span>Gửi liên kết đặt lại mật khẩu</span>}
                 </button>
-
                 <div className="pt-2 text-center">
                   <button
                     type="button"
-                    onClick={() => {
-                      setActiveTab('login');
-                      setErrorMessage('');
-                      setSuccessMessage('');
-                    }}
-                    className="text-xs text-stone-400 hover:text-stone-200"
+                    onClick={() => setActiveTab('login')}
+                    className="text-amber-400 hover:text-amber-300 text-xs font-semibold underline underline-offset-2"
                   >
-                    ← Quay lại Đăng nhập
+                    Quay lại đăng nhập
                   </button>
                 </div>
               </form>
